@@ -1,0 +1,16 @@
+query GetRobots($userLabel: String!)
+{
+  # users (where: {label: $userLabel}) {
+    robots (where: {userLabel: $userLabel}){
+      label
+      createdTimestamp
+      # metadata
+    # }
+  }
+}
+
+query ListRobots($userLabel: String!){
+  robots (where: {userLabel: $userLabel}){
+    label
+  }
+} 

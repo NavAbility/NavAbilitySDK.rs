@@ -1,0 +1,12 @@
+[package]
+name = "navabilitysdk"
+version = "0.1.0"
+authors = ["NavAbility(TM) by WhereWhen.ai Technologies Inc."]
+edition = "2021"
+
+[dependencies]
+graphql_client = { version="0.14", features = ["reqwest", "reqwest-blocking"] }
+reqwest = "^0.11"
+serde = "1"
+serde_json = "1"
+log = "^0.4"
