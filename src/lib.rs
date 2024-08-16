@@ -45,14 +45,14 @@ pub struct ListRobots;
 // }
 
 #[derive(Debug)]
-struct NavAbilityClient {
+pub struct NavAbilityClient {
     client: Client,
     apiurl: String,
     user_label: String,
     nva_api_token: String,
 }
 impl NavAbilityClient {
-    fn new(apiurl: &str, user_label: &str, nva_api_token: &str) -> Self {
+    fn new(apiurl: &String, user_label: &String, nva_api_token: &String) -> Self {
         let client = Client::builder()
             .user_agent("graphql-rust/0.12.0")
             .default_headers(
