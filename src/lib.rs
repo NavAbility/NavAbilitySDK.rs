@@ -84,7 +84,7 @@ impl NavAbilityClient {
     }
 }
 
-pub fn list_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseData {
+pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseData {
     let variables = get_robots::Variables {
         user_label: client.user_label.clone(),
     };
@@ -103,12 +103,14 @@ pub fn list_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseDa
 }
 
 
-pub async fn get_robots_async(
+
+
+pub async fn fetch_robots_async(
     nvacl: &NavAbilityClient,
 ) -> Result<Response<get_robots::ResponseData>, Box<dyn Error>> {
 
     // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = list_robots_blocking(&nvacl).users;
+    let ur_list = get_robots_blocking(&nvacl).users;
     // dbg!(&ur_list);
 
         // let client = list_robots_client(auth_token);
@@ -135,6 +137,27 @@ pub async fn get_robots_async(
 
 // #[cfg(feature = "tokio")]
 #[cfg(not(target_arch = "wasm32"))]
+pub fn fetch_ur_list_blocking(
+    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    nvacl: &NavAbilityClient
+    // api_url: &String, 
+    // auth_token: &String
+) -> Result<(),Box<dyn Error>> {
+
+    // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
+    let ur_list = get_robots_blocking(&nvacl).users;
+    // dbg!(&ur_list);
+
+    if let Err(e) = send_into.send(ur_list) {
+        tracing::error!("Error sending user robot list data: {}", e);
+    };
+
+    Ok(())
+}
+
+
+// #[cfg(feature = "tokio")]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn fetch_ur_list_tokio(
     send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
     nvacl: &NavAbilityClient
@@ -143,7 +166,7 @@ pub fn fetch_ur_list_tokio(
 ) -> Result<(),Box<dyn Error>> { // -> Vec<get_robots::GetRobotsUsers> {
 
     // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = list_robots_blocking(&nvacl).users;
+    let ur_list = get_robots_blocking(&nvacl).users;
     // dbg!(&ur_list);
 
     // THIS IS THE NEW VERSION
@@ -153,7 +176,7 @@ pub fn fetch_ur_list_tokio(
         .build()
         .unwrap();
     // let ur_list = rt.block_on(async { 
-    //     get_robots_async(&nvacl).await // &api_url, &auth_token).await 
+    //     fetch_robots_async(&nvacl).await // &api_url, &auth_token).await 
     // }).unwrap()
     //     .data
     //     .expect("Problem with GQL response")
@@ -176,7 +199,7 @@ pub async fn fetch_ur_list_web(
 ) { // -> Vec<get_robots::GetRobotsUsers> {
     // FIXME this internally grabs api_key from env
     let ur_list = 
-        get_robots_async(&api_url, &auth_token)
+        fetch_robots_async(&api_url, &auth_token)
         .await
         .unwrap()
         .data
@@ -200,10 +223,10 @@ mod tests {
         let api_url: &str = "https://api.d1.navability.io/graphql";
         let client = NavAbilityClient::new(&api_url.to_string(), &nva_userlabel, &nva_api_token);
         println!("client: {:?}", client);
-        let robotrs = list_robots_blocking(&client);
+        let robotrs = get_robots_blocking(&client);
         println!("robots: {:?}", robotrs);
 
-        let robotlist = list_robots_blocking(&client);
+        let robotlist = get_robots_blocking(&client);
         println!("robot list: {:?}", robotlist);
     }
 }
