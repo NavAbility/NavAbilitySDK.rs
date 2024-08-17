@@ -10,6 +10,9 @@ use graphql_client::{
     Response
 };
 
+#[cfg(feature="wasm")]
+use reqwest::Client;
+
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "tokio")]
 use tokio;
@@ -216,10 +219,13 @@ mod tests {
         let api_url: &str = "https://api.d1.navability.io/graphql";
         let client = NavAbilityClient::new(&api_url.to_string(), &nva_userlabel, &nva_api_token);
         println!("client: {:?}", client);
-        let robotrs = get_robots_blocking(&client);
-        println!("robots: {:?}", robotrs);
 
+        #[cfg(feature = "blocking")]
+        let robotrs = get_robots_blocking(&client);
+        // println!("robots: {:?}", robotrs);
+
+        #[cfg(feature = "blocking")]
         let robotlist = get_robots_blocking(&client);
-        println!("robot list: {:?}", robotlist);
+        // println!("robot list: {:?}", robotlist);
     }
 }
