@@ -93,6 +93,75 @@ impl NavAbilityClient {
     }
 }
 
+
+
+pub async fn fetch_robots_async(
+    nvacl: &NavAbilityClient,
+) -> Result<Response<get_robots::ResponseData>, Box<dyn Error>> {
+
+    // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
+    let variables = get_robots::Variables {
+        user_label: nvacl.user_label.to_string()
+    };
+
+    // this is the important line
+    let request_body = GetRobots::build_query(variables);
+
+    let res = nvacl.client.post(&nvacl.apiurl).json(&request_body).send().await?;
+    let response_body: Response<get_robots::ResponseData> = res.json().await?;
+    dbg!("{:?}", &response_body);
+    Ok(response_body)
+}
+
+
+
+#[cfg(target_arch = "wasm32")]
+pub async fn fetch_ur_list_web(
+    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    client: &NavAbilityClient
+    // api_url: &String, 
+    // auth_token: &String
+) { // -> Vec<get_robots::GetRobotsUsers> {
+    // FIXME this internally grabs api_key from env
+      // &api_url, &auth_token)
+    let ur_list = 
+        fetch_robots_async(&client)
+            .await
+            .unwrap()
+            .data
+            .expect("Problem with GQL response")
+            .users;
+}
+
+
+
+// #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "tokio")]
+pub fn fetch_ur_list_tokio(
+    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    nvacl: &NavAbilityClient
+) -> Result<(),Box<dyn Error>> { // -> Vec<get_robots::GetRobotsUsers> {
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let ur_list = rt.block_on(async { 
+        fetch_robots_async(&nvacl).await
+    }).unwrap()
+        .data
+        .expect("Problem with GQL response")
+        .users;
+
+    if let Err(e) = send_into.send(ur_list) {
+        tracing::error!("Error sending user robot list data: {}", e);
+    };
+
+    Ok(())
+}
+
+
+
 #[cfg(feature = "blocking")]
 pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseData {
     let variables = get_robots::Variables {
@@ -129,70 +198,6 @@ pub fn fetch_ur_list_blocking(
     };
 
     Ok(())
-}
-
-
-pub async fn fetch_robots_async(
-    nvacl: &NavAbilityClient,
-) -> Result<Response<get_robots::ResponseData>, Box<dyn Error>> {
-
-    // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
-    let variables = get_robots::Variables {
-        user_label: nvacl.user_label.to_string()
-    };
-
-    // this is the important line
-    let request_body = GetRobots::build_query(variables);
-
-    let res = nvacl.client.post(&nvacl.apiurl).json(&request_body).send().await?;
-    let response_body: Response<get_robots::ResponseData> = res.json().await?;
-    dbg!("{:?}", &response_body);
-    Ok(response_body)
-}
-
-
-
-// #[cfg(not(target_arch = "wasm32"))]
-#[cfg(feature = "tokio")]
-pub fn fetch_ur_list_tokio(
-    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
-    nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> { // -> Vec<get_robots::GetRobotsUsers> {
-
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    let ur_list = rt.block_on(async { 
-        fetch_robots_async(&nvacl).await
-    }).unwrap()
-        .data
-        .expect("Problem with GQL response")
-        .users;
-
-    if let Err(e) = send_into.send(ur_list) {
-        tracing::error!("Error sending user robot list data: {}", e);
-    };
-
-    Ok(())
-}
-
-
-
-#[cfg(target_arch = "wasm32")]
-pub async fn fetch_ur_list_web(
-    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
-    api_url: &String, 
-    auth_token: &String
-) { // -> Vec<get_robots::GetRobotsUsers> {
-    // FIXME this internally grabs api_key from env
-    let ur_list = 
-        fetch_robots_async(&api_url, &auth_token)
-        .await
-        .unwrap()
-        .data
-        .expect("Problem with GQL response")
-        .users;
 }
 
 
