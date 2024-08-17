@@ -1,11 +1,21 @@
-query GetRobots($userLabel: String!)
+# FIXME NEW AND IMPROVED USE THIS
+# query GetRobots($userLabel: String!)
+# {
+#   robots (where: {userLabel: $userLabel}){
+#     label
+#     createdTimestamp
+#     # metadata
+#   }
+# }
+# FIXME LEGACY REMOVE
+query GetRobots($userLabel: EmailAddress!)
 {
-  # users (where: {label: $userLabel}) {
-    robots (where: {userLabel: $userLabel}){
+  users (where: {label: $userLabel}) {
+    robots {
       label
       createdTimestamp
       # metadata
-    # }
+    }
   }
 }
 
