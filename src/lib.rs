@@ -3,13 +3,17 @@
 use std::error::Error;
 use std::sync::mpsc;
 
-use ::reqwest::blocking::Client;
+// use ::reqwest::blocking::Client;
+use reqwest::Client;
 use graphql_client::{
     // reqwest,
-    reqwest::post_graphql_blocking,
     GraphQLQuery,
     Response
 };
+
+// #[cfg(not(target_arch = "wasm32"))]
+// use reqwest::post_graphql_blocking;
+
 // use std::error::Error;
 // use log::*;
 
@@ -84,25 +88,42 @@ impl NavAbilityClient {
     }
 }
 
-pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseData {
-    let variables = get_robots::Variables {
-        user_label: client.user_label.clone(),
-    };
+// pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseData {
+//     let variables = get_robots::Variables {
+//         user_label: client.user_label.clone(),
+//     };
 
-    let response_body =
-        post_graphql_blocking::<GetRobots, _>(&client.client, &client.apiurl, variables)
-            .expect("Failure to post graphql");
+//     let response_body =
+//         post_graphql_blocking::<GetRobots, _>(&client.client, &client.apiurl, variables)
+//             .expect("Failure to post graphql");
     
-    //debug print raw response body
-    dbg!(&response_body);
+//     //debug print raw response body
+//     dbg!(&response_body);
 
-    let response_data: get_robots::ResponseData =
-        response_body.data.expect("missing response data");
+//     let response_data: get_robots::ResponseData =
+//         response_body.data.expect("missing response data");
 
-    return response_data;
-}
+//     return response_data;
+// }
 
 
+// // #[cfg(feature = "tokio")]
+// #[cfg(not(target_arch = "wasm32"))]
+// pub fn fetch_ur_list_blocking(
+//     send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+//     nvacl: &NavAbilityClient
+// ) -> Result<(),Box<dyn Error>> {
+
+//     // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
+//     let ur_list = get_robots_blocking(&nvacl).users;
+//     // dbg!(&ur_list);
+
+//     if let Err(e) = send_into.send(ur_list) {
+//         tracing::error!("Error sending user robot list data: {}", e);
+//     };
+
+//     Ok(())
+// }
 
 
 pub async fn fetch_robots_async(
@@ -110,7 +131,7 @@ pub async fn fetch_robots_async(
 ) -> Result<Response<get_robots::ResponseData>, Box<dyn Error>> {
 
     // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = get_robots_blocking(&nvacl).users;
+    // let ur_list = get_robots_blocking(&nvacl).users;
     // dbg!(&ur_list);
 
         // let client = list_robots_client(auth_token);
@@ -127,33 +148,14 @@ pub async fn fetch_robots_async(
     let request_body = GetRobots::build_query(variables);
 
     
-    todo!();
-    // let res = nvacl.client.post(api_url).json(&request_body).send().await?;
-    // let response_body: Response<get_robots::ResponseData> = res.json().await?;
-    // dbg!("{:?}", &response_body);
-    // Ok(response_body)
+    // todo!();
+    let res = nvacl.client.post(&nvacl.apiurl).json(&request_body).send().await?;
+    let response_body: Response<get_robots::ResponseData> = res.json().await?;
+    dbg!("{:?}", &response_body);
+    Ok(response_body)
 }
 
 
-// #[cfg(feature = "tokio")]
-#[cfg(not(target_arch = "wasm32"))]
-pub fn fetch_ur_list_blocking(
-    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
-    nvacl: &NavAbilityClient
-    // api_url: &String, 
-    // auth_token: &String
-) -> Result<(),Box<dyn Error>> {
-
-    // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = get_robots_blocking(&nvacl).users;
-    // dbg!(&ur_list);
-
-    if let Err(e) = send_into.send(ur_list) {
-        tracing::error!("Error sending user robot list data: {}", e);
-    };
-
-    Ok(())
-}
 
 
 // #[cfg(feature = "tokio")]
@@ -161,13 +163,7 @@ pub fn fetch_ur_list_blocking(
 pub fn fetch_ur_list_tokio(
     send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
     nvacl: &NavAbilityClient
-    // api_url: &String, 
-    // auth_token: &String
 ) -> Result<(),Box<dyn Error>> { // -> Vec<get_robots::GetRobotsUsers> {
-
-    // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = get_robots_blocking(&nvacl).users;
-    // dbg!(&ur_list);
 
     // THIS IS THE NEW VERSION
     // FIXME this internally grabs api_key from env
@@ -175,12 +171,12 @@ pub fn fetch_ur_list_tokio(
         .enable_all()
         .build()
         .unwrap();
-    // let ur_list = rt.block_on(async { 
-    //     fetch_robots_async(&nvacl).await // &api_url, &auth_token).await 
-    // }).unwrap()
-    //     .data
-    //     .expect("Problem with GQL response")
-    //     .users;
+    let ur_list = rt.block_on(async { 
+        fetch_robots_async(&nvacl).await // &api_url, &auth_token).await 
+    }).unwrap()
+        .data
+        .expect("Problem with GQL response")
+        .users;
 
     if let Err(e) = send_into.send(ur_list) {
         tracing::error!("Error sending user robot list data: {}", e);
