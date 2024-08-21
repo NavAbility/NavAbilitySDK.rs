@@ -13,6 +13,12 @@ use graphql_client::{
 #[cfg(feature="wasm")]
 use reqwest::Client;
 
+#[cfg(target_arch = "wasm32")]
+use gloo_console::__macro::JsValue;
+
+#[cfg(target_arch = "wasm32")]
+use gloo_console::log;
+
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "tokio")]
 use tokio;
@@ -127,13 +133,26 @@ pub async fn fetch_ur_list_web(
 ) { // -> Vec<get_robots::GetRobotsUsers> {
     // FIXME this internally grabs api_key from env
       // &api_url, &auth_token)
-    let ur_list = 
-        fetch_robots_async(&client)
-            .await
-            .unwrap()
-            .data
-            .expect("Problem with GQL response")
-            .users;
+      
+    if let Ok(response) = fetch_robots_async(&client).await {
+        let ur_list_data = response.data;
+        match ur_list_data {
+            None => gloo_console::log!("text", JsValue::from("Problem with GQL response")),
+            Some(resdata) => if let Err(e) = send_into.send(resdata.users) {
+                tracing::error!("Error sending user robot list data: {}", e);
+            }
+    
+        }
+        // let ur_list = ur_list_data
+        //     .expect("Problem with GQL response")
+        //     .users;    
+        // if let Err(e) = send_into.send(ur_list) {
+        //     tracing::error!("Error sending user robot list data: {}", e);
+        // }
+    } else {
+        tracing::error!("Unable to fetch list from client connection");
+    }
+
 }
 
 

@@ -21,11 +21,16 @@ reqwest = {version = "^0.11", features = ["json"], optional=true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", default-features = false, optional=true}
 
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-console = { version = "0.3", optional = true }
+
+
 [features]
 tokio = ["dep:tokio", "dep:reqwest"]
 blocking = ["graphql_client/reqwest","graphql_client/reqwest-blocking"]
 wasm = ["dep:reqwest"]
-
+wasm-dev = ["dep:gloo-console"]
 
 [profile.release]
 opt-level = 2 # fast and small wasm
