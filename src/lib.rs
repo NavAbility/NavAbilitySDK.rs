@@ -2,10 +2,8 @@
 
 use std::error::Error;
 use std::sync::mpsc;
-// use log::*;
 
 use graphql_client::{
-    // reqwest,
     GraphQLQuery,
     Response
 };
@@ -14,26 +12,23 @@ use graphql_client::{
 use reqwest::Client;
 
 #[cfg(target_arch = "wasm32")]
-use gloo_console::__macro::JsValue;
-
-#[cfg(target_arch = "wasm32")]
-use gloo_console::log;
+use gloo_console::{__macro::JsValue, log};
 
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "tokio")]
 use tokio;
-#[cfg(feature="tokio")]
+#[cfg(feature = "tokio")]
 use reqwest::Client;
 
 #[cfg(feature="blocking")]
 use ::reqwest::blocking::Client;
-// #[cfg(feature="blocking")]
-// use graphql_client::reqwest;
 #[cfg(feature="blocking")]
 use graphql_client::reqwest::post_graphql_blocking;
-// #[cfg(not(target_arch = "wasm32"))]
 
 
+fn type_of<T>(_: T) -> &'static str {
+    std::any::type_name::<T>()
+}
 
 
 type EmailAddress = String;
@@ -74,9 +69,9 @@ pub struct ListRobots;
 #[derive(Debug)]
 pub struct NavAbilityClient {
     client: Client,
-    apiurl: String,
-    user_label: String,
-    nva_api_token: String,
+    pub apiurl: String,
+    pub user_label: String,
+    pub nva_api_token: String,
 }
 impl NavAbilityClient {
     pub fn new(apiurl: &String, user_label: &String, nva_api_token: &String) -> Self {
@@ -116,39 +111,84 @@ pub async fn fetch_robots_async(
     // this is the important line
     let request_body = GetRobots::build_query(variables);
 
-    let res = nvacl.client.post(&nvacl.apiurl).json(&request_body).send().await?;
-    let response_body: Response<get_robots::ResponseData> = res.json().await?;
-    dbg!("{:?}", &response_body);
-    Ok(response_body)
+    // #[cfg(target_arch = "wasm32")] 
+    // {
+    //     gloo_console::log!("NvaSDK.rs nvacl.apiurl ", nvacl.apiurl.to_string());
+    //     gloo_console::log!("NvaSDK.rs nvacl.user_label ", nvacl.user_label.to_string());
+    //     gloo_console::log!("NvaSDK.rs nvacl.nva_api_token ", nvacl.nva_api_token.to_string());
+    //     gloo_console::log!("NvaSDK.rs request_body.query ", request_body.query.to_string());
+    // }
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+    // .expect("Failed to get NavAbility API response");
+    match req_res {
+        Err(re) => {
+            tracing::error!("Failed to get NavAbility API response {}", re);
+            #[cfg(target_arch = "wasm32")]
+            {
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
+                gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
+                gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
+            }
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            // : Response<get_robots::ResponseData>
+            let serde_res = res.json().await;
+            // .expect("Failed to json unpack GQL response");
+            match serde_res {
+                Ok(response_body) => {
+                    tracing::debug!("received and json deserialized user robots");
+
+                    #[cfg(target_arch = "wasm32")]
+                    gloo_console::log!("NvaSDK.rs ", "received and json deserialized user robots");
+
+                    return Ok(response_body);
+                },
+                Err(e) => {
+                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
+
+                    #[cfg(target_arch = "wasm32")]            
+                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
+
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
+    // dbg!("{:?}", &response_body);
+
+    // #[cfg(target_arch = "wasm32")]
+    // gloo_console::log!("NvaSDK.rs ", type_of(&response_body));
+
+    // Ok(response_body)
+    // serde_res
 }
 
 
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
-    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    send_into: mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
     client: &NavAbilityClient
-    // api_url: &String, 
-    // auth_token: &String
-) { // -> Vec<get_robots::GetRobotsUsers> {
-    // FIXME this internally grabs api_key from env
-      // &api_url, &auth_token)
-      
-    if let Ok(response) = fetch_robots_async(&client).await {
-        let ur_list_data = response.data;
+) { // -> Vec<get_robots::GetRobotsUsers> {      
+    if let Ok(response_body) = fetch_robots_async(&client).await {
+        let ur_list_data = response_body.data;
         match ur_list_data {
-            None => gloo_console::log!("text", JsValue::from("Problem with GQL response")),
-            Some(resdata) => if let Err(e) = send_into.send(resdata.users) {
-                tracing::error!("Error sending user robot list data: {}", e);
+            None => gloo_console::log!("text", JsValue::from("NvaSDK.rs, bad GQL response")),
+            Some(resdata) => {
+                let ur_data = resdata.users;
+                let res_len = ur_data.len();
+                gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
+                let resp = send_into.send(ur_data);
+                if let Err(e) = resp {
+                    tracing::error!("Error sending user robot list data: {}", e);
+                }
             }
-    
         }
-        // let ur_list = ur_list_data
-        //     .expect("Problem with GQL response")
-        //     .users;    
-        // if let Err(e) = send_into.send(ur_list) {
-        //     tracing::error!("Error sending user robot list data: {}", e);
-        // }
     } else {
         tracing::error!("Unable to fetch list from client connection");
     }
@@ -168,18 +208,22 @@ pub fn fetch_ur_list_tokio(
         .enable_all()
         .build()
         .unwrap();
-    let ur_list = rt.block_on(async { 
+    let ur_list_data = rt.block_on(async { 
         fetch_robots_async(&nvacl).await
-    }).unwrap()
-        .data
-        .expect("Problem with GQL response")
-        .users;
+    }).unwrap().data;
 
-    if let Err(e) = send_into.send(ur_list) {
-        tracing::error!("Error sending user robot list data: {}", e);
-    };
-
-    Ok(())
+    match ur_list_data { // .data.expect("Problem with GQL response")
+        Some(data) => {
+            let ur_list = data.users;
+            if let Err(e) = send_into.send(ur_list) {
+                tracing::error!("Error sending user robot list data: {}", e);
+            };
+            return Ok(())
+        },
+        None => {
+            return panic!("Problem with GQL response");
+        }
+    }
 }
 
 
