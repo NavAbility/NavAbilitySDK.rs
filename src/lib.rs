@@ -2,6 +2,8 @@
 
 use std::error::Error;
 use std::sync::mpsc;
+use uuid::Uuid;
+use chrono::{self, Utc};
 
 use graphql_client::{
     GraphQLQuery,
@@ -30,7 +32,6 @@ fn type_of<T>(_: T) -> &'static str {
     std::any::type_name::<T>()
 }
 
-
 type EmailAddress = String;
 type DateTime = String;
 type Metadata = String;
@@ -50,6 +51,67 @@ pub struct GetRobots;
     response_derives = "Debug"
 )]
 pub struct ListRobots;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/user_robot_session.graphql",
+    response_derives = "Debug"
+)]
+pub struct GetURS;
+
+// #[derive(GraphQLQuery)]
+// #[graphql(
+//     schema_path = "src/schema.json",
+//     query_path = "src/add_robots.graphql",
+//     response_derives = "Debug"
+// )]
+// pub struct AddRobot;
+
+// unclear if manual definition of user robot session is necessary
+pub struct User {
+    id: Uuid,
+    label: String,
+    _version: String,
+    created_timestamp: chrono::DateTime::<chrono::Utc>,
+    last_updated_timestamp: chrono::DateTime::<chrono::Utc>,
+}
+
+pub struct Robot {
+    pub id: Option<Uuid>,
+    pub label: String,
+    pub _version: String,
+    pub created_timestamp: chrono::DateTime::<chrono::Utc>,
+    pub last_updated_timestamp: chrono::DateTime::<chrono::Utc>,
+}
+
+impl Robot {
+    pub fn new(
+        id: Option<Uuid>,
+        label: String,
+        _version: String,
+        created_timestamp: chrono::DateTime<chrono::Utc>,
+        last_updated_timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Self {
+        Self {
+            id,
+            label,
+            _version,
+            created_timestamp,
+            last_updated_timestamp,
+        }
+    }
+}
+
+pub struct Session {
+    id: Uuid,
+    label: String,
+    robot_label: String,
+    user_label: String,
+    _version: String,
+    created_timestamp: chrono::DateTime::<chrono::Utc>,
+    last_updated_timestamp: chrono::DateTime::<chrono::Utc>,
+}
 
 // likely in an earlier compile step via build.rs
 // Schema can maybe be generated with something like:
@@ -98,6 +160,61 @@ impl NavAbilityClient {
 }
 
 
+pub async fn fetch_urs_async(
+    nvacl: &NavAbilityClient,
+    robot_label: String,
+    session_label: String,
+) -> Result<Response<get_urs::ResponseData>, Box<dyn Error>> {
+
+    let variables = get_urs::Variables {
+        user_label: nvacl.user_label.to_string(),
+        robot_label: robot_label.to_string(),
+        session_label: session_label.to_string(),
+    };
+
+    let request_body = GetURS::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+
+    match req_res {
+        Err(re) => {
+            tracing::error!("Failed to get NavAbility API response {}", re);
+            #[cfg(target_arch = "wasm32")]
+            {
+                gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
+                gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
+            }
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            let serde_res = res.json().await;
+            match serde_res {
+                Ok(response_body) => {
+                    tracing::debug!("received and json deserialized GetURS");
+
+                    #[cfg(target_arch = "wasm32")]
+                    gloo_console::log!("NvaSDK.rs ", "received and json GetURS");
+
+                    return Ok(response_body);
+                },
+                Err(e) => {
+                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
+
+                    #[cfg(target_arch = "wasm32")]            
+                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
+
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
+}
+
 
 pub async fn fetch_robots_async(
     nvacl: &NavAbilityClient,
@@ -129,9 +246,9 @@ pub async fn fetch_robots_async(
             tracing::error!("Failed to get NavAbility API response {}", re);
             #[cfg(target_arch = "wasm32")]
             {
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
                 gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
                 gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
             }
             return Err(Box::new(re));
         },
@@ -170,6 +287,39 @@ pub async fn fetch_robots_async(
 
 
 
+
+#[cfg(target_arch = "wasm32")]
+pub async fn fetch_context_web(
+    send_into: mpsc::Sender<Vec<get_urs::GetUrsUsers>>, 
+    client: &NavAbilityClient,
+    robot_label: String,
+    session_label: String,
+) { // -> Vec<get_robots::GetRobotsUsers> {      
+    if let Ok(response_body) = fetch_urs_async(&client, robot_label, session_label).await {
+        let urs_data = response_body.data;
+        match urs_data {
+            None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
+            Some(resdata) => {
+                let urs_data = resdata.users;
+                let res_len = urs_data.len();
+                gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
+
+                let resp = send_into.send(urs_data);
+                if let Err(e) = resp {
+                    tracing::error!("Error sending user robot list data: {}", e);
+                }
+            }
+        }
+    } else {
+        tracing::error!("NvaSDK.rs Unable to fetch list from client connection");
+        #[cfg(target_arch = "wasm32")]            
+        gloo_console::log!("NvaSDK.rs ", "Unable to fetch list from client connection");
+    }
+
+}
+
+
+
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
     send_into: mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
@@ -178,7 +328,7 @@ pub async fn fetch_ur_list_web(
     if let Ok(response_body) = fetch_robots_async(&client).await {
         let ur_list_data = response_body.data;
         match ur_list_data {
-            None => gloo_console::log!("text", JsValue::from("NvaSDK.rs, bad GQL response")),
+            None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
             Some(resdata) => {
                 let ur_data = resdata.users;
                 let res_len = ur_data.len();
@@ -190,7 +340,9 @@ pub async fn fetch_ur_list_web(
             }
         }
     } else {
-        tracing::error!("Unable to fetch list from client connection");
+        tracing::error!("NvaSDK.rs Unable to fetch list from client connection");
+        #[cfg(target_arch = "wasm32")]            
+        gloo_console::log!("NvaSDK.rs ", "Unable to fetch list from client connection");
     }
 
 }
