@@ -36,7 +36,7 @@ type EmailAddress = String;
 type DateTime = String;
 type Metadata = String;
 
-#[derive(GraphQLQuery)]
+#[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
     query_path = "src/robot_queries.graphql",
@@ -73,16 +73,16 @@ pub struct User {
     id: Uuid,
     label: String,
     _version: String,
-    created_timestamp: chrono::DateTime::<chrono::Utc>,
-    last_updated_timestamp: chrono::DateTime::<chrono::Utc>,
+    created_timestamp: chrono::DateTime::<Utc>,
+    last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
 pub struct Robot {
     pub id: Option<Uuid>,
     pub label: String,
     pub _version: String,
-    pub created_timestamp: chrono::DateTime::<chrono::Utc>,
-    pub last_updated_timestamp: chrono::DateTime::<chrono::Utc>,
+    pub created_timestamp: chrono::DateTime::<Utc>,
+    pub last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
 impl Robot {
@@ -90,8 +90,8 @@ impl Robot {
         id: Option<Uuid>,
         label: String,
         _version: String,
-        created_timestamp: chrono::DateTime<chrono::Utc>,
-        last_updated_timestamp: chrono::DateTime<chrono::Utc>,
+        created_timestamp: chrono::DateTime<Utc>,
+        last_updated_timestamp: chrono::DateTime<Utc>,
     ) -> Self {
         Self {
             id,
@@ -109,8 +109,34 @@ pub struct Session {
     robot_label: String,
     user_label: String,
     _version: String,
-    created_timestamp: chrono::DateTime::<chrono::Utc>,
-    last_updated_timestamp: chrono::DateTime::<chrono::Utc>,
+    created_timestamp: chrono::DateTime::<Utc>,
+    last_updated_timestamp: chrono::DateTime::<Utc>,
+}
+
+# [derive(Default)]
+pub struct BlobEntry {
+    id: Option<Uuid>,
+    blobId: Option<Uuid>,
+    originId: Uuid,
+    label: String,
+    blobstore: String,
+    hash: String,
+    origin: String,
+    size: Option<i32>,
+    description: String,
+    mimeType: String,
+    metadata: String,
+    timestamp: chrono::DateTime<Utc>,
+    createdTimestamp: Option<chrono::DateTime<Utc>>,
+    lastUpdatedTimestamp: Option<chrono::DateTime<Utc>>,
+    _type: String,
+    _version: String,
+}
+
+impl BlobEntry {
+    fn new() -> Self {
+        Default::default()
+    }
 }
 
 // likely in an earlier compile step via build.rs
@@ -128,7 +154,7 @@ pub struct Session {
 //     Ok(())
 // }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NavAbilityClient {
     client: Client,
     pub apiurl: String,
