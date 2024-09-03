@@ -1,0 +1,47 @@
+
+fragment blobEntry_fields on BlobEntry {
+  id
+  blobId
+  originId
+  label
+  blobstore
+  hash
+  origin
+  description
+  mimeType
+  metadata
+  timestamp
+  _type
+  _version
+}
+
+query get_blob_entry(
+  \$userId: ID!
+  \$robotId: ID!
+  \$sessionId: ID!
+  \$variableLabel: String!
+  \$blobLabel: String!
+) {
+  users(where: { id: \$userId }) {
+    robots(where: { id: \$robotId }) {
+      sessions(where: { id: \$sessionId }) {
+        variables(where: { label: \$variableLabel }) {
+          blobEntries(where: { label: \$blobLabel }) {
+            ...blobEntry_fields
+          }
+        }
+      }
+    }
+  }
+}
+
+mutation addBlobEntries(\$blobEntries: [BlobEntryCreateInput!]!) {
+  # Create the new ones
+  addBlobEntries(
+    input: \$blobEntries
+  ) {
+    blobEntries {
+      ...blobEntry_fields
+    }
+  }
+}

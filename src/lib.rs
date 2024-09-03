@@ -6,8 +6,7 @@ use uuid::Uuid;
 use chrono::{self, Utc};
 
 use graphql_client::{
-    GraphQLQuery,
-    Response
+    GraphQLQuery, QueryBody, Response
 };
 
 #[cfg(feature="wasm")]
@@ -35,6 +34,7 @@ fn type_of<T>(_: T) -> &'static str {
 type EmailAddress = String;
 type DateTime = String;
 type Metadata = String;
+type BigInt = i64;
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
@@ -59,6 +59,16 @@ pub struct ListRobots;
     response_derives = "Debug"
 )]
 pub struct GetURS;
+
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/blob_store.graphql",
+    response_derives = "Debug"
+)]
+pub struct CreateUpload;
+
 
 // #[derive(GraphQLQuery)]
 // #[graphql(
@@ -113,29 +123,56 @@ pub struct Session {
     last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
+/// A `BlobEntry` is a small about of structured data that holds reference information to find an actual blob. Many `BlobEntry`s 
+/// can exist on different graph nodes spanning Robots, and Sessions which can all reference the same `Blob`.  A `BlobEntry` 
+/// is also a equivalent to a bridging entry between local `.originId` and a remotely assigned `.blobIds`.
 # [derive(Default)]
 pub struct BlobEntry {
-    id: Option<Uuid>,
-    blobId: Option<Uuid>,
-    originId: Uuid,
-    label: String,
-    blobstore: String,
-    hash: String,
-    origin: String,
-    size: Option<i32>,
-    description: String,
-    mimeType: String,
-    metadata: String,
-    timestamp: chrono::DateTime<Utc>,
-    createdTimestamp: Option<chrono::DateTime<Utc>>,
-    lastUpdatedTimestamp: Option<chrono::DateTime<Utc>>,
-    _type: String,
-    _version: String,
+    /// Remotely assigned and globally unique identifier for the `BlobEntry` itself (not the `.blobId`).
+    pub id: Option<Uuid>,
+    /// Machine friendly and globally unique identifier of the 'Blob', usually assigned from a common point in the system.  This can be used to guarantee unique retrieval of the large data blob.
+    pub blobId: Option<Uuid>,
+    /// Machine friendly and locally assigned identifier of the 'Blob'.  `.originId`s are mandatory upon first creation at the origin regardless of network access.  Separate from `.blobId` since some architectures do not allow edge processes to assign a uuid4 to data store elements.
+    pub originId: Uuid,
+    /// Human friendly label of the `Blob` and also used as unique identifier per node on which a `BlobEntry` is added.  E.g. do "LEFTCAM_1", "LEFTCAM_2", ... of you need to repeat a label on the same variable.
+    pub label: String,
+    /// A hint about where the `Blob` itself might be stored.  Remember that a Blob may be duplicated over multiple blobstores.
+    pub blobstore: String,
+    /// A hash value to ensure data consistency which must correspond to the stored hash upon retrieval.  Use `bytes2hex(sha256(blob))`. [Legacy: some usage functions allow the check to be skipped if needed.]
+    pub hash: String,
+    /// Context from which a BlobEntry=>Blob was first created. E.g. user|robot|session|varlabel.
+    pub origin: String,
+    /// number of bytes in blob
+    pub size: Option<i64>,
+    /// Additional information that can help a different user of the Blob.
+    pub description: String,
+    /// MIME description describing the format of binary data in the `Blob`, e.g. 'image/png' or 'application/json; _type=CameraModel'.
+    pub mimeType: String,
+    /// Additional storage for functional metadata used in some scenarios, e.g. to support advanced features such as `parsejson(base64decode(entry.metadata))['time_sync']`.
+    pub metadata: String,
+    /// When the Blob itself was first created.
+    pub timestamp: chrono::DateTime<Utc>,
+    /// When the BlobEntry was created.
+    pub createdTimestamp: Option<chrono::DateTime<Utc>>,
+    /// Use carefully, but necessary to support advanced usage such as time synchronization over Blob data.
+    pub lastUpdatedTimestamp: Option<chrono::DateTime<Utc>>,
+    /// Self type declaration for when duck-typing happens.
+    pub _type: String,
+    /// Type version of this BlobEntry. Consider upgrading to `::VersionNumber`.
+    pub _version: String,
 }
 
 impl BlobEntry {
-    fn new() -> Self {
-        Default::default()
+    pub fn new() -> Self {
+        let mut be = BlobEntry::default();
+        be.originId = Uuid::new_v4();
+        be.blobstore = "NavAbility".to_string();
+        be.origin = "NavAbilitySDK.rs".to_string();
+        be.createdTimestamp = Some(Utc::now());
+        be.lastUpdatedTimestamp = be.createdTimestamp.clone();
+        be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
+        be._version = "0.24.0".to_string(); // FIXME dont hardcode, pull from common source
+        return be
     }
 }
 
@@ -186,6 +223,8 @@ impl NavAbilityClient {
 }
 
 
+
+
 pub async fn fetch_urs_async(
     nvacl: &NavAbilityClient,
     robot_label: String,
@@ -204,7 +243,6 @@ pub async fn fetch_urs_async(
         .post(&nvacl.apiurl)
         .json(&request_body)
         .send().await;
-
 
     match req_res {
         Err(re) => {
@@ -251,16 +289,7 @@ pub async fn fetch_robots_async(
         user_label: nvacl.user_label.to_string()
     };
 
-    // this is the important line
     let request_body = GetRobots::build_query(variables);
-
-    // #[cfg(target_arch = "wasm32")] 
-    // {
-    //     gloo_console::log!("NvaSDK.rs nvacl.apiurl ", nvacl.apiurl.to_string());
-    //     gloo_console::log!("NvaSDK.rs nvacl.user_label ", nvacl.user_label.to_string());
-    //     gloo_console::log!("NvaSDK.rs nvacl.nva_api_token ", nvacl.nva_api_token.to_string());
-    //     gloo_console::log!("NvaSDK.rs request_body.query ", request_body.query.to_string());
-    // }
 
     let req_res = nvacl.client
         .post(&nvacl.apiurl)
@@ -309,6 +338,61 @@ pub async fn fetch_robots_async(
 
     // Ok(response_body)
     // serde_res
+}
+
+
+pub async fn create_upload_async(
+    nvacl: NavAbilityClient,
+    name: String,
+    blob_size: i64,
+) -> Result<Response<create_upload::ResponseData>, Box<dyn Error>> {
+
+    let variables = create_upload::Variables {
+        name: name.to_string(),
+        size: blob_size.clone(),
+        parts: 1,
+    };
+
+    let request_body = CreateUpload::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+        match req_res {
+        Err(re) => {
+            tracing::error!("Failed to get NavAbility API response {}", re);
+            #[cfg(target_arch = "wasm32")]
+            {
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
+            }
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            // : Response<get_robots::ResponseData>
+            let serde_res = res.json().await;
+            // .expect("Failed to json unpack GQL response");
+            match serde_res {
+                Ok(response_body) => {
+                    tracing::debug!("received and json deserialized user robots");
+
+                    #[cfg(target_arch = "wasm32")]
+                    gloo_console::log!("NvaSDK.rs ", "received and json deserialized user robots");
+
+                    return Ok(response_body);
+                },
+                Err(e) => {
+                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
+
+                    #[cfg(target_arch = "wasm32")]            
+                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
+
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
 }
 
 
@@ -371,6 +455,45 @@ pub async fn fetch_ur_list_web(
         gloo_console::log!("NvaSDK.rs ", "Unable to fetch list from client connection");
     }
 
+}
+
+#[cfg(target_arch = "wasm32")]
+pub async fn create_upload_web(
+    send_into: mpsc::Sender<create_upload::ResponseData>, 
+    client: &NavAbilityClient,
+    name: &String,
+    blob_size: i64
+) { // -> Vec<get_robots::GetRobotsUsers> {      
+    if let Ok(response_body) = create_upload_async(client.clone(), name.to_string(), blob_size).await {
+        let res_errs = response_body.errors;
+        match res_errs {
+            Some(ref err) => {
+                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                #[cfg(target_arch = "wasm32")]
+                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+            },
+            None => {
+                let res_data = response_body.data;
+                match res_data {
+                    None => {
+                        tracing::error!("NvaSDK.rs bad GQL response, see errors above");
+                        #[cfg(target_arch = "wasm32")]
+                        gloo_console::log!("NvaSDK.rs bad GQL response, see errors above");
+                    },
+                    Some(resdatau) => {
+                        if let Err(e) = send_into.send(resdatau) {
+                            tracing::error!("Error sending user robot list data: {}", e);
+                        };
+                        return ()
+                    }
+                }
+            }
+        }
+    } else {
+        tracing::error!("NvaSDK.rs Unable to fetch result from client connection");
+        #[cfg(target_arch = "wasm32")]            
+        gloo_console::log!("NvaSDK.rs ", "Unable to fetch result from client connection");
+    }
 }
 
 
