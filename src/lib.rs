@@ -207,7 +207,13 @@ impl NavAbilityClient {
                     reqwest::header::AUTHORIZATION,
                     reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
                         .unwrap(),
-                ))
+                )).chain(
+                    std::iter::once((
+                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                        reqwest::header::HeaderValue::from_str(&apiurl)
+                            .unwrap(),
+                    ))
+                )
                 .collect(),
             )
             .build()
@@ -345,12 +351,13 @@ pub async fn create_upload_async(
     nvacl: NavAbilityClient,
     name: String,
     blob_size: i64,
+    nparts: Option<i64>,
 ) -> Result<Response<create_upload::ResponseData>, Box<dyn Error>> {
 
     let variables = create_upload::Variables {
         name: name.to_string(),
         size: blob_size.clone(),
-        parts: 1,
+        parts: nparts.unwrap_or(1),
     };
 
     let request_body = CreateUpload::build_query(variables);
@@ -375,10 +382,10 @@ pub async fn create_upload_async(
             // .expect("Failed to json unpack GQL response");
             match serde_res {
                 Ok(response_body) => {
-                    tracing::debug!("received and json deserialized user robots");
+                    tracing::debug!("received and json deserialized create_upload");
 
                     #[cfg(target_arch = "wasm32")]
-                    gloo_console::log!("NvaSDK.rs ", "received and json deserialized user robots");
+                    gloo_console::log!(format!("NvaSDK.rs received and json deserialized create_upload")); // {:?}",&response_body));
 
                     return Ok(response_body);
                 },
@@ -406,17 +413,27 @@ pub async fn fetch_context_web(
     session_label: String,
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = fetch_urs_async(&client, robot_label, session_label).await {
-        let urs_data = response_body.data;
-        match urs_data {
-            None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
-            Some(resdata) => {
-                let urs_data = resdata.users;
-                let res_len = urs_data.len();
-                gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
-
-                let resp = send_into.send(urs_data);
-                if let Err(e) = resp {
-                    tracing::error!("Error sending user robot list data: {}", e);
+        let res_errs = response_body.errors;
+        match res_errs {
+            Some(ref err) => {
+                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                #[cfg(target_arch = "wasm32")]
+                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+            },
+            None => {
+                let urs_data = response_body.data;
+                match urs_data {
+                    None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, GQL response_body.data is empty")),
+                    Some(resdata) => {
+                        let urs_data = resdata.users;
+                        let res_len = urs_data.len();
+                        gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
+        
+                        let resp = send_into.send(urs_data);
+                        if let Err(e) = resp {
+                            tracing::error!("Error sending user robot list data: {}", e);
+                        }
+                    }
                 }
             }
         }
@@ -436,16 +453,26 @@ pub async fn fetch_ur_list_web(
     client: &NavAbilityClient
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = fetch_robots_async(&client).await {
-        let ur_list_data = response_body.data;
-        match ur_list_data {
-            None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
-            Some(resdata) => {
-                let ur_data = resdata.users;
-                let res_len = ur_data.len();
-                gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
-                let resp = send_into.send(ur_data);
-                if let Err(e) = resp {
-                    tracing::error!("Error sending user robot list data: {}", e);
+        let res_errs = response_body.errors;
+        match res_errs {
+            Some(ref err) => {
+                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                #[cfg(target_arch = "wasm32")]
+                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+            },
+            None => {
+                let ur_list_data = response_body.data;
+                match ur_list_data {
+                    None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
+                    Some(resdata) => {
+                        let ur_data = resdata.users;
+                        let res_len = ur_data.len();
+                        gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
+                        let resp = send_into.send(ur_data);
+                        if let Err(e) = resp {
+                            tracing::error!("Error sending user robot list data: {}", e);
+                        }
+                    }
                 }
             }
         }
@@ -462,9 +489,15 @@ pub async fn create_upload_web(
     send_into: mpsc::Sender<create_upload::ResponseData>, 
     client: &NavAbilityClient,
     name: &String,
-    blob_size: i64
+    blob_size: i64,
+    nparts: Option<i64>,
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
-    if let Ok(response_body) = create_upload_async(client.clone(), name.to_string(), blob_size).await {
+    if let Ok(response_body) = create_upload_async(
+            client.clone(), 
+            name.to_string(), 
+            blob_size,
+            nparts
+    ).await {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {

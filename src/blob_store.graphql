@@ -7,15 +7,38 @@ mutation CreateUpload($name: String!, $size: BigInt!, $parts: Int!) {
     parts: $parts
   ) {
     uploadId
+    blob {
+      id
+      name
+      size
+    }
     parts {
       partNumber
       url
     }
-    blob {
-      id
-    }
   }
 }
+
+
+# SDK.js version
+# export type BlobInput = {
+#   name: string;
+#   size: number;
+# };
+# mutation CreateUpload ($blob: BlobInput!, $parts: Int) {
+#   createUpload(blob: $blob, parts: $parts) {
+#     uploadId
+#     blob {
+#       id
+#       name
+#       size
+#     }
+#     parts {
+#       partNumber
+#       url
+#     }
+#   }
+# }
 
 mutation CompleteUpload($blobId: ID!, $uploadId: ID!, $eTag: String) {
   completeUpload (
