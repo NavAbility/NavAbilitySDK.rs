@@ -709,28 +709,45 @@ impl<T> FileUploader<T> {
         content: Vec<u8>,
         url_endpoint: String
     ) -> Result<(), Box<dyn std::error::Error>> {
+        // PUT POST OPTIONS CORS: https://aws.amazon.com/blogs/media/deep-dive-into-cors-configs-on-aws-s3-how-to/
+
         // let part = Part::bytes(content).file_name("file_name.extension");
         // let file = reqwest::multipart::Form::new().part("field_name", part);
     
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(reqwest::header::CONTENT_LENGTH, reqwest::header::HeaderValue::from(content.len()));
+        // headers.insert("Accept", "text/plain, application/json, */*");
+        // headers.insert("Sec-Fetch-Dest", "empty");
+        // headers.insert("Sec-Fetch-Mode", "cors");
+        // headers.insert("Sec-Fetch-Site", "cross-site");
+        // headers.insert("Sec-GPC", 1);
+        // headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_CREDENTIALS, reqwest::header::HeaderValue::from(true));
+        // headers.insert(reqwest::header::ACCESS_CONTROL_REQUEST_HEADERS, "authorization,content-type".parse().unwrap());
+        // headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_METHOD, "GET, PUT, POST".parse().unwrap());
+        // headers.insert(reqwest::header::ACCESS_CONTROL_EXPOSE_HEADERS, "ETag, Content-Type, Accept-Ranges, Content-Length".parse().unwrap());
+        // headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+        // headers.insert("Connection", "keep-alive");
+
         let response = Client::new()
-            .post(url_endpoint)
-            .header("Content-Length",content.len())
-            .header("Access-Control-Allow-Origin", "*") // TODO be more specific
-            .header("Accept","text/plain, application/json, application/octet-stream, */*")
-            .header("Sec-Fetch-Dest", "empty")
-            .header("Sec-Fetch-Mode", "cors")
-            .header("Sec-Fetch-Site", "cross-site")
-            .header("Sec-GPC", 1)
-            .header("Connection", "keep-alive")
+            .put(url_endpoint)
+            .headers(headers)
             .body(content)
-            // .multipart(file)
             .send()
             .await?;
+
+            // // .multipart(file)
+            // gloo_console::log!(format!("inner header {:?}", &postclient));
     
+        // let res_head = response.headers();
+
         gloo_console::log!(format!("Status: {}", response.status()));
         gloo_console::log!(format!("Headers:\n{:#?}", response.headers()));
         gloo_console::log!(format!("Body:\n{}", response.text().await?));
     
+        // if res_head.contains_key("etag") {
+        //     gloo_console::log!(format!("header has etag {:?}",res_head["etag"]));
+        // }
+        
         // FIXME return the eTag value
         Ok(())
     }
