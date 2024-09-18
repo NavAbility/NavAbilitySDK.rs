@@ -1,4 +1,8 @@
-mutation CreateUpload($name: String!, $size: BigInt!, $parts: Int!) {
+mutation CreateUpload(
+  $name: String!, 
+  $size: BigInt!, 
+  $parts: Int!
+) {
   createUpload(
     blob: {
       name: $name,
@@ -7,27 +11,28 @@ mutation CreateUpload($name: String!, $size: BigInt!, $parts: Int!) {
     parts: $parts
   ) {
     uploadId
+    blob {
+      id
+      name
+      size
+    }
     parts {
       partNumber
       url
     }
-    blob {
-      id
-    }
   }
 }
 
-mutation CompleteUpload($blobId: ID!, $uploadId: ID!, $eTag: String) {
-  completeUpload (
-    blobId: $blobId,
-    completedUpload: {
-      uploadId: $uploadId,
-      parts: [
-        {
-          partNumber: 1,
-          eTag: $eTag
-        }
-      ]
-    }
+
+mutation CompleteUpload (
+  $blobId: ID!, 
+  $completedUpload: CompletedUploadInput!
+) {
+  completeUpload(
+    blobId: $blobId, 
+    completedUpload: $completedUpload
   )
 }
+
+
+

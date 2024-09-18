@@ -11,6 +11,9 @@ use graphql_client::{
 
 #[cfg(feature="wasm")]
 use reqwest::Client;
+// #[cfg(feature="wasm")]
+// use reqwest::multipart::Part; // requires multipart
+
 
 #[cfg(target_arch = "wasm32")]
 use gloo_console::{__macro::JsValue, log};
@@ -68,6 +71,15 @@ pub struct GetURS;
     response_derives = "Debug"
 )]
 pub struct CreateUpload;
+
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/blob_store.graphql",
+    response_derives = "Debug"
+)]
+pub struct CompleteUpload;
 
 
 // #[derive(GraphQLQuery)]
@@ -200,14 +212,24 @@ pub struct NavAbilityClient {
 }
 impl NavAbilityClient {
     pub fn new(apiurl: &String, user_label: &String, nva_api_token: &String) -> Self {
+        // FIXME good header.insert example: https://medium.com/@itsuki.enjoy/post-file-using-multipart-form-data-in-rust-5171ae57aeed
+        //   or https://users.rust-lang.org/t/how-to-upload-a-file-using-rust-or-some-library/45423/4
         let client = Client::builder()
-            .user_agent("graphql-rust/0.12.0")
-            .default_headers(
+        .user_agent("graphql-rust/0.12.0")
+        .default_headers(
+                // TODO use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
+                // TODO use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
                 std::iter::once((
                     reqwest::header::AUTHORIZATION,
                     reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
                         .unwrap(),
-                ))
+                )).chain(
+                    std::iter::once((
+                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                        reqwest::header::HeaderValue::from_str(&apiurl)
+                            .unwrap(),
+                    ))
+                )
                 .collect(),
             )
             .build()
@@ -341,62 +363,6 @@ pub async fn fetch_robots_async(
 }
 
 
-pub async fn create_upload_async(
-    nvacl: NavAbilityClient,
-    name: String,
-    blob_size: i64,
-) -> Result<Response<create_upload::ResponseData>, Box<dyn Error>> {
-
-    let variables = create_upload::Variables {
-        name: name.to_string(),
-        size: blob_size.clone(),
-        parts: 1,
-    };
-
-    let request_body = CreateUpload::build_query(variables);
-
-    let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
-
-        match req_res {
-        Err(re) => {
-            tracing::error!("Failed to get NavAbility API response {}", re);
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
-            }
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            // : Response<get_robots::ResponseData>
-            let serde_res = res.json().await;
-            // .expect("Failed to json unpack GQL response");
-            match serde_res {
-                Ok(response_body) => {
-                    tracing::debug!("received and json deserialized user robots");
-
-                    #[cfg(target_arch = "wasm32")]
-                    gloo_console::log!("NvaSDK.rs ", "received and json deserialized user robots");
-
-                    return Ok(response_body);
-                },
-                Err(e) => {
-                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
-
-                    #[cfg(target_arch = "wasm32")]            
-                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
-
-                    return Err(Box::new(e));
-                }
-            }
-        }
-    }
-}
-
-
-
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_context_web(
@@ -406,17 +372,27 @@ pub async fn fetch_context_web(
     session_label: String,
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = fetch_urs_async(&client, robot_label, session_label).await {
-        let urs_data = response_body.data;
-        match urs_data {
-            None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
-            Some(resdata) => {
-                let urs_data = resdata.users;
-                let res_len = urs_data.len();
-                gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
-
-                let resp = send_into.send(urs_data);
-                if let Err(e) = resp {
-                    tracing::error!("Error sending user robot list data: {}", e);
+        let res_errs = response_body.errors;
+        match res_errs {
+            Some(ref err) => {
+                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                #[cfg(target_arch = "wasm32")]
+                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+            },
+            None => {
+                let urs_data = response_body.data;
+                match urs_data {
+                    None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, GQL response_body.data is empty")),
+                    Some(resdata) => {
+                        let urs_data = resdata.users;
+                        let res_len = urs_data.len();
+                        gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
+        
+                        let resp = send_into.send(urs_data);
+                        if let Err(e) = resp {
+                            tracing::error!("Error sending user robot list data: {}", e);
+                        }
+                    }
                 }
             }
         }
@@ -436,16 +412,26 @@ pub async fn fetch_ur_list_web(
     client: &NavAbilityClient
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = fetch_robots_async(&client).await {
-        let ur_list_data = response_body.data;
-        match ur_list_data {
-            None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
-            Some(resdata) => {
-                let ur_data = resdata.users;
-                let res_len = ur_data.len();
-                gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
-                let resp = send_into.send(ur_data);
-                if let Err(e) = resp {
-                    tracing::error!("Error sending user robot list data: {}", e);
+        let res_errs = response_body.errors;
+        match res_errs {
+            Some(ref err) => {
+                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                #[cfg(target_arch = "wasm32")]
+                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+            },
+            None => {
+                let ur_list_data = response_body.data;
+                match ur_list_data {
+                    None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
+                    Some(resdata) => {
+                        let ur_data = resdata.users;
+                        let res_len = ur_data.len();
+                        gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
+                        let resp = send_into.send(ur_data);
+                        if let Err(e) = resp {
+                            tracing::error!("Error sending user robot list data: {}", e);
+                        }
+                    }
                 }
             }
         }
@@ -462,9 +448,17 @@ pub async fn create_upload_web(
     send_into: mpsc::Sender<create_upload::ResponseData>, 
     client: &NavAbilityClient,
     name: &String,
-    blob_size: i64
+    blob_size: i64,
+    nparts: Option<i64>,
+    blobId_: Option<Uuid>, // doenst work yet, leave None
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
-    if let Ok(response_body) = create_upload_async(client.clone(), name.to_string(), blob_size).await {
+    if let Ok(response_body) = create_upload_async(
+            client.clone(), 
+            name.to_string(), 
+            blob_size,
+            nparts,
+            blobId_,
+    ).await {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
@@ -566,6 +560,195 @@ pub fn fetch_ur_list_blocking(
 
     Ok(())
 }
+
+
+
+
+pub async fn create_upload_async(
+    nvacl: NavAbilityClient,
+    name: String,
+    blob_size: i64,
+    nparts: Option<i64>,
+    blobId: Option<Uuid>,
+) -> Result<Response<create_upload::ResponseData>, Box<dyn Error>> {
+
+    let variables = create_upload::Variables {
+        name: name.to_string(),
+        size: blob_size.clone(),
+        parts: nparts.unwrap_or(1),
+        // blobId,
+    };
+
+    let request_body = CreateUpload::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+        match req_res {
+        Err(re) => {
+            tracing::error!("Failed to get NavAbility API response {}", re);
+            #[cfg(target_arch = "wasm32")]
+            {
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
+            }
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            // : Response<get_robots::ResponseData>
+            let serde_res = res.json().await;
+            // .expect("Failed to json unpack GQL response");
+            match serde_res {
+                Ok(response_body) => {
+                    tracing::debug!("received and json deserialized create_upload");
+
+                    #[cfg(target_arch = "wasm32")]
+                    gloo_console::log!(format!("NvaSDK.rs received and json deserialized create_upload")); // {:?}",&response_body));
+
+                    return Ok(response_body);
+                },
+                Err(e) => {
+                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
+
+                    #[cfg(target_arch = "wasm32")]            
+                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
+
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
+}
+
+
+pub async fn complete_upload_async(
+    nvacl: NavAbilityClient,
+    blob_id: Uuid,
+    upload_id: String,
+    etags: Vec<String>,
+    // completed_upload: complete_upload::CompletedUploadInput,
+) -> Result<(), Box<dyn Error>> {
+    let mut parts: Vec<Option<complete_upload::CompletedUploadPartInput>> = vec![];
+    for (i,et) in etags.iter().enumerate() {
+        parts.push(
+            Some(
+                complete_upload::CompletedUploadPartInput {
+                    part_number: (i + 1) as i64,
+                    e_tag: Some(et.to_string()),
+                }
+            )
+        )
+    }
+
+    let cupl = complete_upload::CompletedUploadInput {
+        upload_id: upload_id.to_string(),
+        parts
+    };
+
+    let variables = complete_upload::Variables {
+        blob_id: blob_id.to_string(),
+        completed_upload: cupl
+    };
+
+    let request_body = CompleteUpload::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+    match req_res {
+        Err(re) => {
+            tracing::error!("Failed to get NavAbility API response {}", re);
+            #[cfg(target_arch = "wasm32")]
+            {
+                gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
+                gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
+            }
+            return Err(Box::new(re));
+        },
+        Ok(res) => Ok(())
+    }
+}
+
+
+#[derive(Debug,Clone)]
+pub struct FileUploader<T> {
+    nvacl: NavAbilityClient,
+    pub file: T, // assume read and seek are available
+    blobId: Uuid,
+    chunk_size: u64,
+    nbytes_uploaded: u64,
+}
+
+
+impl<T> FileUploader<T> {
+    pub fn new(
+        nvacl: NavAbilityClient,
+        file: T,
+        label: String,
+        blobId: Uuid,
+        chunk_size: Option<u64>,
+    ) -> Self {
+
+        // create the actual uploader object
+        Self {
+            nvacl,
+            file,
+            blobId,
+            chunk_size: chunk_size.expect("FileUpload expects chunk_size as u64"),
+            nbytes_uploaded: 0 as u64,
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub async fn upload_file(
+        &mut self,
+        content: Vec<u8>,
+        url_endpoint: String
+    ) -> Result<String, Box<dyn std::error::Error>> {
+
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(reqwest::header::CONTENT_LENGTH, reqwest::header::HeaderValue::from(content.len()));
+        
+        // PUT POST OPTIONS CORS: https://aws.amazon.com/blogs/media/deep-dive-into-cors-configs-on-aws-s3-how-to/
+        let response = Client::new()
+            .put(url_endpoint)
+            .headers(headers)
+            .body(content)
+            .send()
+            .await?;
+
+            // // .multipart(file)
+            // gloo_console::log!(format!("inner header {:?}", &postclient));
+    
+            
+            let status_code = response.status();
+            if reqwest::StatusCode::OK == status_code {
+                let res_head = response.headers();
+                let etag = res_head["etag"].to_str().unwrap().replace("\"","");
+                // gloo_console::log!(format!("Headers:\n{:#?}", response.headers()));
+                // gloo_console::log!(format!("Body:\n{}", response.text().await?));
+                return Ok(etag)
+            } else {
+                gloo_console::log!(format!("Status: {}", &status_code));
+                return Err(format!("Upload file put returned Status: {}", status_code).into())
+            }
+    }
+}
+
+// type CompletedUploadPartInput {
+//   partNumber: Int!
+//   eTag: String!
+// }
+// type CompletedUploadInput {
+//   uploadId: String!
+//   parts: [CompletedUploadPartInput!]!
+// }
+
+
 
 
 #[cfg(test)]

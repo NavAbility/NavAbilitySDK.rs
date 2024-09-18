@@ -15,7 +15,10 @@ log = "^0.4"
 uuid = { version ="1", features = ["v4"] }
 tracing = "0.1"
 graphql_client = "0.14"
-reqwest = {version = "^0.11", features = ["json"], optional=true }
+reqwest = {version = "^0.11", optional=true, features = [
+  "json",
+  # "multipart",
+] }
 # for blocking calls, but features deps not 100% sorted out yet TODO
 # graphql_client = { version="0.14", features = ["reqwest","reqwest-blocking"] }
 
