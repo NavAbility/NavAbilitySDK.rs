@@ -625,7 +625,7 @@ pub async fn create_upload_async(
 pub async fn complete_upload_async(
     nvacl: NavAbilityClient,
     blob_id: Uuid,
-    upload_id: Uuid,
+    upload_id: String,
     etags: Vec<String>,
     // completed_upload: complete_upload::CompletedUploadInput,
 ) -> Result<(), Box<dyn Error>> {
@@ -708,26 +708,12 @@ impl<T> FileUploader<T> {
         &mut self,
         content: Vec<u8>,
         url_endpoint: String
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        // PUT POST OPTIONS CORS: https://aws.amazon.com/blogs/media/deep-dive-into-cors-configs-on-aws-s3-how-to/
+    ) -> Result<String, Box<dyn std::error::Error>> {
 
-        // let part = Part::bytes(content).file_name("file_name.extension");
-        // let file = reqwest::multipart::Form::new().part("field_name", part);
-    
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(reqwest::header::CONTENT_LENGTH, reqwest::header::HeaderValue::from(content.len()));
-        // headers.insert("Accept", "text/plain, application/json, */*");
-        // headers.insert("Sec-Fetch-Dest", "empty");
-        // headers.insert("Sec-Fetch-Mode", "cors");
-        // headers.insert("Sec-Fetch-Site", "cross-site");
-        // headers.insert("Sec-GPC", 1);
-        // headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_CREDENTIALS, reqwest::header::HeaderValue::from(true));
-        // headers.insert(reqwest::header::ACCESS_CONTROL_REQUEST_HEADERS, "authorization,content-type".parse().unwrap());
-        // headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_METHOD, "GET, PUT, POST".parse().unwrap());
-        // headers.insert(reqwest::header::ACCESS_CONTROL_EXPOSE_HEADERS, "ETag, Content-Type, Accept-Ranges, Content-Length".parse().unwrap());
-        // headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
-        // headers.insert("Connection", "keep-alive");
-
+        
+        // PUT POST OPTIONS CORS: https://aws.amazon.com/blogs/media/deep-dive-into-cors-configs-on-aws-s3-how-to/
         let response = Client::new()
             .put(url_endpoint)
             .headers(headers)
@@ -738,30 +724,19 @@ impl<T> FileUploader<T> {
             // // .multipart(file)
             // gloo_console::log!(format!("inner header {:?}", &postclient));
     
-        // let res_head = response.headers();
-
-        gloo_console::log!(format!("Status: {}", response.status()));
-        gloo_console::log!(format!("Headers:\n{:#?}", response.headers()));
-        gloo_console::log!(format!("Body:\n{}", response.text().await?));
-    
-        // if res_head.contains_key("etag") {
-        //     gloo_console::log!(format!("header has etag {:?}",res_head["etag"]));
-        // }
-        
-        // FIXME return the eTag value
-        Ok(())
+            
+            let status_code = response.status();
+            if reqwest::StatusCode::OK == status_code {
+                let res_head = response.headers();
+                let etag = res_head["etag"].to_str().unwrap().replace("\"","");
+                // gloo_console::log!(format!("Headers:\n{:#?}", response.headers()));
+                // gloo_console::log!(format!("Body:\n{}", response.text().await?));
+                return Ok(etag)
+            } else {
+                gloo_console::log!(format!("Status: {}", &status_code));
+                return Err(format!("Upload file put returned Status: {}", status_code).into())
+            }
     }
-
-    // // https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.multipart
-    // let client = reqwest::Client::new();
-    // let form = reqwest::multipart::Form::new()
-    //     .text("key3", "value3")
-    //     .text("key4", "value4");
-    // let response = client.post("your url")
-    //     .multipart(form)
-    //     .send()
-    //     .await?;
-
 }
 
 // type CompletedUploadPartInput {
