@@ -85,6 +85,15 @@ pub struct CompleteUpload;
 // #[derive(GraphQLQuery)]
 // #[graphql(
 //     schema_path = "src/schema.json",
+//     query_path = "src/blob_entry.graphql",
+//     response_derives = "Debug"
+// )]
+// pub struct AddBlobEntries;
+
+
+// #[derive(GraphQLQuery)]
+// #[graphql(
+//     schema_path = "src/schema.json",
 //     query_path = "src/add_robots.graphql",
 //     response_derives = "Debug"
 // )]
@@ -562,6 +571,23 @@ pub fn fetch_ur_list_blocking(
 }
 
 
+// pub async fn add_blob_entries_async(
+//     nvacl: NavAbilityClient,
+// ) -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
+
+//     // let cupl = add_blob_entries::BlobEntryCreateInput {
+//     //     upload_id: upload_id.to_string(),
+//     //     parts
+//     // };
+
+//     // let variables = add_blob_entries::Variables {
+//     //     blobEntries: 
+//     // };
+
+//     // let request_body = CreateUpload::build_query(variables);
+
+//     todo!();
+// }
 
 
 pub async fn create_upload_async(
