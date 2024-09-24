@@ -16,17 +16,17 @@ fragment blobEntry_fields on BlobEntry {
 }
 
 query get_blob_entry(
-  \$userId: ID!
-  \$robotId: ID!
-  \$sessionId: ID!
-  \$variableLabel: String!
-  \$blobLabel: String!
+  $userId: ID!
+  $robotId: ID!
+  $sessionId: ID!
+  $variableLabel: String!
+  $blobLabel: String!
 ) {
-  users(where: { id: \$userId }) {
-    robots(where: { id: \$robotId }) {
-      sessions(where: { id: \$sessionId }) {
-        variables(where: { label: \$variableLabel }) {
-          blobEntries(where: { label: \$blobLabel }) {
+  users(where: { id: $userId }) {
+    robots(where: { id: $robotId }) {
+      sessions(where: { id: $sessionId }) {
+        variables(where: { label: $variableLabel }) {
+          blobEntries(where: { label: $blobLabel }) {
             ...blobEntry_fields
           }
         }
@@ -35,10 +35,10 @@ query get_blob_entry(
   }
 }
 
-mutation addBlobEntries(\$blobEntries: [BlobEntryCreateInput!]!) {
+mutation addBlobEntries($blobEntries: [BlobEntryCreateInput!]!) {
   # Create the new ones
   addBlobEntries(
-    input: \$blobEntries
+    input: $blobEntries
   ) {
     blobEntries {
       ...blobEntry_fields
