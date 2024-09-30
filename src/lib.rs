@@ -38,10 +38,14 @@ type EmailAddress = String;
 type DateTime = String;
 type Metadata = String;
 type BigInt = i64;
+type B64JSON = String;
+type Latitude = f64;
+type Longitude = f64;
+type UUID = String;
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
@@ -49,7 +53,7 @@ pub struct GetRobots;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
@@ -57,7 +61,7 @@ pub struct ListRobots;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/user_robot_session.graphql",
     response_derives = "Debug"
 )]
@@ -66,7 +70,7 @@ pub struct GetURS;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -75,25 +79,25 @@ pub struct CreateUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
 pub struct CompleteUpload;
 
 
-// #[derive(GraphQLQuery)]
-// #[graphql(
-//     schema_path = "src/schema.json",
-//     query_path = "src/blob_entry.graphql",
-//     response_derives = "Debug"
-// )]
-// pub struct AddBlobEntries;
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema_d1.json",
+    query_path = "src/blob_entry.graphql",
+    response_derives = "Debug"
+)]
+pub struct AddBlobEntries;
 
 
 // #[derive(GraphQLQuery)]
 // #[graphql(
-//     schema_path = "src/schema.json",
+//     schema_path = "src/schema_d1.json",
 //     query_path = "src/add_robots.graphql",
 //     response_derives = "Debug"
 // )]
@@ -197,9 +201,18 @@ impl BlobEntry {
     }
 }
 
+
+pub fn makeEntryInput(
+    entry: &BlobEntry
+) -> add_blob_entries::BlobEntryCreateInput {
+    // let test = BlobEntryCreateInput::default();
+    todo!();
+}
+
+
 // likely in an earlier compile step via build.rs
 // Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema.json
+// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d1.json
 
 // async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
 //     // this is the important line
