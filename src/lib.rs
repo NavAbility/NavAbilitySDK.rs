@@ -45,19 +45,19 @@ type UUID = String;
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
-pub struct GetRobots;
+pub struct GetAgents;
 
-#[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "src/schema_d1.json",
-    query_path = "src/robot_queries.graphql",
-    response_derives = "Debug"
-)]
-pub struct ListRobots;
+// #[derive(GraphQLQuery)]
+// #[graphql(
+//     schema_path = "src/schema_d1.json",
+//     query_path = "src/robot_queries.graphql",
+//     response_derives = "Debug"
+// )]
+// pub struct ListRobots;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -420,14 +420,15 @@ pub async fn fetch_urs_async(
 
 pub async fn fetch_robots_async(
     nvacl: &NavAbilityClient,
-) -> Result<Response<get_robots::ResponseData>, Box<dyn Error>> {
+) -> Result<Response<get_agents::ResponseData>, Box<dyn Error>> {
 
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
-    let variables = get_robots::Variables {
-        user_label: nvacl.user_label.to_string()
+    let variables = get_agents::Variables {
+        org_id: nvacl.user_label.to_string(),
+        // Uuid::new_v4().to_string() // FIXME uuid
     };
 
-    let request_body = GetRobots::build_query(variables);
+    let request_body = GetAgents::build_query(variables);
 
     let req_res = nvacl.client
         .post(&nvacl.apiurl)
@@ -491,9 +492,9 @@ pub async fn fetch_context_web(
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                tracing::error!("NvaSDK.rs fetch_context_web has response errors {:?}",&res_errs);
                 #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+                gloo_console::log!(format!("NvaSDK.rs fetch_context_web has response errors {:?}",&res_errs));
             },
             None => {
                 let urs_data = response_body.data;
@@ -524,23 +525,23 @@ pub async fn fetch_context_web(
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
-    send_into: mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    send_into: mpsc::Sender<Vec<get_agents::GetAgentsAgents>>, 
     client: &NavAbilityClient
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = fetch_robots_async(&client).await {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                tracing::error!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs);
                 #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+                gloo_console::log!(format!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs));
             },
             None => {
                 let ur_list_data = response_body.data;
                 match ur_list_data {
                     None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
                     Some(resdata) => {
-                        let ur_data = resdata.users;
+                        let ur_data = resdata.agents;
                         let res_len = ur_data.len();
                         gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
                         let resp = send_into.send(ur_data);
@@ -578,9 +579,9 @@ pub async fn create_upload_web(
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                tracing::error!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs);
                 #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+                gloo_console::log!(format!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs));
             },
             None => {
                 let res_data = response_body.data;
