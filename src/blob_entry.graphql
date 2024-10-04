@@ -35,7 +35,7 @@ query get_blob_entry(
   }
 }
 
-mutation addBlobEntries($blobEntries: [BlobEntryCreateInput!]!) {
+mutation AddBlobEntries($blobEntries: [BlobEntryCreateInput!]!) {
   # Create the new ones
   addBlobEntries(
     input: $blobEntries

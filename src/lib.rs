@@ -38,10 +38,14 @@ type EmailAddress = String;
 type DateTime = String;
 type Metadata = String;
 type BigInt = i64;
+type B64JSON = String;
+type Latitude = f64;
+type Longitude = f64;
+type UUID = String;
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
@@ -49,7 +53,7 @@ pub struct GetRobots;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
@@ -57,7 +61,7 @@ pub struct ListRobots;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/user_robot_session.graphql",
     response_derives = "Debug"
 )]
@@ -66,7 +70,7 @@ pub struct GetURS;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -75,25 +79,25 @@ pub struct CreateUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.json",
+    schema_path = "src/schema_d1.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
 pub struct CompleteUpload;
 
 
-// #[derive(GraphQLQuery)]
-// #[graphql(
-//     schema_path = "src/schema.json",
-//     query_path = "src/blob_entry.graphql",
-//     response_derives = "Debug"
-// )]
-// pub struct AddBlobEntries;
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema_d1.json",
+    query_path = "src/blob_entry.graphql",
+    response_derives = "Debug"
+)]
+pub struct AddBlobEntries;
 
 
 // #[derive(GraphQLQuery)]
 // #[graphql(
-//     schema_path = "src/schema.json",
+//     schema_path = "src/schema_d1.json",
 //     query_path = "src/add_robots.graphql",
 //     response_derives = "Debug"
 // )]
@@ -147,7 +151,7 @@ pub struct Session {
 /// A `BlobEntry` is a small about of structured data that holds reference information to find an actual blob. Many `BlobEntry`s 
 /// can exist on different graph nodes spanning Robots, and Sessions which can all reference the same `Blob`.  A `BlobEntry` 
 /// is also a equivalent to a bridging entry between local `.originId` and a remotely assigned `.blobIds`.
-# [derive(Default)]
+# [derive(Default, Clone)]
 pub struct BlobEntry {
     /// Remotely assigned and globally unique identifier for the `BlobEntry` itself (not the `.blobId`).
     pub id: Option<Uuid>,
@@ -197,9 +201,112 @@ impl BlobEntry {
     }
 }
 
+
+impl add_blob_entries::BlobEntryCreateInput {
+    pub fn new(
+        entry: &BlobEntry,
+        user_label: Option<String>,
+        robot_label: Option<String>,
+        session_label: Option<String>,
+        variable_label: Option<String>,
+        factor_label: Option<String>,
+    ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
+        let mut blob_id = entry.originId;
+        if let Some(bid) = entry.blobId {
+            blob_id = bid;
+        }
+        Self { // add_blob_entries::BlobEntryCreateInput {
+            origin_id: entry.originId.to_string(),
+            blob_id: blob_id.to_string(),
+            label: entry.label.to_string(),
+            blobstore: Some(entry.blobstore.to_string()),
+            origin: Some(entry.origin.to_string()),
+            description: Some(entry.description.to_string()),
+            mime_type: Some(entry.mimeType.to_string()),
+            hash: Some(entry.hash.to_string()),
+            metadata: Some(entry.metadata.to_string()),
+            timestamp: Some(entry.timestamp.to_string()),
+            nstime: None,
+            type_: entry._type.to_string(),
+            version: entry._version.to_string(),
+            user_label,
+            robot_label,
+            session_label,
+            variable_label,
+            factor_label,
+            parent: None,
+        }
+    }
+}
+
+
+pub async fn add_entry_agent_async(
+    nvacl: NavAbilityClient,
+    agent_label: &String,
+    entry: &BlobEntry,
+)  -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
+    
+    let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+        entry,
+        None,
+        Some(agent_label.to_string()),
+        None,
+        None,
+        None
+    );
+    let mut blob_entries = Vec::new();
+    blob_entries.push(gqlentry);
+
+    let variables = add_blob_entries::Variables {
+        blob_entries,
+    };
+
+    let request_body = AddBlobEntries::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+    match req_res {
+        Err(re) => {
+            tracing::error!("Failed to get NavAbility API response {}", re);
+            #[cfg(target_arch = "wasm32")]
+            {
+                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
+            }
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            // : Response<get_robots::ResponseData>
+            let serde_res = res.json().await;
+            // .expect("Failed to json unpack GQL response");
+            match serde_res {
+                Ok(response_body) => {
+                    tracing::debug!("received and json deserialized create_upload");
+
+                    #[cfg(target_arch = "wasm32")]
+                    gloo_console::log!(format!("NvaSDK.rs received and json deserialized create_upload")); // {:?}",&response_body));
+
+                    return Ok(response_body);
+                },
+                Err(e) => {
+                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
+
+                    #[cfg(target_arch = "wasm32")]            
+                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
+
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
+}
+
+
 // likely in an earlier compile step via build.rs
 // Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema.json
+// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d1.json
 
 // async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
 //     // this is the important line
@@ -612,7 +719,7 @@ pub async fn create_upload_async(
         .json(&request_body)
         .send().await;
 
-        match req_res {
+    match req_res {
         Err(re) => {
             tracing::error!("Failed to get NavAbility API response {}", re);
             #[cfg(target_arch = "wasm32")]
