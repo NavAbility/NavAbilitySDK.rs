@@ -70,7 +70,7 @@ pub struct GetURS;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -79,7 +79,7 @@ pub struct CreateUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -97,7 +97,7 @@ pub struct AddBlobEntries;
 
 // #[derive(GraphQLQuery)]
 // #[graphql(
-//     schema_path = "src/schema_d1.json",
+//     schema_path = "src/schema_d2.json",
 //     query_path = "src/add_robots.graphql",
 //     response_derives = "Debug"
 // )]
@@ -306,7 +306,7 @@ pub async fn add_entry_agent_async(
 
 // likely in an earlier compile step via build.rs
 // Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d1.json
+// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d2.json
 
 // async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
 //     // this is the important line
@@ -566,14 +566,14 @@ pub async fn create_upload_web(
     name: &String,
     blob_size: i64,
     nparts: Option<i64>,
-    blobId_: Option<Uuid>, // doenst work yet, leave None
+    blob_id: Option<Uuid>, // doenst work yet, leave None
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = create_upload_async(
             client.clone(), 
-            name.to_string(), 
-            blob_size,
+            blob_id.expect("Must provide blob_id to create_upload_web"),
             nparts,
-            blobId_,
+            // name.to_string(), 
+            // blob_size,
     ).await {
         let res_errs = response_body.errors;
         match res_errs {
@@ -699,17 +699,16 @@ pub fn fetch_ur_list_blocking(
 
 pub async fn create_upload_async(
     nvacl: NavAbilityClient,
-    name: String,
-    blob_size: i64,
-    nparts: Option<i64>,
-    blobId: Option<Uuid>,
+    // label: String,
+    // blob_size: i64,
+    blob_id: Uuid,
+    parts: Option<i64>,
 ) -> Result<Response<create_upload::ResponseData>, Box<dyn Error>> {
 
     let variables = create_upload::Variables {
-        name: name.to_string(),
-        size: blob_size.clone(),
-        parts: nparts.unwrap_or(1),
-        // blobId,
+        // label: label.to_string(),
+        blob_id: blob_id.to_string(),
+        parts: parts.unwrap_or(1),
     };
 
     let request_body = CreateUpload::build_query(variables);
@@ -781,7 +780,7 @@ pub async fn complete_upload_async(
 
     let variables = complete_upload::Variables {
         blob_id: blob_id.to_string(),
-        completed_upload: cupl
+        completed_upload: Some(cupl)
     };
 
     let request_body = CompleteUpload::build_query(variables);
