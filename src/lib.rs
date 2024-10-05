@@ -156,9 +156,9 @@ pub struct BlobEntry {
     /// Remotely assigned and globally unique identifier for the `BlobEntry` itself (not the `.blobId`).
     pub id: Option<Uuid>,
     /// Machine friendly and globally unique identifier of the 'Blob', usually assigned from a common point in the system.  This can be used to guarantee unique retrieval of the large data blob.
-    pub blobId: Option<Uuid>,
+    pub blobId: Uuid,
     /// Machine friendly and locally assigned identifier of the 'Blob'.  `.originId`s are mandatory upon first creation at the origin regardless of network access.  Separate from `.blobId` since some architectures do not allow edge processes to assign a uuid4 to data store elements.
-    pub originId: Uuid,
+    pub originId: Option<Uuid>,
     /// Human friendly label of the `Blob` and also used as unique identifier per node on which a `BlobEntry` is added.  E.g. do "LEFTCAM_1", "LEFTCAM_2", ... of you need to repeat a label on the same variable.
     pub label: String,
     /// A hint about where the `Blob` itself might be stored.  Remember that a Blob may be duplicated over multiple blobstores.
@@ -190,7 +190,7 @@ pub struct BlobEntry {
 impl BlobEntry {
     pub fn new() -> Self {
         let mut be = BlobEntry::default();
-        be.originId = Uuid::new_v4();
+        be.blobId = Uuid::new_v4();
         be.blobstore = "NavAbility".to_string();
         be.origin = "NavAbilitySDK.rs".to_string();
         be.createdTimestamp = Some(Utc::now());
@@ -211,13 +211,13 @@ impl add_blob_entries::BlobEntryCreateInput {
         variable_label: Option<String>,
         factor_label: Option<String>,
     ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
-        let mut blob_id = entry.originId;
-        if let Some(bid) = entry.blobId {
-            blob_id = bid;
-        }
+        // let blob_id = entry.blobId;
+        // if let Some(bid) = entry.blobId {
+        //     blob_id = bid;
+        // }
         Self { // add_blob_entries::BlobEntryCreateInput {
-            origin_id: entry.originId.to_string(),
-            blob_id: blob_id.to_string(),
+            origin_id: entry.blobId.to_string(),
+            blob_id: entry.blobId.to_string(),
             label: entry.label.to_string(),
             blobstore: Some(entry.blobstore.to_string()),
             origin: Some(entry.origin.to_string()),
