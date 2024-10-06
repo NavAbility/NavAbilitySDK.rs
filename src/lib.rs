@@ -54,7 +54,7 @@ pub struct GetAgents;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/user_robot_session.graphql",
     response_derives = "Debug"
 )]
@@ -105,26 +105,26 @@ pub struct User {
     last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
-pub struct Robot {
+pub struct Agent {
     pub id: Option<Uuid>,
     pub label: String,
-    pub _version: String,
+    // pub _version: String,
     pub created_timestamp: chrono::DateTime::<Utc>,
     pub last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
-impl Robot {
+impl Agent {
     pub fn new(
         id: Option<Uuid>,
         label: String,
-        _version: String,
+        // _version: String,
         created_timestamp: chrono::DateTime<Utc>,
         last_updated_timestamp: chrono::DateTime<Utc>,
     ) -> Self {
         Self {
             id,
             label,
-            _version,
+            // _version,
             created_timestamp,
             last_updated_timestamp,
         }
@@ -369,10 +369,12 @@ pub async fn fetch_urs_async(
     session_label: String,
 ) -> Result<Response<get_urs::ResponseData>, Box<dyn Error>> {
 
+    let org_id = Uuid::parse_str(&nvacl.user_label.to_string())
+    .expect("Unable to parse org_id as uuid");
     let variables = get_urs::Variables {
-        user_label: nvacl.user_label.to_string(),
-        robot_label: robot_label.to_string(),
-        session_label: session_label.to_string(),
+        org_id: org_id.to_string(),
+        // robot_label: robot_label.to_string(),
+        // session_label: session_label.to_string(),
     };
 
     let request_body = GetURS::build_query(variables);
@@ -483,7 +485,7 @@ pub async fn fetch_robots_async(
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_context_web(
-    send_into: mpsc::Sender<Vec<get_urs::GetUrsUsers>>, 
+    send_into: mpsc::Sender<Vec<get_urs::GetUrsOrgs>>, 
     client: &NavAbilityClient,
     robot_label: String,
     session_label: String,
@@ -501,7 +503,7 @@ pub async fn fetch_context_web(
                 match urs_data {
                     None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, GQL response_body.data is empty")),
                     Some(resdata) => {
-                        let urs_data = resdata.users;
+                        let urs_data = resdata.orgs;
                         let res_len = urs_data.len();
                         gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
         
