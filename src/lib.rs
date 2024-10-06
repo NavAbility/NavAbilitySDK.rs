@@ -45,23 +45,16 @@ type UUID = String;
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
-pub struct GetRobots;
+pub struct GetAgents;
+
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
-    query_path = "src/robot_queries.graphql",
-    response_derives = "Debug"
-)]
-pub struct ListRobots;
-
-#[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/user_robot_session.graphql",
     response_derives = "Debug"
 )]
@@ -70,7 +63,7 @@ pub struct GetURS;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -79,7 +72,7 @@ pub struct CreateUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -88,7 +81,7 @@ pub struct CompleteUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/blob_entry.graphql",
     response_derives = "Debug"
 )]
@@ -97,7 +90,7 @@ pub struct AddBlobEntries;
 
 // #[derive(GraphQLQuery)]
 // #[graphql(
-//     schema_path = "src/schema_d1.json",
+//     schema_path = "src/schema_d2.json",
 //     query_path = "src/add_robots.graphql",
 //     response_derives = "Debug"
 // )]
@@ -112,26 +105,26 @@ pub struct User {
     last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
-pub struct Robot {
+pub struct Agent {
     pub id: Option<Uuid>,
     pub label: String,
-    pub _version: String,
+    // pub _version: String,
     pub created_timestamp: chrono::DateTime::<Utc>,
     pub last_updated_timestamp: chrono::DateTime::<Utc>,
 }
 
-impl Robot {
+impl Agent {
     pub fn new(
         id: Option<Uuid>,
         label: String,
-        _version: String,
+        // _version: String,
         created_timestamp: chrono::DateTime<Utc>,
         last_updated_timestamp: chrono::DateTime<Utc>,
     ) -> Self {
         Self {
             id,
             label,
-            _version,
+            // _version,
             created_timestamp,
             last_updated_timestamp,
         }
@@ -156,9 +149,9 @@ pub struct BlobEntry {
     /// Remotely assigned and globally unique identifier for the `BlobEntry` itself (not the `.blobId`).
     pub id: Option<Uuid>,
     /// Machine friendly and globally unique identifier of the 'Blob', usually assigned from a common point in the system.  This can be used to guarantee unique retrieval of the large data blob.
-    pub blobId: Option<Uuid>,
+    pub blobId: Uuid,
     /// Machine friendly and locally assigned identifier of the 'Blob'.  `.originId`s are mandatory upon first creation at the origin regardless of network access.  Separate from `.blobId` since some architectures do not allow edge processes to assign a uuid4 to data store elements.
-    pub originId: Uuid,
+    pub originId: Option<Uuid>,
     /// Human friendly label of the `Blob` and also used as unique identifier per node on which a `BlobEntry` is added.  E.g. do "LEFTCAM_1", "LEFTCAM_2", ... of you need to repeat a label on the same variable.
     pub label: String,
     /// A hint about where the `Blob` itself might be stored.  Remember that a Blob may be duplicated over multiple blobstores.
@@ -190,7 +183,7 @@ pub struct BlobEntry {
 impl BlobEntry {
     pub fn new() -> Self {
         let mut be = BlobEntry::default();
-        be.originId = Uuid::new_v4();
+        be.blobId = Uuid::new_v4();
         be.blobstore = "NavAbility".to_string();
         be.origin = "NavAbilitySDK.rs".to_string();
         be.createdTimestamp = Some(Utc::now());
@@ -202,42 +195,42 @@ impl BlobEntry {
 }
 
 
-impl add_blob_entries::BlobEntryCreateInput {
-    pub fn new(
-        entry: &BlobEntry,
-        user_label: Option<String>,
-        robot_label: Option<String>,
-        session_label: Option<String>,
-        variable_label: Option<String>,
-        factor_label: Option<String>,
-    ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
-        let mut blob_id = entry.originId;
-        if let Some(bid) = entry.blobId {
-            blob_id = bid;
-        }
-        Self { // add_blob_entries::BlobEntryCreateInput {
-            origin_id: entry.originId.to_string(),
-            blob_id: blob_id.to_string(),
-            label: entry.label.to_string(),
-            blobstore: Some(entry.blobstore.to_string()),
-            origin: Some(entry.origin.to_string()),
-            description: Some(entry.description.to_string()),
-            mime_type: Some(entry.mimeType.to_string()),
-            hash: Some(entry.hash.to_string()),
-            metadata: Some(entry.metadata.to_string()),
-            timestamp: Some(entry.timestamp.to_string()),
-            nstime: None,
-            type_: entry._type.to_string(),
-            version: entry._version.to_string(),
-            user_label,
-            robot_label,
-            session_label,
-            variable_label,
-            factor_label,
-            parent: None,
-        }
-    }
-}
+// impl add_blob_entries::BlobEntryCreateInput {
+//     pub fn new(
+//         entry: &BlobEntry,
+//         user_label: Option<String>,
+//         robot_label: Option<String>,
+//         session_label: Option<String>,
+//         variable_label: Option<String>,
+//         factor_label: Option<String>,
+//     ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
+//         // let blob_id = entry.blobId;
+//         // if let Some(bid) = entry.blobId {
+//         //     blob_id = bid;
+//         // }
+//         Self { // add_blob_entries::BlobEntryCreateInput {
+//             origin_id: entry.blobId.to_string(),
+//             blob_id: entry.blobId.to_string(),
+//             label: entry.label.to_string(),
+//             blobstore: Some(entry.blobstore.to_string()),
+//             origin: Some(entry.origin.to_string()),
+//             description: Some(entry.description.to_string()),
+//             mime_type: Some(entry.mimeType.to_string()),
+//             hash: Some(entry.hash.to_string()),
+//             metadata: Some(entry.metadata.to_string()),
+//             timestamp: Some(entry.timestamp.to_string()),
+//             nstime: None,
+//             type_: entry._type.to_string(),
+//             version: entry._version.to_string(),
+//             user_label,
+//             robot_label,
+//             session_label,
+//             variable_label,
+//             factor_label,
+//             parent: None,
+//         }
+//     }
+// }
 
 
 pub async fn add_entry_agent_async(
@@ -246,19 +239,26 @@ pub async fn add_entry_agent_async(
     entry: &BlobEntry,
 )  -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
     
-    let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
-        entry,
-        None,
-        Some(agent_label.to_string()),
-        None,
-        None,
-        None
-    );
-    let mut blob_entries = Vec::new();
-    blob_entries.push(gqlentry);
+    // let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+    //     entry,
+    //     None,
+    //     Some(agent_label.to_string()),
+    //     None,
+    //     None,
+    //     None
+    // );
+    // let mut blob_entries = Vec::new();
+    // blob_entries.push(gqlentry);
 
+    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
+    let name = format!("{}{}",&agent_label,&entry.label).to_string();
+    let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
     let variables = add_blob_entries::Variables {
-        blob_entries,
+        entry_id: entry_id.to_string(),
+        entry_label: entry.label.to_string(),
+        blob_id: entry.blobId.to_string(),
+        agent_label: agent_label.to_string(),
+        // blob_entries,
     };
 
     let request_body = AddBlobEntries::build_query(variables);
@@ -306,7 +306,7 @@ pub async fn add_entry_agent_async(
 
 // likely in an earlier compile step via build.rs
 // Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d1.json
+// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d2.json
 
 // async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
 //     // this is the important line
@@ -369,10 +369,12 @@ pub async fn fetch_urs_async(
     session_label: String,
 ) -> Result<Response<get_urs::ResponseData>, Box<dyn Error>> {
 
+    let org_id = Uuid::parse_str(&nvacl.user_label.to_string())
+    .expect("Unable to parse org_id as uuid");
     let variables = get_urs::Variables {
-        user_label: nvacl.user_label.to_string(),
-        robot_label: robot_label.to_string(),
-        session_label: session_label.to_string(),
+        org_id: org_id.to_string(),
+        // robot_label: robot_label.to_string(),
+        // session_label: session_label.to_string(),
     };
 
     let request_body = GetURS::build_query(variables);
@@ -420,14 +422,15 @@ pub async fn fetch_urs_async(
 
 pub async fn fetch_robots_async(
     nvacl: &NavAbilityClient,
-) -> Result<Response<get_robots::ResponseData>, Box<dyn Error>> {
+) -> Result<Response<get_agents::ResponseData>, Box<dyn Error>> {
 
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
-    let variables = get_robots::Variables {
-        user_label: nvacl.user_label.to_string()
+    let variables = get_agents::Variables {
+        org_id: nvacl.user_label.to_string(),
+        // Uuid::new_v4().to_string() // FIXME uuid
     };
 
-    let request_body = GetRobots::build_query(variables);
+    let request_body = GetAgents::build_query(variables);
 
     let req_res = nvacl.client
         .post(&nvacl.apiurl)
@@ -482,7 +485,7 @@ pub async fn fetch_robots_async(
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_context_web(
-    send_into: mpsc::Sender<Vec<get_urs::GetUrsUsers>>, 
+    send_into: mpsc::Sender<Vec<get_urs::GetUrsOrgs>>, 
     client: &NavAbilityClient,
     robot_label: String,
     session_label: String,
@@ -491,16 +494,16 @@ pub async fn fetch_context_web(
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                tracing::error!("NvaSDK.rs fetch_context_web has response errors {:?}",&res_errs);
                 #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+                gloo_console::log!(format!("NvaSDK.rs fetch_context_web has response errors {:?}",&res_errs));
             },
             None => {
                 let urs_data = response_body.data;
                 match urs_data {
                     None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, GQL response_body.data is empty")),
                     Some(resdata) => {
-                        let urs_data = resdata.users;
+                        let urs_data = resdata.orgs;
                         let res_len = urs_data.len();
                         gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
         
@@ -524,23 +527,23 @@ pub async fn fetch_context_web(
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
-    send_into: mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    send_into: mpsc::Sender<Vec<get_agents::GetAgentsAgents>>, 
     client: &NavAbilityClient
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = fetch_robots_async(&client).await {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                tracing::error!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs);
                 #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+                gloo_console::log!(format!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs));
             },
             None => {
                 let ur_list_data = response_body.data;
                 match ur_list_data {
                     None => gloo_console::log!("NvaSDK.rs ", JsValue::from("NvaSDK.rs, bad GQL response")),
                     Some(resdata) => {
-                        let ur_data = resdata.users;
+                        let ur_data = resdata.agents;
                         let res_len = ur_data.len();
                         gloo_console::log!("length of data resp going send_into.send ", JsValue::from(res_len));                
                         let resp = send_into.send(ur_data);
@@ -566,21 +569,21 @@ pub async fn create_upload_web(
     name: &String,
     blob_size: i64,
     nparts: Option<i64>,
-    blobId_: Option<Uuid>, // doenst work yet, leave None
+    blob_id: Option<Uuid>, // doenst work yet, leave None
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
     if let Ok(response_body) = create_upload_async(
             client.clone(), 
-            name.to_string(), 
-            blob_size,
+            blob_id.expect("Must provide blob_id to create_upload_web"),
             nparts,
-            blobId_,
+            // name.to_string(), 
+            // blob_size,
     ).await {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs);
+                tracing::error!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs);
                 #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_async has response errors {:?}",&res_errs));
+                gloo_console::log!(format!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs));
             },
             None => {
                 let res_data = response_body.data;
@@ -699,17 +702,16 @@ pub fn fetch_ur_list_blocking(
 
 pub async fn create_upload_async(
     nvacl: NavAbilityClient,
-    name: String,
-    blob_size: i64,
-    nparts: Option<i64>,
-    blobId: Option<Uuid>,
+    // label: String,
+    // blob_size: i64,
+    blob_id: Uuid,
+    parts: Option<i64>,
 ) -> Result<Response<create_upload::ResponseData>, Box<dyn Error>> {
 
     let variables = create_upload::Variables {
-        name: name.to_string(),
-        size: blob_size.clone(),
-        parts: nparts.unwrap_or(1),
-        // blobId,
+        // label: label.to_string(),
+        blob_id: blob_id.to_string(),
+        parts: parts.unwrap_or(1),
     };
 
     let request_body = CreateUpload::build_query(variables);
@@ -781,7 +783,7 @@ pub async fn complete_upload_async(
 
     let variables = complete_upload::Variables {
         blob_id: blob_id.to_string(),
-        completed_upload: cupl
+        completed_upload: Some(cupl)
     };
 
     let request_body = CompleteUpload::build_query(variables);

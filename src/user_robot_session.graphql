@@ -1,5 +1,6 @@
 
-fragment user_fields on User {
+
+fragment agent_fields on Agent {
   id
   label
   _version
@@ -7,48 +8,26 @@ fragment user_fields on User {
   lastUpdatedTimestamp
 }
 
-fragment robot_fields on Robot {
+fragment model_fields on Model {
   id
   label
-  _version
   createdTimestamp
   lastUpdatedTimestamp
 }
 
-fragment session_fields on Session {
-  id
-  label
-  robotLabel
-  userLabel
-  _version
-  createdTimestamp
-  lastUpdatedTimestamp
-}
 
-query getUser($userLabel: EmailAddress!) {
-  users (where: {label: $userLabel}) {
-    ...user_fields
-    robots {
-      ...robot_fields
-      sessions {
-        ...session_fields
-      }  
-    }
-  }
-}
 
-query GetURS(
-  $userLabel: EmailAddress!, 
-  $robotLabel: String!, 
-  $sessionLabel: String!
-) {
-  users (where: {label: $userLabel}) {
-    ...user_fields
-    robots (where: {label: $robotLabel}) {
-      ...robot_fields
-      sessions (where: {label: $sessionLabel}) {
-        ...session_fields
-      }  
+
+
+
+
+query GetURS($org_id: ID!) {
+  orgs(where: {id: $org_id}) {
+    agents {
+      ...agent_fields
+      models {
+        ...model_fields
+      }
     }
   }
 }

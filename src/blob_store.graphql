@@ -1,38 +1,33 @@
+
+
 mutation CreateUpload(
-  $name: String!, 
-  $size: BigInt!, 
+  $blobId: ID!, 
   $parts: Int!
 ) {
   createUpload(
-    blob: {
-      name: $name,
-      size: $size
-    },
+    blobId: $blobId
     parts: $parts
-  ) {
-    uploadId
-    blob {
-      id
-      name
-      size
+    store: {
+      label: "default"
     }
+  ) {
+    blobId
     parts {
       partNumber
       url
     }
+    uploadId
   }
 }
 
 
 mutation CompleteUpload (
   $blobId: ID!, 
-  $completedUpload: CompletedUploadInput!
+  $completedUpload: CompletedUploadInput
 ) {
   completeUpload(
-    blobId: $blobId, 
+    blobId: $blobId
     completedUpload: $completedUpload
   )
 }
-
-
 
