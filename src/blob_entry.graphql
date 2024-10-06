@@ -15,33 +15,77 @@ fragment blobEntry_fields on BlobEntry {
   _version
 }
 
-query get_blob_entry(
-  $userId: ID!
-  $robotId: ID!
-  $sessionId: ID!
-  $variableLabel: String!
-  $blobLabel: String!
+
+query GetBlobEntry(
+  $entry_id: ID!
 ) {
-  users(where: { id: $userId }) {
-    robots(where: { id: $robotId }) {
-      sessions(where: { id: $sessionId }) {
-        variables(where: { label: $variableLabel }) {
-          blobEntries(where: { label: $blobLabel }) {
-            ...blobEntry_fields
+  blobEntries(
+    where: {
+    	id: $entry_id
+  	}
+  ) {
+    ...blobEntry_fields
+  }
+}
+
+# query get_blob_entry(
+#   $userId: ID!
+#   $robotId: ID!
+#   $sessionId: ID!
+#   $variableLabel: String!
+#   $blobLabel: String!
+# ) {
+#   users(where: { id: $userId }) {
+#     robots(where: { id: $robotId }) {
+#       sessions(where: { id: $sessionId }) {
+#         variables(where: { label: $variableLabel }) {
+#           blobEntries(where: { label: $blobLabel }) {
+#             ...blobEntry_fields
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
+
+# mutation AddBlobEntries($blobEntries: [BlobEntryCreateInput!]!) {
+#   # Create the new ones
+#   addBlobEntries(
+#     input: $blobEntries
+#   ) {
+#     blobEntries {
+#       ...blobEntry_fields
+#     }
+#   }
+# }
+
+mutation AddBlobEntries(
+  $entry_id: ID!,
+  $entry_label: String!,
+  $blob_id: ID!,
+  $agent_label: String!,
+) {
+  addBlobEntries(
+    input: {
+      id: $entry_id, 
+      label: $entry_label, 
+      blobId: $blob_id,
+      _version: "0.24", 
+      parent: {
+        Agent: {
+          connect: {
+            where: {
+              node: {
+                label: $agent_label
+              }
+            }
           }
         }
       }
     }
-  }
-}
-
-mutation AddBlobEntries($blobEntries: [BlobEntryCreateInput!]!) {
-  # Create the new ones
-  addBlobEntries(
-    input: $blobEntries
   ) {
     blobEntries {
-      ...blobEntry_fields
+      timestamp
     }
   }
 }

@@ -51,13 +51,6 @@ type UUID = String;
 )]
 pub struct GetAgents;
 
-// #[derive(GraphQLQuery)]
-// #[graphql(
-//     schema_path = "src/schema_d1.json",
-//     query_path = "src/robot_queries.graphql",
-//     response_derives = "Debug"
-// )]
-// pub struct ListRobots;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -88,7 +81,7 @@ pub struct CompleteUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d1.json",
+    schema_path = "src/schema_d2.json",
     query_path = "src/blob_entry.graphql",
     response_derives = "Debug"
 )]
@@ -202,42 +195,42 @@ impl BlobEntry {
 }
 
 
-impl add_blob_entries::BlobEntryCreateInput {
-    pub fn new(
-        entry: &BlobEntry,
-        user_label: Option<String>,
-        robot_label: Option<String>,
-        session_label: Option<String>,
-        variable_label: Option<String>,
-        factor_label: Option<String>,
-    ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
-        // let blob_id = entry.blobId;
-        // if let Some(bid) = entry.blobId {
-        //     blob_id = bid;
-        // }
-        Self { // add_blob_entries::BlobEntryCreateInput {
-            origin_id: entry.blobId.to_string(),
-            blob_id: entry.blobId.to_string(),
-            label: entry.label.to_string(),
-            blobstore: Some(entry.blobstore.to_string()),
-            origin: Some(entry.origin.to_string()),
-            description: Some(entry.description.to_string()),
-            mime_type: Some(entry.mimeType.to_string()),
-            hash: Some(entry.hash.to_string()),
-            metadata: Some(entry.metadata.to_string()),
-            timestamp: Some(entry.timestamp.to_string()),
-            nstime: None,
-            type_: entry._type.to_string(),
-            version: entry._version.to_string(),
-            user_label,
-            robot_label,
-            session_label,
-            variable_label,
-            factor_label,
-            parent: None,
-        }
-    }
-}
+// impl add_blob_entries::BlobEntryCreateInput {
+//     pub fn new(
+//         entry: &BlobEntry,
+//         user_label: Option<String>,
+//         robot_label: Option<String>,
+//         session_label: Option<String>,
+//         variable_label: Option<String>,
+//         factor_label: Option<String>,
+//     ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
+//         // let blob_id = entry.blobId;
+//         // if let Some(bid) = entry.blobId {
+//         //     blob_id = bid;
+//         // }
+//         Self { // add_blob_entries::BlobEntryCreateInput {
+//             origin_id: entry.blobId.to_string(),
+//             blob_id: entry.blobId.to_string(),
+//             label: entry.label.to_string(),
+//             blobstore: Some(entry.blobstore.to_string()),
+//             origin: Some(entry.origin.to_string()),
+//             description: Some(entry.description.to_string()),
+//             mime_type: Some(entry.mimeType.to_string()),
+//             hash: Some(entry.hash.to_string()),
+//             metadata: Some(entry.metadata.to_string()),
+//             timestamp: Some(entry.timestamp.to_string()),
+//             nstime: None,
+//             type_: entry._type.to_string(),
+//             version: entry._version.to_string(),
+//             user_label,
+//             robot_label,
+//             session_label,
+//             variable_label,
+//             factor_label,
+//             parent: None,
+//         }
+//     }
+// }
 
 
 pub async fn add_entry_agent_async(
@@ -246,19 +239,26 @@ pub async fn add_entry_agent_async(
     entry: &BlobEntry,
 )  -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
     
-    let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
-        entry,
-        None,
-        Some(agent_label.to_string()),
-        None,
-        None,
-        None
-    );
-    let mut blob_entries = Vec::new();
-    blob_entries.push(gqlentry);
+    // let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+    //     entry,
+    //     None,
+    //     Some(agent_label.to_string()),
+    //     None,
+    //     None,
+    //     None
+    // );
+    // let mut blob_entries = Vec::new();
+    // blob_entries.push(gqlentry);
 
+    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
+    let name = format!("{}{}",&agent_label,&entry.label).to_string();
+    let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
     let variables = add_blob_entries::Variables {
-        blob_entries,
+        entry_id: entry_id.to_string(),
+        entry_label: entry.label.to_string(),
+        blob_id: entry.blobId.to_string(),
+        agent_label: agent_label.to_string(),
+        // blob_entries,
     };
 
     let request_body = AddBlobEntries::build_query(variables);
