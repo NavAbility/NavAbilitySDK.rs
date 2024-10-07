@@ -1,0 +1,11 @@
+
+
+mutation CompleteUpload (
+  $blobId: ID!, 
+  $completedUpload: CompletedUploadInput
+) {
+  completeUpload(
+    blobId: $blobId
+    completedUpload: $completedUpload
+  )
+}

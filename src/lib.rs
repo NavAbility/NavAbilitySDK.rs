@@ -64,7 +64,7 @@ pub struct GetURS;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/blob_store.graphql",
+    query_path = "src/gql/blob_store.graphql",
     response_derives = "Debug"
 )]
 pub struct CreateUpload;
@@ -73,7 +73,7 @@ pub struct CreateUpload;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/blob_store.graphql",
+    query_path = "src/gql/CompleteUpload.gql",
     response_derives = "Debug"
 )]
 pub struct CompleteUpload;
