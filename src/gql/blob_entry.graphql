@@ -7,12 +7,15 @@ fragment entry_fields on BlobEntry {
   blobstore
   hash
   origin
+  size
   description
   mimeType
   metadata
   timestamp
-  _type
+  createdTimestamp
+  lastUpdatedTimestamp
   _version
+  _type
 }
 
 

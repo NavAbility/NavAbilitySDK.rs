@@ -46,7 +46,7 @@ type UUID = String;
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/robot_queries.graphql",
+    query_path = "src/gql/robot_queries.graphql",
     response_derives = "Debug"
 )]
 pub struct GetAgents;
@@ -55,7 +55,7 @@ pub struct GetAgents;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/user_robot_session.graphql",
+    query_path = "src/gql/user_robot_session.graphql",
     response_derives = "Debug"
 )]
 pub struct GetURS;
@@ -64,7 +64,7 @@ pub struct GetURS;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/blob_store.graphql",
+    query_path = "src/gql/blob_store.graphql",
     response_derives = "Debug"
 )]
 pub struct CreateUpload;
@@ -73,7 +73,7 @@ pub struct CreateUpload;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/blob_store.graphql",
+    query_path = "src/gql/CompleteUpload.gql",
     response_derives = "Debug"
 )]
 pub struct CompleteUpload;
@@ -82,7 +82,7 @@ pub struct CompleteUpload;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/blob_entry.graphql",
+    query_path = "src/gql/blob_entry.graphql",
     response_derives = "Debug"
 )]
 pub struct AddBlobEntries;
@@ -90,7 +90,7 @@ pub struct AddBlobEntries;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/blob_entry.graphql",
+    query_path = "src/gql/blob_entry.graphql",
     response_derives = "Debug"
 )]
 pub struct GetBlobEntry;
@@ -195,8 +195,8 @@ impl BlobEntry {
     pub fn new() -> Self {
         let mut be = BlobEntry::default();
         be.blobId = Uuid::new_v4();
-        be.blobstore = "NavAbility".to_string();
-        be.origin = "NavAbilitySDK.rs".to_string();
+        be.blobstore = "default".to_string();
+        be.origin = "NvaSDK.rs".to_string();
         be.createdTimestamp = Some(Utc::now());
         be.lastUpdatedTimestamp = be.createdTimestamp.clone();
         be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
@@ -421,13 +421,7 @@ pub async fn fetch_urs_async(
 
     match req_res {
         Err(re) => {
-            tracing::error!("Failed to get NavAbility API response {}", re);
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
-                gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
-            }
+            to_console_error(&format!("Failed API response {:?}",&re));
             return Err(Box::new(re));
         },
         Ok(res) => {
@@ -860,7 +854,7 @@ pub async fn complete_upload_async(
 
     let variables = complete_upload::Variables {
         blob_id: blob_id.to_string(),
-        completed_upload: Some(cupl)
+        completed_upload: cupl,
     };
 
     let request_body = CompleteUpload::build_query(variables);
