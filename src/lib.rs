@@ -205,24 +205,36 @@ impl BlobEntry {
     }
 
     pub fn try_from_receiver(
-        rx: &std::sync::mpsc::Receiver<GetBlobEntry>
+        rx: &std::sync::mpsc::Receiver<get_blob_entry::ResponseData>
     ) -> Option<Self> {
-        let mut be = BlobEntry::default();
-
+        
         match rx.try_recv() {
-            Ok(gety) => {
-                // gety;
-                // gety.fields.iter
-                // be.blobId = gety;
-                // be.blobstore = "NavAbility".to_string();
-                // be.origin = "NavAbilitySDK.rs".to_string();
+            Ok(gqle) => {
+                let gety = &gqle.blob_entries[0];
+                let mut be = BlobEntry::default();
+                be.id = Some(Uuid::parse_str(&gety.id).expect("failed to parse entry id to uuid"));
+                be.blobId = Uuid::parse_str(&gety.blob_id).expect("failed to parse entry blob_id to uuid");
+                if let Some(blobstore) = &gety.blobstore {
+                    be.blobstore = blobstore.to_string();
+                }
+                if let Some(origin) = &gety.origin {
+                    be.origin = origin.to_string();
+                }
+                if let Some(timestamp) = &gety.timestamp {
+                    to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
+                    // be.timestamp = chrono::DateTime::parse_from_str(timestamp, );
+                }
                 // be.createdTimestamp = Some(Utc::now());
                 // be.lastUpdatedTimestamp = be.createdTimestamp.clone();
-                // be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
-                // be._version = "0.24.0".to_string(); // FIXME dont hardcode, pull from common source
+                if let Some(_type) = &gety.type_ {
+                    be._type = _type.to_string();
+                }
+                be._version = gety.version.to_string();
                 return Some(be)
             }
-            Err(e) => {}
+            Err(e) => {
+                // to_console_debug(&"BlobEntry::try_from_receive nothing in channel");
+            }
         }
 
         return None
@@ -305,11 +317,7 @@ pub async fn add_entry_agent_async(
 
     match req_res {
         Err(re) => {
-            tracing::error!("Failed to get NavAbility API response {}", re);
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
-            }
+            to_console_error(&format!("add entry to agent failed to get API response {:?}",re));
             return Err(Box::new(re));
         },
         Ok(res) => {
@@ -322,11 +330,7 @@ pub async fn add_entry_agent_async(
                     return Ok(response_body);
                 },
                 Err(e) => {
-                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
-
-                    #[cfg(target_arch = "wasm32")]            
-                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
-
+                    to_console_error(&format!("add to entry to agent failed to deser gql json {:?}",&e));
                     return Err(Box::new(e));
                 }
             }
@@ -463,33 +467,21 @@ pub async fn fetch_robots_async(
         .post(&nvacl.apiurl)
         .json(&request_body)
         .send().await;
-    // .expect("Failed to get NavAbility API response");
+
     match req_res {
         Err(re) => {
-            tracing::error!("Failed to get NavAbility API response {}", re);
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
-                gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
-            }
+            to_console_error(&format!("fetch robots, no API response {:?}", re));
             return Err(Box::new(re));
         },
         Ok(res) => {
-            // : Response<get_robots::ResponseData>
             let serde_res = res.json().await;
-            // .expect("Failed to json unpack GQL response");
             match serde_res {
                 Ok(response_body) => {
                     to_console_debug("org agents gql received and json deserialized");
                     return Ok(response_body);
                 },
                 Err(e) => {
-                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
-
-                    #[cfg(target_arch = "wasm32")]            
-                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
-
+                    to_console_error(&format!("failed to unpack json from GQL API response: {:?}", &e));
                     return Err(Box::new(e));
                 }
             }
@@ -556,8 +548,13 @@ pub async fn send_blob_entry(
     match resp {
         Ok(resp_) => {
             if resp_.errors.is_none() {
-                to_console_debug(&"send_blob_entry gql response received and json deserialized");
-                send_into.send(resp_.data.expect("was expecting data for gql get blob entry"));
+                let entr = resp_.data.expect("was expecting data for gql get blob entry");
+                let label = entr.blob_entries[0].label.to_string();
+                let _ = send_into.send(entr);
+                to_console_debug(&format!(
+                    "after send_blob_entry gql response received and json deserialized {}",
+                    label
+                ));
                 // return Ok(response_body.data);
             } else {
                 to_console_error(&format!("create upload errored with message {:?}", &resp_.errors));
