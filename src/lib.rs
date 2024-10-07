@@ -45,7 +45,7 @@ type UUID = String;
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
-    schema_path = "src/schema_d2.json",
+    schema_path = "src/schema.json",
     query_path = "src/robot_queries.graphql",
     response_derives = "Debug"
 )]
@@ -54,7 +54,7 @@ pub struct GetAgents;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d2.json",
+    schema_path = "src/schema.json",
     query_path = "src/user_robot_session.graphql",
     response_derives = "Debug"
 )]
@@ -63,7 +63,7 @@ pub struct GetURS;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d2.json",
+    schema_path = "src/schema.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -72,7 +72,7 @@ pub struct CreateUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d2.json",
+    schema_path = "src/schema.json",
     query_path = "src/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -81,16 +81,25 @@ pub struct CompleteUpload;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema_d2.json",
+    schema_path = "src/schema.json",
     query_path = "src/blob_entry.graphql",
     response_derives = "Debug"
 )]
 pub struct AddBlobEntries;
 
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/blob_entry.graphql",
+    response_derives = "Debug"
+)]
+pub struct GetBlobEntry;
+
+
 
 // #[derive(GraphQLQuery)]
 // #[graphql(
-//     schema_path = "src/schema_d2.json",
+//     schema_path = "src/schema.json",
 //     query_path = "src/add_robots.graphql",
 //     response_derives = "Debug"
 // )]
@@ -180,6 +189,8 @@ pub struct BlobEntry {
     pub _version: String,
 }
 
+
+
 impl BlobEntry {
     pub fn new() -> Self {
         let mut be = BlobEntry::default();
@@ -191,6 +202,30 @@ impl BlobEntry {
         be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
         be._version = "0.24.0".to_string(); // FIXME dont hardcode, pull from common source
         return be
+    }
+
+    pub fn try_from_receiver(
+        rx: &std::sync::mpsc::Receiver<GetBlobEntry>
+    ) -> Option<Self> {
+        let mut be = BlobEntry::default();
+
+        match rx.try_recv() {
+            Ok(gety) => {
+                // gety;
+                // gety.fields.iter
+                // be.blobId = gety;
+                // be.blobstore = "NavAbility".to_string();
+                // be.origin = "NavAbilitySDK.rs".to_string();
+                // be.createdTimestamp = Some(Utc::now());
+                // be.lastUpdatedTimestamp = be.createdTimestamp.clone();
+                // be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
+                // be._version = "0.24.0".to_string(); // FIXME dont hardcode, pull from common source
+                return Some(be)
+            }
+            Err(e) => {}
+        }
+
+        return None
     }
 }
 
@@ -283,11 +318,7 @@ pub async fn add_entry_agent_async(
             // .expect("Failed to json unpack GQL response");
             match serde_res {
                 Ok(response_body) => {
-                    tracing::debug!("received and json deserialized create_upload");
-
-                    #[cfg(target_arch = "wasm32")]
-                    gloo_console::log!(format!("NvaSDK.rs received and json deserialized create_upload")); // {:?}",&response_body));
-
+                    to_console_debug("add_entry_agent gql received and json deserialized");
                     return Ok(response_body);
                 },
                 Err(e) => {
@@ -306,7 +337,7 @@ pub async fn add_entry_agent_async(
 
 // likely in an earlier compile step via build.rs
 // Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema_d2.json
+// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema.json
 
 // async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
 //     // this is the important line
@@ -399,11 +430,7 @@ pub async fn fetch_urs_async(
             let serde_res = res.json().await;
             match serde_res {
                 Ok(response_body) => {
-                    tracing::debug!("received and json deserialized GetURS");
-
-                    #[cfg(target_arch = "wasm32")]
-                    gloo_console::log!("NvaSDK.rs ", "received and json GetURS");
-
+                    to_console_debug("GetURS gql received and json deserialized");
                     return Ok(response_body);
                 },
                 Err(e) => {
@@ -454,11 +481,7 @@ pub async fn fetch_robots_async(
             // .expect("Failed to json unpack GQL response");
             match serde_res {
                 Ok(response_body) => {
-                    tracing::debug!("received and json deserialized user robots");
-
-                    #[cfg(target_arch = "wasm32")]
-                    gloo_console::log!("NvaSDK.rs ", "received and json deserialized user robots");
-
+                    to_console_debug("org agents gql received and json deserialized");
                     return Ok(response_body);
                 },
                 Err(e) => {
@@ -472,15 +495,78 @@ pub async fn fetch_robots_async(
             }
         }
     }
-    // dbg!("{:?}", &response_body);
-
-    // #[cfg(target_arch = "wasm32")]
-    // gloo_console::log!("NvaSDK.rs ", type_of(&response_body));
-
-    // Ok(response_body)
-    // serde_res
 }
 
+
+// async fn are_there_errors(
+//     serde_res: Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>>
+// ) -> Result<get_blob_entry::ResponseData, error?> {
+
+
+pub async fn fetch_blob_entry(
+    nvacl: NavAbilityClient,
+    id: Uuid
+) -> Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>> {
+
+    let variables = get_blob_entry::Variables {
+        entry_id: id.to_string(),
+    };
+
+    let request_body = GetBlobEntry::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    // are_there_errors(req_res).await
+    match req_res {
+        Err(re) => {
+            to_console_error(&format!("Failed to get NavAbility API response {}", re));
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            let serde_res = res.json().await;
+            match serde_res {
+                Ok(response_body) => {
+                    // if response_body.errors.is_none() {
+                    //     to_console_debug(&"received and json deserialized gql");
+                    //     return Ok(response_body.data);
+                    // } else {
+                    //     to_console_error(&format!("create upload errored with message {:?}", &response_body.errors));
+                    //     return Err(Box::new(response_body.errors));
+                    // }
+                    return Ok(response_body)
+                },
+                Err(e) => {
+                    to_console_error(&format!("failed to unpack json from GQL API response: {:?}", &e));
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
+}
+
+pub async fn send_blob_entry(
+    send_into: std::sync::mpsc::Sender<get_blob_entry::ResponseData>,
+    nvacl: NavAbilityClient,
+    id: Uuid
+) {
+    let resp = fetch_blob_entry(nvacl, id).await;
+    match resp {
+        Ok(resp_) => {
+            if resp_.errors.is_none() {
+                to_console_debug(&"send_blob_entry gql response received and json deserialized");
+                send_into.send(resp_.data.expect("was expecting data for gql get blob entry"));
+                // return Ok(response_body.data);
+            } else {
+                to_console_error(&format!("create upload errored with message {:?}", &resp_.errors));
+                // return Err(Box::new(response_body.errors));
+            }
+        }
+        Err(e) => {}
+    }
+}
 
 
 #[cfg(target_arch = "wasm32")]
@@ -494,9 +580,7 @@ pub async fn fetch_context_web(
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                tracing::error!("NvaSDK.rs fetch_context_web has response errors {:?}",&res_errs);
-                #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs fetch_context_web has response errors {:?}",&res_errs));
+                to_console_error(&format!("fetch_context_web has response errors {:?}",&res_errs));
             },
             None => {
                 let urs_data = response_body.data;
@@ -505,11 +589,11 @@ pub async fn fetch_context_web(
                     Some(resdata) => {
                         let urs_data = resdata.orgs;
                         let res_len = urs_data.len();
-                        gloo_console::log!("length of context send_into.send ", JsValue::from(res_len));  
+                        to_console_debug(&format!("length of context send_into.send {}", res_len));  
         
                         let resp = send_into.send(urs_data);
                         if let Err(e) = resp {
-                            tracing::error!("Error sending user robot list data: {}", e);
+                            to_console_error(&format!("Error sending user robot list data: {}", e));
                         }
                     }
                 }
@@ -736,11 +820,7 @@ pub async fn create_upload_async(
             // .expect("Failed to json unpack GQL response");
             match serde_res {
                 Ok(response_body) => {
-                    tracing::debug!("received and json deserialized create_upload");
-
-                    #[cfg(target_arch = "wasm32")]
-                    gloo_console::log!(format!("NvaSDK.rs received and json deserialized create_upload")); // {:?}",&response_body));
-
+                    to_console_debug("create_upload_async gql received and json deserialized");
                     return Ok(response_body);
                 },
                 Err(e) => {
@@ -884,7 +964,23 @@ impl<T> FileUploader<T> {
 // }
 
 
+fn to_console_debug(
+    text: &str
+) {
+    #[cfg(not(target_arch = "wasm32"))]
+    tracing::debug!("{}",text);
+    #[cfg(target_arch = "wasm32")]
+    gloo_console::log!(text.to_string());
+}
 
+fn to_console_error(
+    text: &str
+) {
+    #[cfg(not(target_arch = "wasm32"))]
+    tracing::error!("ERROR NvaSDK.rs {}",&text);
+    #[cfg(target_arch = "wasm32")]
+    gloo_console::log!(&format!("ERROR NvaSDK.rs {}",&text));
+}
 
 #[cfg(test)]
 mod tests {

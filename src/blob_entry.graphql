@@ -1,5 +1,5 @@
 
-fragment blobEntry_fields on BlobEntry {
+fragment entry_fields on BlobEntry {
   id
   blobId
   originId
@@ -24,40 +24,11 @@ query GetBlobEntry(
     	id: $entry_id
   	}
   ) {
-    ...blobEntry_fields
+    ...entry_fields
   }
 }
 
-# query get_blob_entry(
-#   $userId: ID!
-#   $robotId: ID!
-#   $sessionId: ID!
-#   $variableLabel: String!
-#   $blobLabel: String!
-# ) {
-#   users(where: { id: $userId }) {
-#     robots(where: { id: $robotId }) {
-#       sessions(where: { id: $sessionId }) {
-#         variables(where: { label: $variableLabel }) {
-#           blobEntries(where: { label: $blobLabel }) {
-#             ...blobEntry_fields
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
-
-# mutation AddBlobEntries($blobEntries: [BlobEntryCreateInput!]!) {
-#   # Create the new ones
-#   addBlobEntries(
-#     input: $blobEntries
-#   ) {
-#     blobEntries {
-#       ...blobEntry_fields
-#     }
-#   }
-# }
+# BlobEntryCreateInput
 
 mutation AddBlobEntries(
   $entry_id: ID!,
