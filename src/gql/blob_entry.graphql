@@ -24,8 +24,8 @@ query GetBlobEntry(
 ) {
   blobEntries(
     where: {
-    	id: $entry_id
-  	}
+      id: $entry_id
+    }
   ) {
     ...entry_fields
   }
@@ -33,33 +33,16 @@ query GetBlobEntry(
 
 # BlobEntryCreateInput
 
-mutation AddBlobEntries(
-  $entry_id: ID!,
-  $entry_label: String!,
-  $blob_id: ID!,
-  $agent_label: String!,
-) {
-  addBlobEntries(
-    input: {
-      id: $entry_id, 
-      label: $entry_label, 
-      blobId: $blob_id,
-      _version: "0.24", 
-      parent: {
-        Agent: {
-          connect: {
-            where: {
-              node: {
-                label: $agent_label
-              }
-            }
-          }
-        }
-      }
-    }
-  ) {
-    blobEntries {
-      timestamp
-    }
-  }
-}
+# Had difficulty with auto-gen BlobEntryCreateInput.parent
+# mutation AddBlobEntries(
+#   $blob_entries: [BlobEntryCreateInput!]!
+# ) {
+#   addBlobEntries(
+#     input: $blob_entries
+#   ) {
+#     blobEntries {
+#       ...entry_fields
+#     }
+#   }
+# }
+

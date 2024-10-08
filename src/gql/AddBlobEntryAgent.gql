@@ -1,0 +1,44 @@
+mutation AddBlobEntries(
+  $agent_label: String!,
+  $entry_id: ID!,
+  $entry_label: String!,
+  $blob_id: ID!,
+  $blobstore: String,
+  $origin: String,
+  $mime_type: String,
+  $description: String,
+  $hash: String!,
+  $size: Int
+  $timestamp: DateTime
+) {
+    addBlobEntries(
+    input: {
+      id: $entry_id, 
+      blobId: $blob_id,
+      label: $entry_label, 
+      blobstore: $blobstore,
+      origin: $origin,
+      mimeType: $mime_type, 
+      description: $description,
+      hash: $hash,
+      size: $size,
+      timestamp: $timestamp,
+      _version: "0.24", 
+      parent: {
+          Agent: {
+            connect: {
+              where: {
+                node: {
+                  label: $agent_label
+              }
+            }
+          }
+        }
+      }
+    }
+  ) {
+      blobEntries {
+        id
+    }
+  }
+}

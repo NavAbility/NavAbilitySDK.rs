@@ -82,7 +82,7 @@ pub struct CompleteUpload;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/gql/blob_entry.graphql",
+    query_path = "src/gql/AddBlobEntryAgent.gql",
     response_derives = "Debug"
 )]
 pub struct AddBlobEntries;
@@ -214,15 +214,38 @@ impl BlobEntry {
                 let mut be = BlobEntry::default();
                 be.id = Some(Uuid::parse_str(&gety.id).expect("failed to parse entry id to uuid"));
                 be.blobId = Uuid::parse_str(&gety.blob_id).expect("failed to parse entry blob_id to uuid");
+                be.label = gety.label.to_string();
                 if let Some(blobstore) = &gety.blobstore {
                     be.blobstore = blobstore.to_string();
                 }
                 if let Some(origin) = &gety.origin {
                     be.origin = origin.to_string();
                 }
+                if let Some(mime) = &gety.mime_type {
+                    be.mimeType = mime.to_string();
+                }
+                if let Some(description) = &gety.description {
+                    be.description = description.to_string();
+                }
+                if let Some(hash) = &gety.hash {
+                    be.hash = hash.to_string();
+                }
+                if let Some(size) = &gety.size {
+                    be.size = Some(*size);
+                }
                 if let Some(timestamp) = &gety.timestamp {
                     to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
-                    // be.timestamp = chrono::DateTime::parse_from_str(timestamp, );
+                    // 2024-09-16T16:51:20.555Z
+                    if let Ok(tms) = chrono::DateTime::parse_from_str(
+                        &timestamp
+                            .replace("Z"," +00")
+                            .replace(" UTC", " +00"), 
+                        "%Y-%m-%dT%H:%M:%S%.f %#z"
+                    ) {
+                        be.timestamp = tms.to_utc();
+                    } else {
+                        to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
+                    }
                 }
                 // be.createdTimestamp = Some(Utc::now());
                 // be.lastUpdatedTimestamp = be.createdTimestamp.clone();
@@ -242,43 +265,6 @@ impl BlobEntry {
 }
 
 
-// impl add_blob_entries::BlobEntryCreateInput {
-//     pub fn new(
-//         entry: &BlobEntry,
-//         user_label: Option<String>,
-//         robot_label: Option<String>,
-//         session_label: Option<String>,
-//         variable_label: Option<String>,
-//         factor_label: Option<String>,
-//     ) -> Self { // -> add_blob_entries::BlobEntryCreateInput {
-//         // let blob_id = entry.blobId;
-//         // if let Some(bid) = entry.blobId {
-//         //     blob_id = bid;
-//         // }
-//         Self { // add_blob_entries::BlobEntryCreateInput {
-//             origin_id: entry.blobId.to_string(),
-//             blob_id: entry.blobId.to_string(),
-//             label: entry.label.to_string(),
-//             blobstore: Some(entry.blobstore.to_string()),
-//             origin: Some(entry.origin.to_string()),
-//             description: Some(entry.description.to_string()),
-//             mime_type: Some(entry.mimeType.to_string()),
-//             hash: Some(entry.hash.to_string()),
-//             metadata: Some(entry.metadata.to_string()),
-//             timestamp: Some(entry.timestamp.to_string()),
-//             nstime: None,
-//             type_: entry._type.to_string(),
-//             version: entry._version.to_string(),
-//             user_label,
-//             robot_label,
-//             session_label,
-//             variable_label,
-//             factor_label,
-//             parent: None,
-//         }
-//     }
-// }
-
 
 pub async fn add_entry_agent_async(
     nvacl: NavAbilityClient,
@@ -286,26 +272,34 @@ pub async fn add_entry_agent_async(
     entry: &BlobEntry,
 )  -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
     
-    // let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
-    //     entry,
-    //     None,
-    //     Some(agent_label.to_string()),
-    //     None,
-    //     None,
-    //     None
-    // );
-    // let mut blob_entries = Vec::new();
-    // blob_entries.push(gqlentry);
-
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}{}",&agent_label,&entry.label).to_string();
     let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
+
+    // let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+    //     org_id,
+    //     entry,
+    //     agent_label.to_string(),
+    // );
+    // let mut blob_entries = Vec::new();
+    // blob_entries.push(gqlentry);
+    // let variables = add_blob_entries::Variables {
+    //     blob_entries,
+    // };
+
     let variables = add_blob_entries::Variables {
+        agent_label: agent_label.to_string(),
         entry_id: entry_id.to_string(),
         entry_label: entry.label.to_string(),
         blob_id: entry.blobId.to_string(),
-        agent_label: agent_label.to_string(),
-        // blob_entries,
+        blobstore: Some(entry.blobstore.to_string()),
+        origin: Some(entry.origin.to_string()),
+        description: Some(entry.description.to_string()),
+        mime_type: Some(entry.mimeType.to_string()),
+        hash: entry.hash.to_string(),
+        size: entry.size,
+        // metadata: Some(entry.metadata.to_string()),
+        timestamp: Some(entry.timestamp.to_string()),
     };
 
     let request_body = AddBlobEntries::build_query(variables);
@@ -689,9 +683,9 @@ pub async fn create_upload_web(
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "tokio")]
 pub fn fetch_ur_list_tokio(
-    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    send_into: &mut mpsc::Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> { // -> Vec<get_robots::GetRobotsUsers> {
+) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -754,25 +748,6 @@ pub fn fetch_ur_list_blocking(
 
     Ok(())
 }
-
-
-// pub async fn add_blob_entries_async(
-//     nvacl: NavAbilityClient,
-// ) -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
-
-//     // let cupl = add_blob_entries::BlobEntryCreateInput {
-//     //     upload_id: upload_id.to_string(),
-//     //     parts
-//     // };
-
-//     // let variables = add_blob_entries::Variables {
-//     //     blobEntries: 
-//     // };
-
-//     // let request_body = CreateUpload::build_query(variables);
-
-//     todo!();
-// }
 
 
 pub async fn create_upload_async(
@@ -972,6 +947,149 @@ fn to_console_error(
     #[cfg(target_arch = "wasm32")]
     gloo_console::log!(&format!("ERROR NvaSDK.rs {}",&text));
 }
+
+
+// impl add_blob_entries::BlobEntryCreateInput {
+//     pub fn new(
+//         org_id: Uuid,
+//         entry: &BlobEntry,
+//         agent_label: String,
+//     ) -> Self {
+
+//         let name = format!("{}{}",&agent_label,&entry.label).to_string();
+//         let id = Uuid::new_v5(&org_id, name.as_bytes());
+
+//         let node = add_blob_entries::AgentWhere::new_agent(Some(agent_label.to_string()));
+
+//         let agent_connect_where = add_blob_entries::AgentConnectWhere {
+//             node: Box::new(node),
+//         };
+
+//         let agent = add_blob_entries::BlobEntryParentAgentFieldInput {
+//             create: None,
+//             connect_or_create: None,
+//             connect: Some(add_blob_entries::BlobEntryParentAgentConnectFieldInput {
+//                 connect: None,
+//                 where_: Some(agent_connect_where),
+//             })
+//         };
+
+//         let parent = add_blob_entries::BlobEntryParentCreateInput {
+//             agent: Some(agent),
+//             model: None,
+//             factorgraph: None,
+//             variable: None,
+//             factor: None
+//         };
+            
+
+//         Self {
+//             id: id.to_string(),
+//             origin_id: Some(entry.blobId.to_string()),
+//             blob_id: entry.blobId.to_string(),
+//             label: entry.label.to_string(),
+//             blobstore: Some(entry.blobstore.to_string()),
+//             origin: Some(entry.origin.to_string()),
+//             description: Some(entry.description.to_string()),
+//             mime_type: Some(entry.mimeType.to_string()),
+//             hash: Some(entry.hash.to_string()),
+//             size: entry.size,
+//             metadata: Some(entry.metadata.to_string()),
+//             timestamp: Some(entry.timestamp.to_string()),
+//             // type_: entry._type.to_string(),
+//             version: entry._version.to_string(),
+//             parent: Some(parent),
+//         }
+//     }
+// }
+// 
+// impl add_blob_entries::AgentWhere {
+//     pub fn new_agent(
+//         agent_label: Option<String>
+//     ) -> Self {
+//         Self {
+//             id: None,
+//             id_in: None,
+//             id_contains: None,
+//             id_starts_with: None,
+//             id_ends_with: None,
+//             org: Box::new(None),
+//             org_aggregate: Box::new(None),
+//             org_connection: Box::new(None),
+//             org_connection_not: Box::new(None),
+//             org_not: Box::new(None),
+//             tags: None,
+//             tags_includes: None,
+//             version_ends_with: None,
+//             version_starts_with: None,
+//             version: None,
+//             version_contains: None,
+//             version_in: None,
+//             and: Box::new(None),
+//             not: Box::new(None),
+//             or: Box::new(None),
+//             blob_entries_aggregate: Box::new(None),
+//             blob_entries_all: Box::new(None),
+//             blob_entries_connection_all: Box::new(None),
+//             blob_entries_connection_none: Box::new(None),
+//             blob_entries_connection_single: Box::new(None),
+//             blob_entries_connection_some: Box::new(None),
+//             blob_entries_none: Box::new(None),
+//             blob_entries_single: Box::new(None),
+//             blob_entries_some: Box::new(None),
+//             created_timestamp: None,
+//             created_timestamp_gt: None,
+//             created_timestamp_gte: None,
+//             created_timestamp_in: None,
+//             created_timestamp_lt: None,
+//             created_timestamp_lte: None,
+//             last_updated_timestamp: None,
+//             last_updated_timestamp_gt: None,
+//             last_updated_timestamp_gte: None,
+//             last_updated_timestamp_lt: None,
+//             last_updated_timestamp_lte: None,
+//             last_updated_timestamp_in: None,
+//             description: None,
+//             description_contains: None,
+//             description_ends_with: None,
+//             description_in: None,
+//             description_starts_with: None,
+//             fgs_aggregate: Box::new(None),
+//             fgs_all: Box::new(None),
+//             fgs_single: Box::new(None),
+//             fgs_connection_all: Box::new(None),
+//             fgs_connection_single: Box::new(None),
+//             fgs_connection_none: Box::new(None),
+//             fgs_connection_some: Box::new(None),
+//             fgs_none: Box::new(None),
+//             fgs_some: Box::new(None),
+//             label: agent_label,
+//             label_in: None,
+//             label_contains: None,
+//             label_starts_with: None,
+//             label_ends_with: None,
+//             metadata: None,
+//             metadata_in: None,
+//             models_aggregate: Box::new(None),
+//             models_all: Box::new(None),
+//             models_none: Box::new(None),
+//             models_some: Box::new(None),
+//             models_single: Box::new(None),
+//             models_connection_all: Box::new(None),
+//             models_connection_none: Box::new(None),
+//             models_connection_some: Box::new(None),
+//             models_connection_single: Box::new(None),
+//         }
+//     }
+// }
+
+
+
+
+
+
+
+
 
 #[cfg(test)]
 mod tests {
