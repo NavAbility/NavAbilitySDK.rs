@@ -95,6 +95,14 @@ pub struct AddBlobEntries;
 )]
 pub struct GetBlobEntry;
 
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/GetOrg.gql",
+    response_derives = "Debug"
+)]
+pub struct GetOrg;
+
 
 
 // #[derive(GraphQLQuery)]
