@@ -491,6 +491,47 @@ pub async fn fetch_robots_async(
 // ) -> Result<get_blob_entry::ResponseData, error?> {
 
 
+pub async fn fetch_org_id(
+    nvacl: NavAbilityClient,
+) -> Result<Response<get_org::ResponseData>, Box<dyn Error>> {
+    
+    let variables = get_org::Variables {};
+
+    let request_body = GetOrg::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+    
+    // are_there_errors(req_res).await
+    match req_res {
+        Err(re) => {
+            to_console_error(&format!("Failed to get NavAbility API response {}", re));
+            return Err(Box::new(re));
+        },
+        Ok(res) => {
+            let serde_res = res.json().await;
+            match serde_res {
+                Ok(response_body) => {
+                    // if response_body.errors.is_none() {
+                    //     to_console_debug(&"received and json deserialized gql");
+                    //     return Ok(response_body.data);
+                    // } else {
+                    //     to_console_error(&format!("create upload errored with message {:?}", &response_body.errors));
+                    //     return Err(Box::new(response_body.errors));
+                    // }
+                    return Ok(response_body)
+                },
+                Err(e) => {
+                    to_console_error(&format!("failed to unpack json from GQL API response: {:?}", &e));
+                    return Err(Box::new(e));
+                }
+            }
+        }
+    }
+}
+
 pub async fn fetch_blob_entry(
     nvacl: NavAbilityClient,
     id: Uuid
