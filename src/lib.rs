@@ -1,7 +1,9 @@
 
 
 use std::error::Error;
-use std::sync::mpsc;
+use std::sync::mpsc::{
+    Sender
+};
 use uuid::Uuid;
 use chrono::{self, Utc};
 
@@ -328,23 +330,30 @@ impl NavAbilityClient {
 
 // get_org::ResponseData
 pub fn send_query_result<T>(
-    send_into: std::sync::mpsc::Sender<Option<T>>,
+    send_into: Sender<T>,
     response_body: Result<Response<T>,Box<dyn Error>>,
 ) {
     match response_body {
         Ok(resbody) => {
             if resbody.errors.is_none() {
-                let _ = send_into.send(resbody.data);
+                match resbody.data {
+                    Some(data) => {
+                        let _ = send_into.send(data);
+                    }
+                    None => to_console_error(&"API query response data is none."),
+                }
             } else {
-                to_console_error(&format!("API query errored with message {:?}", &resbody.errors));
+                to_console_error(&format!("API query responed with error: {:?}", &resbody.errors));
                 // return Err(Box::new(response_body.errors));
             }
         }
         Err(e) => {
-            to_console_error(&format!("API query result failure {:?}",&e));
+            to_console_error(&format!("API query failure: {:?}",&e));
         }
     }
 }
+
+
 
 
 // async fn are_there_errors(
@@ -539,27 +548,19 @@ pub async fn fetch_org_id(
     .json(&request_body)
     .send().await;
     
-    // are_there_errors(req_res).await
     match req_res {
         Err(re) => {
-            to_console_error(&format!("Failed to get NavAbility API response {}", re));
+            to_console_error(&format!("API request error: {:?}", re));
             return Err(Box::new(re));
         },
         Ok(res) => {
             let serde_res = res.json().await;
             match serde_res {
                 Ok(response_body) => {
-                    // if response_body.errors.is_none() {
-                    //     to_console_debug(&"received and json deserialized gql");
-                    //     return Ok(response_body.data);
-                    // } else {
-                    //     to_console_error(&format!("create upload errored with message {:?}", &response_body.errors));
-                    //     return Err(Box::new(response_body.errors));
-                    // }
                     return Ok(response_body)
                 },
                 Err(e) => {
-                    to_console_error(&format!("failed to unpack json from GQL API response: {:?}", &e));
+                    to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
                     return Err(Box::new(e));
                 }
             }
@@ -617,39 +618,21 @@ pub async fn send_blob_entry(
     id: Uuid
 ) {
     let resp = fetch_blob_entry(nvacl, id).await;
-    // FIXME refactor to use send_query_result(.)
-    //     expected struct `Sender<std::option::Option<get_blob_entry::ResponseData>>`
-    //     found struct `Sender<get_blob_entry::ResponseData>`
-    // send_query_result::<get_blob_entry::ResponseData>(send_into, resp);
-    match resp {
-        Ok(resp_) => {
-            if resp_.errors.is_none() {
-                let entr = resp_.data.expect("was expecting data for gql get blob entry");
-                let label = entr.blob_entries[0].label.to_string();
-                let _ = send_into.send(entr);
-                to_console_debug(&format!(
-                    "after send_blob_entry gql response received and json deserialized {}",
-                    label
-                ));
-                // return Ok(response_body.data);
-            } else {
-                to_console_error(&format!("create upload errored with message {:?}", &resp_.errors));
-                // return Err(Box::new(response_body.errors));
-            }
-        }
-        Err(e) => {}
-    }
+    send_query_result::<get_blob_entry::ResponseData>(send_into, resp);
 }
 
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_context_web(
-    send_into: mpsc::Sender<Vec<get_urs::GetUrsOrgs>>, 
+    send_into: Sender<Vec<get_urs::GetUrsOrgs>>, 
     client: &NavAbilityClient,
     robot_label: String,
     session_label: String,
-) { // -> Vec<get_robots::GetRobotsUsers> {      
-    if let Ok(response_body) = fetch_urs_async(&client, robot_label, session_label).await {
+) { // -> Vec<get_robots::GetRobotsUsers> {
+    let result = fetch_urs_async(&client, robot_label, session_label).await;
+    // FIXME use send_query_result instead, refactor .orgs part
+    // send_query_result(send_into, result);
+    if let Ok(response_body) = result {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
@@ -673,9 +656,7 @@ pub async fn fetch_context_web(
             }
         }
     } else {
-        tracing::error!("NvaSDK.rs Unable to fetch list from client connection");
-        #[cfg(target_arch = "wasm32")]            
-        gloo_console::log!("NvaSDK.rs ", "Unable to fetch list from client connection");
+        to_console_error(&"Unable to fetch list from client connection");
     }
 
 }
@@ -684,10 +665,11 @@ pub async fn fetch_context_web(
 
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
-    send_into: mpsc::Sender<Vec<get_agents::GetAgentsAgents>>, 
+    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
     client: &NavAbilityClient
 ) { // -> Vec<get_robots::GetRobotsUsers> {      
-    if let Ok(response_body) = fetch_robots_async(&client).await {
+    let result = fetch_robots_async(&client).await;
+    if let Ok(response_body) = result {
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
@@ -712,58 +694,63 @@ pub async fn fetch_ur_list_web(
             }
         }
     } else {
-        tracing::error!("NvaSDK.rs Unable to fetch list from client connection");
-        #[cfg(target_arch = "wasm32")]            
-        gloo_console::log!("NvaSDK.rs ", "Unable to fetch list from client connection");
+        to_console_error("fetch_robots_async(&client).await");
     }
 
 }
 
 #[cfg(target_arch = "wasm32")]
 pub async fn create_upload_web(
-    send_into: mpsc::Sender<create_upload::ResponseData>, 
+    send_into: Sender<create_upload::ResponseData>, 
     client: &NavAbilityClient,
     name: &String,
     blob_size: i64,
     nparts: Option<i64>,
     blob_id: Option<Uuid>, // doenst work yet, leave None
-) { // -> Vec<get_robots::GetRobotsUsers> {      
-    if let Ok(response_body) = create_upload_async(
-            client.clone(), 
-            blob_id.expect("Must provide blob_id to create_upload_web"),
-            nparts,
-            // name.to_string(), 
-            // blob_size,
-    ).await {
-        let res_errs = response_body.errors;
-        match res_errs {
-            Some(ref err) => {
-                tracing::error!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs);
-                #[cfg(target_arch = "wasm32")]
-                gloo_console::log!(format!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs));
-            },
-            None => {
-                let res_data = response_body.data;
-                match res_data {
-                    None => {
-                        tracing::error!("NvaSDK.rs bad GQL response, see errors above");
-                        #[cfg(target_arch = "wasm32")]
-                        gloo_console::log!("NvaSDK.rs bad GQL response, see errors above");
-                    },
-                    Some(resdatau) => {
-                        if let Err(e) = send_into.send(resdatau) {
-                            tracing::error!("Error sending user robot list data: {}", e);
-                        };
-                        return ()
-                    }
-                }
-            }
-        }
-    } else {
-        tracing::error!("NvaSDK.rs Unable to fetch result from client connection");
-        #[cfg(target_arch = "wasm32")]            
-        gloo_console::log!("NvaSDK.rs ", "Unable to fetch result from client connection");
-    }
+) {
+    let result = create_upload_async(
+        client.clone(), 
+        blob_id.expect("Must provide blob_id to create_upload_web"),
+        nparts,
+    ).await;
+    send_query_result(send_into, result);
+
+    // if let Ok(response_body) = create_upload_async(
+    //         client.clone(), 
+    //         blob_id.expect("Must provide blob_id to create_upload_web"),
+    //         nparts,
+    //         // name.to_string(), 
+    //         // blob_size,
+    // ).await {
+    //     let res_errs = response_body.errors;
+    //     match res_errs {
+    //         Some(ref err) => {
+    //             tracing::error!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs);
+    //             #[cfg(target_arch = "wasm32")]
+    //             gloo_console::log!(format!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs));
+    //         },
+    //         None => {
+    //             let res_data = response_body.data;
+    //             match res_data {
+    //                 None => {
+    //                     tracing::error!("NvaSDK.rs bad GQL response, see errors above");
+    //                     #[cfg(target_arch = "wasm32")]
+    //                     gloo_console::log!("NvaSDK.rs bad GQL response, see errors above");
+    //                 },
+    //                 Some(resdatau) => {
+    //                     if let Err(e) = send_into.send(resdatau) {
+    //                         tracing::error!("Error sending user robot list data: {}", e);
+    //                     };
+    //                     return ()
+    //                 }
+    //             }
+    //         }
+    //     }
+    // } else {
+    //     tracing::error!("NvaSDK.rs Unable to fetch result from client connection");
+    //     #[cfg(target_arch = "wasm32")]            
+    //     gloo_console::log!("NvaSDK.rs ", "Unable to fetch result from client connection");
+    // }
 }
 
 
@@ -771,7 +758,7 @@ pub async fn create_upload_web(
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "tokio")]
 pub fn fetch_ur_list_tokio(
-    send_into: &mut mpsc::Sender<Vec<get_agents::GetAgentsAgents>>, 
+    send_into: &mut Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
 
@@ -822,7 +809,7 @@ pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseDat
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "blocking")]
 pub fn fetch_ur_list_blocking(
-    send_into: &mut mpsc::Sender<Vec<get_robots::GetRobotsUsers>>, 
+    send_into: &mut Sender<Vec<get_robots::GetRobotsUsers>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
 
@@ -929,13 +916,7 @@ pub async fn complete_upload_async(
 
     match req_res {
         Err(re) => {
-            tracing::error!("Failed to get NavAbility API response {}", re);
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_console::log!("NvaSDK.rs, post to url ", format!("{:?}", &nvacl.apiurl));
-                gloo_console::log!("NvaSDK.rs, client was ", format!("{:?}", &nvacl.client));
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
-            }
+            to_console_error(&format!("Failed to get NavAbility API response {:?}", re));
             return Err(Box::new(re));
         },
         Ok(res) => Ok(())
