@@ -15,7 +15,7 @@ log = "^0.4"
 uuid = { version ="^1.11", features = ["v4","v5"] }
 tracing = "^0.1"
 graphql_client = "^0.14"
-reqwest = {version = "^0.11", optional=true, features = [
+reqwest = {version = "^0.12", optional=true, features = [
   "json",
   # "multipart",
 ] }
