@@ -8,13 +8,13 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-serde = "1"
-serde_json = "1"
-chrono = "0.4"
+serde = "^1.0"
+serde_json = "^1.0"
+chrono = "^0.4"
 log = "^0.4"
-uuid = { version ="1", features = ["v4","v5"] }
-tracing = "0.1"
-graphql_client = "0.14"
+uuid = { version ="^1.11", features = ["v4","v5"] }
+tracing = "^0.1"
+graphql_client = "^0.14"
 reqwest = {version = "^0.11", optional=true, features = [
   "json",
   # "multipart",
@@ -24,11 +24,11 @@ reqwest = {version = "^0.11", optional=true, features = [
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1", default-features = false, optional=true}
+tokio = { version = "^1.40", default-features = false, optional=true}
 
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-gloo-console = { version = "0.3", optional = true }
+gloo-console = { version = "^0.3", optional = true }
 
 
 [features]
@@ -38,4 +38,9 @@ wasm = ["dep:reqwest"]
 wasm-dev = ["dep:gloo-console"]
 
 [profile.release]
-opt-level = 2 # fast and small wasm
+opt-level = 'z' # fast and small wasm
+lto = true
+
+# Optimize all dependencies even in debug builds:
+[profile.dev.package."*"]
+opt-level = 2
