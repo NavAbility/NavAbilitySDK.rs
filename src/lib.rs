@@ -274,6 +274,102 @@ impl BlobEntry {
 
 
 
+
+
+#[derive(Debug, Clone)]
+pub struct NavAbilityClient {
+    client: Client,
+    pub apiurl: String,
+    pub user_label: String,
+    pub nva_api_token: String,
+}
+impl NavAbilityClient {
+    pub fn new(apiurl: &String, user_label: &String, nva_api_token: &String) -> Self {
+        // FIXME good header.insert example: https://medium.com/@itsuki.enjoy/post-file-using-multipart-form-data-in-rust-5171ae57aeed
+        //   or https://users.rust-lang.org/t/how-to-upload-a-file-using-rust-or-some-library/45423/4
+        let client = Client::builder()
+        .user_agent("graphql-rust/0.12.0")
+        .default_headers(
+                // TODO use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
+                // TODO use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
+                std::iter::once((
+                    reqwest::header::AUTHORIZATION,
+                    reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
+                        .unwrap(),
+                )).chain(
+                    std::iter::once((
+                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                        reqwest::header::HeaderValue::from_str(&apiurl)
+                            .unwrap(),
+                    ))
+                ).chain(
+                    std::iter::once((
+                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                        reqwest::header::HeaderValue::from_str(&apiurl.replace("api.","app.d"))
+                            .unwrap(),
+                    ))
+                )
+                .collect(),
+            )
+            .build()
+            .expect("Failure to create client");
+
+        NavAbilityClient {
+            client,
+            apiurl: apiurl.to_string(),
+            user_label: user_label.to_string(),
+            nva_api_token: nva_api_token.to_string(),
+        }
+    }
+}
+
+
+
+
+// get_org::ResponseData
+pub fn send_query_result<T>(
+    send_into: std::sync::mpsc::Sender<Option<T>>,
+    response_body: Result<Response<T>,Box<dyn Error>>,
+) {
+    match response_body {
+        Ok(resbody) => {
+            if resbody.errors.is_none() {
+                let _ = send_into.send(resbody.data);
+            } else {
+                to_console_error(&format!("API query errored with message {:?}", &resbody.errors));
+                // return Err(Box::new(response_body.errors));
+            }
+        }
+        Err(e) => {
+            to_console_error(&format!("API query result failure {:?}",&e));
+        }
+    }
+}
+
+
+// async fn are_there_errors(
+//     serde_res: Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>>
+// ) -> Result<get_blob_entry::ResponseData, error?> {
+
+
+// likely in an earlier compile step via build.rs
+// Schema can maybe be generated with something like:
+// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema.json
+
+// async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
+//     // this is the important line
+//     let request_body = GetRobots::build_query(variables);
+
+//     let client = reqwest::Client::new();
+//     let mut res = client.post(url).json(&request_body).send().await?;
+//     let response_body: Response<get_robots::ResponseData> = res.json().await?;
+//     println!("{:#?}", response_body);
+//     Ok(())
+// }
+
+
+
+
 pub async fn add_entry_agent_async(
     nvacl: NavAbilityClient,
     agent_label: &String,
@@ -339,64 +435,6 @@ pub async fn add_entry_agent_async(
         }
     }
 }
-
-
-// likely in an earlier compile step via build.rs
-// Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema.json
-
-// async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
-//     // this is the important line
-//     let request_body = GetRobots::build_query(variables);
-
-//     let client = reqwest::Client::new();
-//     let mut res = client.post(url).json(&request_body).send().await?;
-//     let response_body: Response<get_robots::ResponseData> = res.json().await?;
-//     println!("{:#?}", response_body);
-//     Ok(())
-// }
-
-#[derive(Debug, Clone)]
-pub struct NavAbilityClient {
-    client: Client,
-    pub apiurl: String,
-    pub user_label: String,
-    pub nva_api_token: String,
-}
-impl NavAbilityClient {
-    pub fn new(apiurl: &String, user_label: &String, nva_api_token: &String) -> Self {
-        // FIXME good header.insert example: https://medium.com/@itsuki.enjoy/post-file-using-multipart-form-data-in-rust-5171ae57aeed
-        //   or https://users.rust-lang.org/t/how-to-upload-a-file-using-rust-or-some-library/45423/4
-        let client = Client::builder()
-        .user_agent("graphql-rust/0.12.0")
-        .default_headers(
-                // TODO use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
-                // TODO use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
-                std::iter::once((
-                    reqwest::header::AUTHORIZATION,
-                    reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
-                        .unwrap(),
-                )).chain(
-                    std::iter::once((
-                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                        reqwest::header::HeaderValue::from_str(&apiurl)
-                            .unwrap(),
-                    ))
-                )
-                .collect(),
-            )
-            .build()
-            .expect("Failure to create client");
-
-        NavAbilityClient {
-            client,
-            apiurl: apiurl.to_string(),
-            user_label: user_label.to_string(),
-            nva_api_token: nva_api_token.to_string(),
-        }
-    }
-}
-
 
 
 
@@ -486,9 +524,6 @@ pub async fn fetch_robots_async(
 }
 
 
-// async fn are_there_errors(
-//     serde_res: Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>>
-// ) -> Result<get_blob_entry::ResponseData, error?> {
 
 
 pub async fn fetch_org_id(
@@ -582,6 +617,10 @@ pub async fn send_blob_entry(
     id: Uuid
 ) {
     let resp = fetch_blob_entry(nvacl, id).await;
+    // FIXME refactor to use send_query_result(.)
+    //     expected struct `Sender<std::option::Option<get_blob_entry::ResponseData>>`
+    //     found struct `Sender<get_blob_entry::ResponseData>`
+    // send_query_result::<get_blob_entry::ResponseData>(send_into, resp);
     match resp {
         Ok(resp_) => {
             if resp_.errors.is_none() {
