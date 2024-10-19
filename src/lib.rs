@@ -1,14 +1,13 @@
 
 
 use std::error::Error;
-use std::sync::mpsc::{
-    Sender
-};
+use std::sync::mpsc::Sender;
 use uuid::Uuid;
 use chrono::{self, Utc};
 
 use graphql_client::{
-    GraphQLQuery, QueryBody, Response
+    GraphQLQuery, 
+    Response
 };
 
 #[cfg(feature="wasm")]
@@ -327,7 +326,6 @@ impl NavAbilityClient {
 
 
 
-
 // get_org::ResponseData
 pub fn send_query_result<T>(
     send_into: Sender<T>,
@@ -354,7 +352,35 @@ pub fn send_query_result<T>(
 }
 
 
+// missing traits for generic serde on query types
+// async fn post_query_serde<V,R>(
+//     nvacl: NavAbilityClient,
+//     request_body: QueryBody<V>,
+// ) -> Result<R,Box<dyn Error>> {
+//     let req_res = nvacl.client
+//     .post(&nvacl.apiurl)
+//     .json(&request_body)
+//     .send().await;
 
+//     match req_res {
+//         Err(re) => {
+//             to_console_error(&format!("API request error: {:?}", re));
+//             return Err(Box::new(re));
+//         },
+//         Ok(res) => {
+//             let serde_res = res.json().await;
+//             match serde_res {
+//                 Ok(response_body) => {
+//                     return Ok(response_body)
+//                 },
+//                 Err(e) => {
+//                     to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
+//                     return Err(Box::new(e));
+//                 }
+//             }
+//         }
+//     }
+// }
 
 // async fn are_there_errors(
 //     serde_res: Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>>
@@ -378,6 +404,76 @@ pub fn send_query_result<T>(
 
 
 
+// fn get_org_query() -> QueryBody<get_org::Variables> {
+//     let variables = get_org::Variables {};
+//     GetOrg::build_query(variables)
+// }
+// pub async fn post_query<V>(
+//     nvacl: NavAbilityClient,
+//     callback: fn() -> V
+// ) -> Result<Response<get_org::ResponseData>, Box<dyn Error>> {
+    
+//     let request_body = callback(); // get_org_query();
+
+//     let req_res = nvacl.client
+//     .post(&nvacl.apiurl)
+//     .json(&request_body)
+//     .send().await;
+    
+//     match req_res {
+//         Err(re) => {
+//             to_console_error(&format!("API request error: {:?}", re));
+//             return Err(Box::new(re));
+//         },
+//         Ok(res) => {
+//             let serde_res = res.json().await;
+//             match serde_res {
+//                 Ok(response_body) => {
+//                     return Ok(response_body)
+//                 },
+//                 Err(e) => {
+//                     to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
+//                     return Err(Box::new(e));
+//                 }
+//             }
+//         }
+//     }
+// }
+
+
+fn check_deser<T>(
+    serde_res: Result<Response<T>,reqwest::Error>
+) -> Result<Response<T>,Box<dyn Error>> {
+
+    if let Err(ref e) = serde_res {
+        to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
+    }
+
+    return Ok(serde_res?)
+}
+
+
+pub async fn fetch_org_id(
+    nvacl: NavAbilityClient,
+) -> Result<Response<get_org::ResponseData>, Box<dyn Error>> {
+    
+    let variables = get_org::Variables {};
+    let request_body = GetOrg::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<get_org::ResponseData>(
+        req_res?.json().await
+    )
+}
+
 
 pub async fn add_entry_agent_async(
     nvacl: NavAbilityClient,
@@ -388,17 +484,6 @@ pub async fn add_entry_agent_async(
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}{}",&agent_label,&entry.label).to_string();
     let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
-
-    // let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
-    //     org_id,
-    //     entry,
-    //     agent_label.to_string(),
-    // );
-    // let mut blob_entries = Vec::new();
-    // blob_entries.push(gqlentry);
-    // let variables = add_blob_entries::Variables {
-    //     blob_entries,
-    // };
 
     let variables = add_blob_entries::Variables {
         agent_label: agent_label.to_string(),
@@ -422,75 +507,50 @@ pub async fn add_entry_agent_async(
         .json(&request_body)
         .send().await;
 
-    match req_res {
-        Err(re) => {
-            to_console_error(&format!("add entry to agent failed to get API response {:?}",re));
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            // : Response<get_robots::ResponseData>
-            let serde_res = res.json().await;
-            // .expect("Failed to json unpack GQL response");
-            match serde_res {
-                Ok(response_body) => {
-                    to_console_debug("add_entry_agent gql received and json deserialized");
-                    return Ok(response_body);
-                },
-                Err(e) => {
-                    to_console_error(&format!("add to entry to agent failed to deser gql json {:?}",&e));
-                    return Err(Box::new(e));
-                }
-            }
-        }
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
     }
-}
 
+    return check_deser::<add_blob_entries::ResponseData>(
+        req_res?.json().await
+    )
+}
+// let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+//     org_id,
+//     entry,
+//     agent_label.to_string(),
+// );
+// let mut blob_entries = Vec::new();
+// blob_entries.push(gqlentry);
+// let variables = add_blob_entries::Variables {
+//     blob_entries,
+// };
 
 
 pub async fn fetch_urs_async(
     nvacl: &NavAbilityClient,
-    robot_label: String,
-    session_label: String,
+    // robot_label: String,
+    // session_label: String,
 ) -> Result<Response<get_urs::ResponseData>, Box<dyn Error>> {
 
-    let org_id = Uuid::parse_str(&nvacl.user_label.to_string())
-    .expect("Unable to parse org_id as uuid");
     let variables = get_urs::Variables {
-        org_id: org_id.to_string(),
-        // robot_label: robot_label.to_string(),
-        // session_label: session_label.to_string(),
+        org_id: nvacl.user_label.to_string(),
     };
 
     let request_body = GetURS::build_query(variables);
 
     let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
 
-    match req_res {
-        Err(re) => {
-            to_console_error(&format!("Failed API response {:?}",&re));
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            let serde_res = res.json().await;
-            match serde_res {
-                Ok(response_body) => {
-                    to_console_debug("GetURS gql received and json deserialized");
-                    return Ok(response_body);
-                },
-                Err(e) => {
-                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
-
-                    #[cfg(target_arch = "wasm32")]            
-                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
-
-                    return Err(Box::new(e));
-                }
-            }
-        }
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
     }
+
+    return check_deser::<get_urs::ResponseData>(
+        req_res?.json().await
+    )
 }
 
 
@@ -507,66 +567,20 @@ pub async fn fetch_robots_async(
     let request_body = GetAgents::build_query(variables);
 
     let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
-
-    match req_res {
-        Err(re) => {
-            to_console_error(&format!("fetch robots, no API response {:?}", re));
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            let serde_res = res.json().await;
-            match serde_res {
-                Ok(response_body) => {
-                    to_console_debug("org agents gql received and json deserialized");
-                    return Ok(response_body);
-                },
-                Err(e) => {
-                    to_console_error(&format!("failed to unpack json from GQL API response: {:?}", &e));
-                    return Err(Box::new(e));
-                }
-            }
-        }
-    }
-}
-
-
-
-
-pub async fn fetch_org_id(
-    nvacl: NavAbilityClient,
-) -> Result<Response<get_org::ResponseData>, Box<dyn Error>> {
-    
-    let variables = get_org::Variables {};
-
-    let request_body = GetOrg::build_query(variables);
-
-    let req_res = nvacl.client
     .post(&nvacl.apiurl)
     .json(&request_body)
     .send().await;
-    
-    match req_res {
-        Err(re) => {
-            to_console_error(&format!("API request error: {:?}", re));
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            let serde_res = res.json().await;
-            match serde_res {
-                Ok(response_body) => {
-                    return Ok(response_body)
-                },
-                Err(e) => {
-                    to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
-                    return Err(Box::new(e));
-                }
-            }
-        }
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
     }
+
+    return check_deser::<get_agents::ResponseData>(
+        req_res?.json().await
+    )
 }
+
+
 
 pub async fn fetch_blob_entry(
     nvacl: NavAbilityClient,
@@ -584,32 +598,13 @@ pub async fn fetch_blob_entry(
     .json(&request_body)
     .send().await;
 
-    // are_there_errors(req_res).await
-    match req_res {
-        Err(re) => {
-            to_console_error(&format!("Failed to get NavAbility API response {}", re));
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            let serde_res = res.json().await;
-            match serde_res {
-                Ok(response_body) => {
-                    // if response_body.errors.is_none() {
-                    //     to_console_debug(&"received and json deserialized gql");
-                    //     return Ok(response_body.data);
-                    // } else {
-                    //     to_console_error(&format!("create upload errored with message {:?}", &response_body.errors));
-                    //     return Err(Box::new(response_body.errors));
-                    // }
-                    return Ok(response_body)
-                },
-                Err(e) => {
-                    to_console_error(&format!("failed to unpack json from GQL API response: {:?}", &e));
-                    return Err(Box::new(e));
-                }
-            }
-        }
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
     }
+
+    return check_deser::<get_blob_entry::ResponseData>(
+        req_res?.json().await
+    )
 }
 
 pub async fn send_blob_entry(
@@ -629,7 +624,7 @@ pub async fn fetch_context_web(
     robot_label: String,
     session_label: String,
 ) { // -> Vec<get_robots::GetRobotsUsers> {
-    let result = fetch_urs_async(&client, robot_label, session_label).await;
+    let result = fetch_urs_async(&client).await;
     // FIXME use send_query_result instead, refactor .orgs part
     // send_query_result(send_into, result);
     if let Ok(response_body) = result {
@@ -714,43 +709,6 @@ pub async fn create_upload_web(
         nparts,
     ).await;
     send_query_result(send_into, result);
-
-    // if let Ok(response_body) = create_upload_async(
-    //         client.clone(), 
-    //         blob_id.expect("Must provide blob_id to create_upload_web"),
-    //         nparts,
-    //         // name.to_string(), 
-    //         // blob_size,
-    // ).await {
-    //     let res_errs = response_body.errors;
-    //     match res_errs {
-    //         Some(ref err) => {
-    //             tracing::error!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs);
-    //             #[cfg(target_arch = "wasm32")]
-    //             gloo_console::log!(format!("NvaSDK.rs create_upload_web has response errors {:?}",&res_errs));
-    //         },
-    //         None => {
-    //             let res_data = response_body.data;
-    //             match res_data {
-    //                 None => {
-    //                     tracing::error!("NvaSDK.rs bad GQL response, see errors above");
-    //                     #[cfg(target_arch = "wasm32")]
-    //                     gloo_console::log!("NvaSDK.rs bad GQL response, see errors above");
-    //                 },
-    //                 Some(resdatau) => {
-    //                     if let Err(e) = send_into.send(resdatau) {
-    //                         tracing::error!("Error sending user robot list data: {}", e);
-    //                     };
-    //                     return ()
-    //                 }
-    //             }
-    //         }
-    //     }
-    // } else {
-    //     tracing::error!("NvaSDK.rs Unable to fetch result from client connection");
-    //     #[cfg(target_arch = "wasm32")]            
-    //     gloo_console::log!("NvaSDK.rs ", "Unable to fetch result from client connection");
-    // }
 }
 
 
@@ -772,7 +730,7 @@ pub fn fetch_ur_list_tokio(
 
     match ur_list_data { // .data.expect("Problem with GQL response")
         Some(data) => {
-            let ur_list = data.users;
+            let ur_list = data.agents;
             if let Err(e) = send_into.send(ur_list) {
                 tracing::error!("Error sending user robot list data: {}", e);
             };
@@ -846,35 +804,13 @@ pub async fn create_upload_async(
         .json(&request_body)
         .send().await;
 
-    match req_res {
-        Err(re) => {
-            tracing::error!("Failed to get NavAbility API response {}", re);
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_console::log!("NvaSDK.rs, failed to get NavAbility API response", format!("{:?}", re));
-            }
-            return Err(Box::new(re));
-        },
-        Ok(res) => {
-            // : Response<get_robots::ResponseData>
-            let serde_res = res.json().await;
-            // .expect("Failed to json unpack GQL response");
-            match serde_res {
-                Ok(response_body) => {
-                    to_console_debug("create_upload_async gql received and json deserialized");
-                    return Ok(response_body);
-                },
-                Err(e) => {
-                    tracing::error!("failed to unpack json from GQL API response: {}", &e);
-
-                    #[cfg(target_arch = "wasm32")]            
-                    gloo_console::log!("NvaSDK.rs ", "failed to unpack json from GQL API response");
-
-                    return Err(Box::new(e));
-                }
-            }
-        }
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
     }
+
+    return check_deser::<create_upload::ResponseData>(
+        req_res?.json().await
+    )
 }
 
 
@@ -884,7 +820,7 @@ pub async fn complete_upload_async(
     upload_id: String,
     etags: Vec<String>,
     // completed_upload: complete_upload::CompletedUploadInput,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<Response<complete_upload::ResponseData>, Box<dyn Error>> {
     let mut parts: Vec<Option<complete_upload::CompletedUploadPartInput>> = vec![];
     for (i,et) in etags.iter().enumerate() {
         parts.push(
@@ -910,17 +846,17 @@ pub async fn complete_upload_async(
     let request_body = CompleteUpload::build_query(variables);
 
     let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
 
-    match req_res {
-        Err(re) => {
-            to_console_error(&format!("Failed to get NavAbility API response {:?}", re));
-            return Err(Box::new(re));
-        },
-        Ok(res) => Ok(())
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
     }
+
+    return check_deser::<complete_upload::ResponseData>(
+        req_res?.json().await
+    )
 }
 
 
@@ -983,8 +919,8 @@ impl<T> FileUploader<T> {
                 // gloo_console::log!(format!("Body:\n{}", response.text().await?));
                 return Ok(etag)
             } else {
-                gloo_console::log!(format!("Status: {}", &status_code));
-                return Err(format!("Upload file put returned Status: {}", status_code).into())
+                to_console_error(&format!("Status: {:?}", &status_code));
+                return Err(format!("Upload file put returned Status: {:?}", status_code).into())
             }
     }
 }
