@@ -1,0 +1,31 @@
+
+mutation AddAgent(
+  $agent_id: ID!
+  $label: String!
+  $version: String!
+  $org_id: ID!
+) {
+  addAgents(
+    input: {
+      id: $agent_id, 
+      label: $label, 
+      tags: "", 
+      _version: $version, 
+      org: {
+        connect: {
+          where: {
+            node: {
+              id: $org_id
+            }
+          }
+        }
+      }
+    }
+  ) {
+    agents {
+      id
+      createdTimestamp
+    }
+  }
+}
+
