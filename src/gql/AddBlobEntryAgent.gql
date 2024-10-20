@@ -6,6 +6,7 @@ mutation AddBlobEntries(
   $blobstore: String,
   $origin: String,
   $mime_type: String,
+  $metadata: String!,
   $description: String,
   $hash: String!,
   $size: Int
@@ -19,6 +20,7 @@ mutation AddBlobEntries(
       blobstore: $blobstore,
       origin: $origin,
       mimeType: $mime_type, 
+      metadata: $metadata,
       description: $description,
       hash: $hash,
       size: $size,
