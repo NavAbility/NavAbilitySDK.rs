@@ -488,6 +488,7 @@ pub async fn add_entry_agent_async(
     nvacl: NavAbilityClient,
     agent_label: &String,
     entry: &BlobEntry,
+    metadata: Option<String>,
 )  -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
     
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
@@ -501,8 +502,9 @@ pub async fn add_entry_agent_async(
         blob_id: entry.blobId.to_string(),
         blobstore: Some(entry.blobstore.to_string()),
         origin: Some(entry.origin.to_string()),
-        description: Some(entry.description.to_string()),
         mime_type: Some(entry.mimeType.to_string()),
+        metadata: metadata.unwrap_or("e30=".to_string()),
+        description: Some(entry.description.to_string()),
         hash: entry.hash.to_string(),
         size: entry.size,
         // metadata: Some(entry.metadata.to_string()),
