@@ -65,6 +65,15 @@ pub struct GetURS;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
+    query_path = "src/gql/CreateDownload.gql",
+    response_derives = "Debug"
+)]
+pub struct CreateDownload;
+
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
     query_path = "src/gql/blob_store.graphql",
     response_derives = "Debug"
 )]
@@ -783,6 +792,44 @@ pub fn fetch_ur_list_blocking(
 }
 
 
+pub async fn create_download_async(
+    nvacl: NavAbilityClient,
+    blob_id: Uuid,
+    store: Option<String>,
+) -> Result<Response<create_download::ResponseData>, Box<dyn Error>> {
+
+    let variables = create_download::Variables {
+        blob_id: blob_id.to_string(),
+        store: store.unwrap_or("default".to_string()).to_string(),
+    };
+
+    let request_body = CreateDownload::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<create_download::ResponseData>(
+        req_res?.json().await
+    )
+}
+
+pub async fn send_create_download(
+    send_into: Sender<create_download::ResponseData>,
+    nvacl: NavAbilityClient,
+    blob_id: Uuid,
+    store: Option<String>
+) {
+    let resp = create_download_async(nvacl,blob_id,store).await;
+    send_query_result::<create_download::ResponseData>(send_into,resp)
+}
+
+
 pub async fn create_upload_async(
     nvacl: NavAbilityClient,
     // label: String,
@@ -897,7 +944,14 @@ impl<T> FileUploader<T> {
     ) -> Result<String, Box<dyn std::error::Error>> {
 
         let mut headers = reqwest::header::HeaderMap::new();
-        headers.insert(reqwest::header::CONTENT_LENGTH, reqwest::header::HeaderValue::from(content.len()));
+        headers.insert(
+            reqwest::header::CONTENT_LENGTH, 
+            reqwest::header::HeaderValue::from(content.len())
+        );
+        // headers.insert(
+        //     reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        //     reqwest::header::HeaderValue::from("https://_mySendIP???_")
+        // );
         
         // PUT POST OPTIONS CORS: https://aws.amazon.com/blogs/media/deep-dive-into-cors-configs-on-aws-s3-how-to/
         let response = Client::new()
@@ -906,10 +960,9 @@ impl<T> FileUploader<T> {
             .body(content)
             .send()
             .await?;
-
+            
             // // .multipart(file)
             // gloo_console::log!(format!("inner header {:?}", &postclient));
-    
             
             let status_code = response.status();
             if reqwest::StatusCode::OK == status_code {
