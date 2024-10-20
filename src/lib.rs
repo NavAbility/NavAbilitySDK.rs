@@ -114,14 +114,13 @@ pub struct GetBlobEntry;
 pub struct GetOrg;
 
 
-
-// #[derive(GraphQLQuery)]
-// #[graphql(
-//     schema_path = "src/schema.json",
-//     query_path = "src/add_robots.graphql",
-//     response_derives = "Debug"
-// )]
-// pub struct AddRobot;
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/AddAgent.gql",
+    response_derives = "Debug"
+)]
+pub struct AddAgent;
 
 // unclear if manual definition of user robot session is necessary
 pub struct User {
@@ -391,63 +390,7 @@ pub fn send_query_result<T>(
 //     }
 // }
 
-// async fn are_there_errors(
-//     serde_res: Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>>
-// ) -> Result<get_blob_entry::ResponseData, error?> {
 
-
-// likely in an earlier compile step via build.rs
-// Schema can maybe be generated with something like:
-// graphql-client introspect-schema https://api.d1.navability.io/graphql --output=schema.json
-
-// async fn perform_my_query(url: &str, variables: get_robots::Variables) -> Result<(), Box<dyn Error>> {
-//     // this is the important line
-//     let request_body = GetRobots::build_query(variables);
-
-//     let client = reqwest::Client::new();
-//     let mut res = client.post(url).json(&request_body).send().await?;
-//     let response_body: Response<get_robots::ResponseData> = res.json().await?;
-//     println!("{:#?}", response_body);
-//     Ok(())
-// }
-
-
-
-// fn get_org_query() -> QueryBody<get_org::Variables> {
-//     let variables = get_org::Variables {};
-//     GetOrg::build_query(variables)
-// }
-// pub async fn post_query<V>(
-//     nvacl: NavAbilityClient,
-//     callback: fn() -> V
-// ) -> Result<Response<get_org::ResponseData>, Box<dyn Error>> {
-    
-//     let request_body = callback(); // get_org_query();
-
-//     let req_res = nvacl.client
-//     .post(&nvacl.apiurl)
-//     .json(&request_body)
-//     .send().await;
-    
-//     match req_res {
-//         Err(re) => {
-//             to_console_error(&format!("API request error: {:?}", re));
-//             return Err(Box::new(re));
-//         },
-//         Ok(res) => {
-//             let serde_res = res.json().await;
-//             match serde_res {
-//                 Ok(response_body) => {
-//                     return Ok(response_body)
-//                 },
-//                 Err(e) => {
-//                     to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
-//                     return Err(Box::new(e));
-//                 }
-//             }
-//         }
-//     }
-// }
 
 
 fn check_deser<T>(
@@ -483,6 +426,37 @@ pub async fn fetch_org_id(
     )
 }
 
+
+pub async fn add_agent_async(
+    nvacl: NavAbilityClient,
+    agent_label: &String,
+) -> Result<Response<add_agent::ResponseData>,Box<dyn Error>> {
+    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
+    let name = format!("{}",&agent_label).to_string();
+    let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
+
+    let variables = add_agent::Variables {
+        agent_id: agent_id.to_string(),
+        label: agent_label.to_string(),
+        version: "0.24".to_string(),
+        org_id: org_id.to_string(),
+    };
+
+    let request_body = AddAgent::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<add_agent::ResponseData>(
+        req_res?.json().await
+    )
+}
 
 pub async fn add_entry_agent_async(
     nvacl: NavAbilityClient,
