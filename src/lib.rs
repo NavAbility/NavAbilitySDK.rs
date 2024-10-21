@@ -38,7 +38,7 @@ fn type_of<T>(_: T) -> &'static str {
 type EmailAddress = String;
 type DateTime = String;
 type Metadata = String;
-type BigInt = i64;
+type BigInt = String;
 type B64JSON = String;
 type Latitude = f64;
 type Longitude = f64;
@@ -249,7 +249,7 @@ impl BlobEntry {
                     be.hash = hash.to_string();
                 }
                 if let Some(size) = &gety.size {
-                    be.size = Some(*size);
+                    be.size = Some((*size).parse::<i64>().unwrap());
                 }
                 if let Some(timestamp) = &gety.timestamp {
                     to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
@@ -355,7 +355,7 @@ pub fn send_query_result<T>(
             }
         }
         Err(e) => {
-            to_console_error(&format!("API query failure: {:?}",&e));
+            to_console_error(&format!("Earlier query handling failure, unable to send: {:?}",&e));
         }
     }
 }
@@ -399,7 +399,7 @@ fn check_deser<T>(
 ) -> Result<Response<T>,Box<dyn Error>> {
 
     if let Err(ref e) = serde_res {
-        to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
+        to_console_error(&format!("JSON unpack failure from possibly good API response: {:?}", &e));
     }
 
     return Ok(serde_res?)
@@ -470,6 +470,11 @@ pub async fn add_entry_agent_async(
     let name = format!("{}{}",&agent_label,&entry.label).to_string();
     let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
 
+    let mut size_s: Option<String> = None;
+    if let Some(sz) = entry.size {
+        size_s = Some(format!("{}",sz));
+    }
+
     let variables = add_blob_entries::Variables {
         agent_label: agent_label.to_string(),
         entry_id: entry_id.to_string(),
@@ -481,8 +486,7 @@ pub async fn add_entry_agent_async(
         metadata: metadata.unwrap_or("e30=".to_string()),
         description: Some(entry.description.to_string()),
         hash: entry.hash.to_string(),
-        size: entry.size,
-        // metadata: Some(entry.metadata.to_string()),
+        size: size_s,
         timestamp: Some(entry.timestamp.to_string()),
     };
 
