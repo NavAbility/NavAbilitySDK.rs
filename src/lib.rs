@@ -47,7 +47,7 @@ type UUID = String;
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/gql/robot_queries.graphql",
+    query_path = "src/gql/GetAgents.gql",
     response_derives = "Debug"
 )]
 pub struct GetAgents;
@@ -56,7 +56,7 @@ pub struct GetAgents;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/gql/user_robot_session.graphql",
+    query_path = "src/gql/GetURS.gql",
     response_derives = "Debug"
 )]
 pub struct GetURS;
@@ -74,7 +74,7 @@ pub struct CreateDownload;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/gql/blob_store.graphql",
+    query_path = "src/gql/CreateUpload.gql",
     response_derives = "Debug"
 )]
 pub struct CreateUpload;
@@ -100,7 +100,7 @@ pub struct AddBlobEntries;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/gql/blob_entry.graphql",
+    query_path = "src/gql/GetBlobEntry.gql",
     response_derives = "Debug"
 )]
 pub struct GetBlobEntry;

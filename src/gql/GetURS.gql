@@ -1,5 +1,4 @@
 
-
 fragment agent_fields on Agent {
   id
   label
@@ -14,11 +13,6 @@ fragment model_fields on Model {
   createdTimestamp
   lastUpdatedTimestamp
 }
-
-
-
-
-
 
 
 query GetURS($org_id: ID!) {

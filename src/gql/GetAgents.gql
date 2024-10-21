@@ -1,0 +1,23 @@
+
+query GetAgents(
+  $org_id: ID!
+) {
+  agents {
+    id
+    label
+    org(where: {id: $org_id}) {
+      id
+    }
+    blobEntries {
+      label
+      id
+      lastUpdatedTimestamp
+      createdTimestamp
+    }
+    createdTimestamp
+    models {
+      label
+      createdTimestamp
+    }
+  }
+}
