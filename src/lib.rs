@@ -214,6 +214,7 @@ impl BlobEntry {
         be.blobId = Uuid::new_v4();
         be.blobstore = "default".to_string();
         be.origin = "NvaSDK.rs".to_string();
+        be.metadata = "e30=".to_string();
         be.createdTimestamp = Some(Utc::now());
         be.lastUpdatedTimestamp = be.createdTimestamp.clone();
         be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
