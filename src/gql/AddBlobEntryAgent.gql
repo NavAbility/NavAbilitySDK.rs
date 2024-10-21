@@ -9,7 +9,7 @@ mutation AddBlobEntries(
   $metadata: String!,
   $description: String,
   $hash: String!,
-  $size: Int
+  $size: BigInt
   $timestamp: DateTime
 ) {
     addBlobEntries(
