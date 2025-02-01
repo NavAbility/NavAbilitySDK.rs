@@ -201,6 +201,7 @@ pub struct GetVariable;
     response_derives = "Debug"
 )]
 pub struct ListVariables;
+// Implicit ListWhere due to graphql-client limitation: https://github.com/graphql-rust/graphql-client/issues/508
 
 #[derive(GraphQLQuery)]
 #[graphql(

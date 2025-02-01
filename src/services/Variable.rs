@@ -1,22 +1,27 @@
 
 use crate::{
-    Utc,
-    Uuid,
-    Sender,
-    GraphQLQuery,
-    Response,
-    Error,
-    GetId,
-    VariableDFG,
-    PackedVariableNodeData,
-    get_variable,
-    GetVariable,
-    list_variables,
-    ListVariables,
     check_query_response_data,
-    to_console_debug,
-    to_console_error,
-    SDK_VERSION,
+    get_variable::{
+        self, 
+        ppe_fields
+    }, 
+    list_variables, 
+    parse_str_utc, 
+    to_console_debug, 
+    to_console_error, 
+    Error, 
+    GetId, 
+    GetVariable, 
+    GraphQLQuery,
+    ListVariables, 
+    MeanMaxPPE, 
+    PackedVariableNodeData, 
+    Response, 
+    Sender, 
+    Utc, 
+    Uuid, 
+    VariableDFG, 
+    SDK_VERSION
 };
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -28,12 +33,89 @@ use crate::{
 
 
 #[allow(non_snake_case)]
-impl VariableDFG<'_> {
+impl MeanMaxPPE {
+    pub fn new(
+        solveKey: &str,
+        suggested: Vec<f64>,
+        max: Vec<f64>,
+        mean: Vec<f64>,
+        _type: &str,
+        _version: &str,
+        createdTimestamp: Option<chrono::DateTime<Utc>>,
+        lastUpdatedTimestamp: Option<chrono::DateTime<Utc>>,
+    ) -> Self {
+        Self {
+            id: None,
+            solveKey: solveKey.to_owned(),
+            suggested,
+            max,
+            mean,
+            _type: _type.to_owned(),
+            _version: _version.to_owned(),
+            createdTimestamp,
+            lastUpdatedTimestamp,
+        }
+    }
+
+    pub fn from_gql(
+        ppe: &ppe_fields
+    ) -> Self {
+        let mut ppesugg = Vec::new();
+        if let Some(ps) = &ppe.suggested {
+            for p in ps.iter() {
+                if p.is_some() { ppesugg.push(p.unwrap().clone()); }
+            }
+        }
+        let mut ppemax = Vec::new();
+        if let Some(ps) = &ppe.max {
+            for p in ps.iter() {
+                if p.is_some() { ppemax.push(p.unwrap().clone()); }
+            }
+        }
+        let mut ppemean = Vec::new();
+        if let Some(ps) = &ppe.mean {
+            for p in ps.iter() {
+                if p.is_some() { ppemean.push(p.unwrap().clone()); }
+            }
+        }
+        let mut ppe_struct = MeanMaxPPE {
+            id: None,
+            solveKey: ppe.solve_key.clone(),
+            suggested: ppesugg,
+            max: ppemax,
+            mean: ppemean,
+            _type: ppe.type_.clone(),
+            _version: ppe.version.clone(),
+            createdTimestamp: None,
+            lastUpdatedTimestamp: None,
+        };
+        if let Ok(id) = Uuid::parse_str(
+            &ppe.id
+        ) {
+            ppe_struct.id = Some(id);
+        }
+        if let Ok(dt) = parse_str_utc(
+            ppe.created_timestamp.clone()
+        ) {
+            ppe_struct.createdTimestamp = Some(dt);
+        }
+        if let Ok(dt) = parse_str_utc(
+            ppe.last_updated_timestamp.clone()
+        ) {
+            ppe_struct.lastUpdatedTimestamp = Some(dt);
+        }
+        return ppe_struct;
+    }
+}
+
+
+#[allow(non_snake_case)]
+impl VariableDFG {
     pub fn new(
         label: &str,
         variableType: &str,
         timestamp: Option<chrono::DateTime<Utc>>,
-        nstime: Option<String>,
+        nstime: Option<usize>,
     ) -> Self {
         let _ts = timestamp.unwrap_or(Utc::now());
         Self {
@@ -41,7 +123,7 @@ impl VariableDFG<'_> {
             label: label.to_owned(),
             tags: Vec::new(),
             timestamp: _ts,
-            nstime: nstime.unwrap_or("".to_owned()),
+            nstime: nstime.unwrap_or(0),
             ppes: Vec::new(),
             blobEntries: Vec::new(),
             variableType: variableType.to_string(),
@@ -55,13 +137,56 @@ impl VariableDFG<'_> {
     pub fn from_gql(
         vgql: &get_variable::GetVariableVariables
     ) -> Self {
+        
+        let timestamp = if let Ok(dt) = parse_str_utc(
+            vgql.variable_summary_fields.timestamp.clone()
+        ) {
+            Some(dt)
+        } else {
+            None
+        };
+        let nstime = if let Ok(ns) = vgql.variable_summary_fields.nstime.parse::<usize>() {
+            Some(ns)
+        } else {
+            None
+        };
 
         let mut variable = Self::new(
             &vgql.variable_skeleton_fields.label.clone(),
             &vgql.variable_summary_fields.variable_type.clone(),
-            None,
-            None,
+            timestamp,
+            nstime,
         );
+
+        // mutate additional information that is available
+        if let Ok(id) = Uuid::parse_str(
+            &vgql.variable_skeleton_fields.id
+        ) {
+            variable.id = Some(id);
+        }
+        // label
+        let mut tags = Vec::new();
+        for tag in vgql.variable_skeleton_fields.tags.iter() {
+            if (&tag).is_some() {
+                tags.push(tag.as_ref().unwrap().clone());
+            }
+        }
+        variable.tags = tags;
+
+        variable._version = vgql.variable_summary_fields.version.clone();
+        variable.solvable = vgql.variable_full_fields.solvable as i32;
+        if let Some(md) = vgql.variable_full_fields.metadata.clone() {
+            variable.metadata = md;
+        }
+
+        let mut ppes = Vec::new();
+        for ppe in &vgql.variable_summary_fields.ppes {
+            ppes.push(MeanMaxPPE::from_gql(ppe));
+        }
+        variable.ppes = ppes;
+
+        // variable.blobEntries
+        // variable.solverData
 
         return variable
     }
@@ -98,6 +223,8 @@ impl PackedVariableNodeData {
 }
 
 
+// ===================== Queries =========================
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn fetch_variable(
     nvafg: &NavAbilityDFG<'_>,
@@ -131,12 +258,12 @@ pub async fn fetch_variable(
 
 #[cfg(feature = "tokio")]
 #[allow(non_snake_case)]
-pub fn getVariable<'a>(
+pub fn getVariable(
     nvafg: &NavAbilityDFG<'_>,
-    label: &'a str,
+    label: &str,
     fields_summary: bool,
     fields_full: bool,
-) -> Option<VariableDFG<'a>> {
+) -> Option<VariableDFG> {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

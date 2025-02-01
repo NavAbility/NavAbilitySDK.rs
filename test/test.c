@@ -103,6 +103,12 @@ int main(void) {
     free_NavAbilityClient(nvacl);
     free_cstr(api); // possibly redundant but doesn't hurt
 
+    printf("check for NullPtr arg handling\n");
+    get_apiurl(NULL);
+    listAgents(NULL); 
+    getVariable(NULL,"");
+
+    printf("All done.\n");
     return 0;
 }
 
