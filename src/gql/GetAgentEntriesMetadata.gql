@@ -1,0 +1,27 @@
+
+query GetAgentEntriesMetadata(
+  $org_id: ID!, 
+  $agent_label: String!, 
+  $mimeType_CONTAINS: String = ""
+) {
+  agents(
+    where: {
+      label_CONTAINS: $agent_label, 
+      org: {
+        id: $org_id
+      }
+    }
+  ) {
+    blobEntries(
+      where: {mimeType_CONTAINS: $mimeType_CONTAINS}
+    ) {
+      label
+      blobId
+      mimeType
+      metadata
+      createdTimestamp
+      lastUpdatedTimestamp
+    }
+    label
+  }
+}

@@ -1,0 +1,23 @@
+
+
+mutation CreateUpload(
+  $blobId: ID!, 
+  $parts: Int!
+) {
+  createUpload(
+    blobId: $blobId
+    parts: $parts
+    store: {
+      label: "default"
+    }
+  ) {
+    blobId
+    parts {
+      partNumber
+      url
+    }
+    uploadId
+  }
+}
+
+

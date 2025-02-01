@@ -1,0 +1,27 @@
+mutation AddModel(
+  $org_id: ID!
+  $model_id: ID!, 
+  $label: String!, 
+  $tags: [String!] = [], 
+) {
+  addModels(
+    input: {
+      id: $model_id, 
+      label: $label, 
+      tags: $tags, 
+      org: {
+        connect: {
+          where: {
+            node: {
+              id: $org_id
+            }
+          }
+        }
+      }
+    }
+  ) {
+    models {
+      id
+    }
+  }
+}

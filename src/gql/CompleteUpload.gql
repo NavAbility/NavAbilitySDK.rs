@@ -1,0 +1,38 @@
+
+mutation CompleteUpload (
+  $blobId: ID!, 
+  $completedUpload: CompletedUploadInput!,
+) {
+  completeUpload(
+    store: {
+      label: "default", 
+      type: NVA_CLOUD
+    },
+    blobId: $blobId
+    completedUpload: $completedUpload
+  )
+}
+
+# mutation completeUpload(
+#   $blobId: ID!, 
+#   $uploadId: ID!, 
+#   $eTag: String, 
+#   $store: BlobStoreInput = {
+#     label: "default", 
+#     type: NVA_CLOUD
+#   }
+#   ) {
+#   completeUpload (
+#     store: $store,
+#     blobId: $blobId,
+#     completedUpload: {
+#       uploadId: $uploadId,
+#       parts: [
+#         {
+#           partNumber: 1,
+#           eTag: $eTag
+#         }
+#       ]
+#     }
+#   )
+# }

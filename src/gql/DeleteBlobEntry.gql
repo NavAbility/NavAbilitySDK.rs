@@ -1,0 +1,12 @@
+mutation DeleteBlobEntry(
+  $id: ID!
+) {
+  deleteBlobEntries(
+    where: {
+      id: $id
+    }
+  ) {
+    nodesDeleted
+    relationshipsDeleted
+  }
+}

@@ -1,0 +1,22 @@
+query ListModelsGraphs(
+  $label_CONTAINS: String = ""
+) {
+  models(
+    where: {
+      label_CONTAINS: $label_CONTAINS
+    }
+  ) {
+    id
+    label
+    lastUpdatedTimestamp
+    tags
+    fgs {
+      id
+      label
+      lastUpdatedTimestamp
+      numFactors
+      numVariables
+      solveKeys
+    }
+  }
+}

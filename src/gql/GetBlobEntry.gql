@@ -1,0 +1,48 @@
+
+fragment entry_fields on BlobEntry {
+  id
+  blobId
+  originId
+  label
+  blobstore
+  hash
+  origin
+  size
+  description
+  mimeType
+  metadata
+  timestamp
+  createdTimestamp
+  lastUpdatedTimestamp
+  _version
+  _type
+}
+
+
+query GetBlobEntry(
+  $entry_id: ID!
+) {
+  blobEntries(
+    where: {
+      id: $entry_id
+    }
+  ) {
+    ...entry_fields
+  }
+}
+
+# BlobEntryCreateInput
+
+# Had difficulty with auto-gen BlobEntryCreateInput.parent
+# mutation AddBlobEntries(
+#   $blob_entries: [BlobEntryCreateInput!]!
+# ) {
+#   addBlobEntries(
+#     input: $blob_entries
+#   ) {
+#     blobEntries {
+#       ...entry_fields
+#     }
+#   }
+# }
+

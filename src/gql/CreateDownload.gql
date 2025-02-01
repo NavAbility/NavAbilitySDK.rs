@@ -1,0 +1,11 @@
+mutation CreateDownload(
+  $store: String!, 
+  $blobId: ID!
+) {
+  createDownload(
+    blobId: $blobId, 
+    store: {
+      label: $store
+    }
+  )
+}

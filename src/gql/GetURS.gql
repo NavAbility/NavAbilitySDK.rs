@@ -1,0 +1,27 @@
+
+fragment agent_fields on Agent {
+  id
+  label
+  _version
+  createdTimestamp
+  lastUpdatedTimestamp
+}
+
+fragment model_fields on Model {
+  id
+  label
+  createdTimestamp
+  lastUpdatedTimestamp
+}
+
+
+query GetURS($org_id: ID!) {
+  orgs(where: {id: $org_id}) {
+    agents {
+      ...agent_fields
+      models {
+        ...model_fields
+      }
+    }
+  }
+}

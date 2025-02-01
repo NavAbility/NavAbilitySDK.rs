@@ -1,0 +1,126 @@
+
+fragment variable_skeleton_fields on Variable {
+    id
+    label
+    tags
+}
+
+
+fragment ppe_fields on PPE {
+    # Note this must be the same order as MeanMaxPPE otherwise JSON3 will fail.
+    id
+    solveKey
+    suggested
+    max
+    mean
+    _type
+    _version
+    createdTimestamp
+    lastUpdatedTimestamp
+}
+
+
+fragment blobEntry_fields on BlobEntry {
+    id
+    blobId
+    originId
+    label
+    blobstore
+    hash
+    origin
+    size
+    description
+    mimeType
+    metadata
+    timestamp
+    createdTimestamp
+    lastUpdatedTimestamp
+    _version
+}
+
+
+## already defined via earlier call
+# fragment blobEntry_fields on BlobEntry {
+#     id
+#     blobId
+#     originId
+#     label
+#     blobstore
+#     hash
+#     origin
+#     size
+#     description
+#     mimeType
+#     metadata
+#     timestamp
+#     createdTimestamp
+#     lastUpdatedTimestamp
+#     _version
+# }
+
+
+fragment variable_summary_fields on Variable {
+    timestamp
+    nstime
+    ppes {
+        ...ppe_fields
+    }
+    blobEntries {
+        ...blobEntry_fields
+    }
+    variableType
+    _version
+}
+
+
+#TODO looks like $(GQL_FRAGMENT_VARIABLES_SKELETON) should be moved to GQL_FRAGMENT_VARIABLES_SUMMARY
+
+fragment solverdata_fields on SolverData {
+    # Note this must be the same order as PackedVariableNodeData otherwise JSON3 will fail.
+    id
+    vecval
+    dimval
+    vecbw
+    dimbw
+    BayesNetOutVertIDs
+    dimIDs
+    dims
+    eliminated
+    BayesNetVertID
+    separator
+    variableType
+    initialized
+    infoPerCoord
+    ismargin
+    dontmargin
+    solveInProgress
+    solvedCount
+    solveKey
+    covar
+    _version  
+}
+
+
+fragment variable_full_fields on Variable {
+    metadata
+    solvable
+    solverData
+    {
+        ...solverdata_fields
+    }
+}
+
+
+# Variables 
+
+query GetVariable(
+    $varId: ID!
+    $fields_summary: Boolean! = true
+    $fields_full: Boolean! = true
+) {
+    variables(where: { id: $varId }) {
+        ...variable_skeleton_fields
+        ...variable_summary_fields @include(if: $fields_summary)
+        ...variable_full_fields @include(if: $fields_full)
+    }
+}

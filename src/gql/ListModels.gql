@@ -1,0 +1,14 @@
+query ListModels(
+  $label_CONTAINS: String = ""
+) {
+  models(
+    where: {
+      label_CONTAINS: $label_CONTAINS
+    }
+  ) {
+    id
+    label
+    lastUpdatedTimestamp
+    tags
+  }
+}

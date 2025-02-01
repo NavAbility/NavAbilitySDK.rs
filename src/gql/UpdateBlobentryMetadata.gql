@@ -1,0 +1,14 @@
+mutation UpdateBlobentryMetadata(
+  $id: ID!,
+  $metadata: String!
+) {
+  updateBlobEntries(
+    where: {id: $id}, 
+    update: {metadata: $metadata}
+  ) {
+    blobEntries {
+      id
+      lastUpdatedTimestamp
+    }
+  }
+}

@@ -1,0 +1,9 @@
+query ListVariables(
+  $fgId: ID!, 
+  $varwhere: ListWhere = {}
+) {
+  listVariables(
+    fgId: $fgId, 
+    where: $varwhere
+  )
+}
