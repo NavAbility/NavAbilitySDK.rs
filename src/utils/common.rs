@@ -1,20 +1,39 @@
 
-use graphql_client::GraphQLQuery;
+/// Utility functions and common tools for the NavAbility SDK.
+///
+/// This module provides various utility functions and common tools used throughout the NavAbility SDK,
+/// including functions for type introspection, string parsing, console logging, and handling GraphQL query responses.
 
+// use graphql_client::GraphQLQuery;
 use crate::{
-    // Uuid,
-    // Utc,
     Error, 
-    Sender,
-    Response,
+    Sender, 
+    Response
 };
-
 use std::fmt;
 
+/// Returns the type name of a given value.
+///
+/// # Arguments
+///
+/// * `_: T` - A value of any type.
+///
+/// # Returns
+///
+/// * `&'static str` - The name of the type of the given value.
 pub fn type_of<T>(_: T) -> &'static str {
     std::any::type_name::<T>()
 }
 
+/// Parses a string into a `chrono::DateTime<Utc>` object.
+///
+/// # Arguments
+///
+/// * `text` - A string representing a date and time in UTC.
+///
+/// # Returns
+///
+/// * `Result<chrono::DateTime<chrono::Utc>, chrono::ParseError>` - A `Result` containing the parsed `DateTime` object or a `ParseError`.
 pub fn parse_str_utc(
     text: String
 ) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
@@ -33,7 +52,11 @@ pub fn parse_str_utc(
     }
 }
 
-
+/// Logs a debug message to the console.
+///
+/// # Arguments
+///
+/// * `text` - A string slice containing the debug message.
 pub fn to_console_debug(
     text: &str
 ) {
@@ -44,6 +67,11 @@ pub fn to_console_debug(
     gloo_console::log!(text.to_string());
 }
 
+/// Logs an error message to the console.
+///
+/// # Arguments
+///
+/// * `text` - A string slice containing the error message.
 pub fn to_console_error(
     text: &str
 ) {
@@ -85,6 +113,15 @@ impl fmt::Display for GQLResponseErrors {
 impl Error for GQLResponseErrors {}
 
 
+/// Checks the response data of a GraphQL query.
+///
+/// # Arguments
+///
+/// * `response_body` - A `Result` containing the response body of the GraphQL query.
+///
+/// # Returns
+///
+/// * `Result<T, Box<dyn Error>>` - A `Result` containing the data of the response or an error.
 pub fn check_query_response_data<T>(
     response_body: Result<Response<T>,Box<dyn Error>>,
 ) -> Result<T,Box<dyn Error>> {
@@ -119,7 +156,12 @@ pub fn check_query_response_data<T>(
     }
 }
 
-// get_org::ResponseData
+/// Sends the result of a GraphQL query to a given sender.
+///
+/// # Arguments
+///
+/// * `send_into` - A sender to which the query result will be sent.
+/// * `response_body` - A `Result` containing the response body of the GraphQL query.
 pub fn send_query_result<T>(
     send_into: Sender<T>,
     response_body: Result<Response<T>,Box<dyn Error>>,
@@ -132,28 +174,17 @@ pub fn send_query_result<T>(
             // suppress panic
         }
     }
-    // match response_body {
-    //     Ok(resbody) => {
-    //         if resbody.errors.is_none() {
-    //             match resbody.data {
-    //                 Some(data) => {
-    //                     let _ = send_into.send(data);
-    //                 }
-    //                 None => to_console_error(&"API query response data is none."),
-    //             }
-    //         } else {
-    //             to_console_error(&format!("API query responed with error: {:?}", &resbody.errors));
-    //             // return Err(Box::new(response_body.errors));
-    //         }
-    //     }
-    //     Err(e) => {
-    //         to_console_error(&format!("Earlier query handling failure, unable to send: {:?}",&e));
-    //     }
-    // }
 }
 
-
-
+/// Checks the deserialization result of a GraphQL query response.
+///
+/// # Arguments
+///
+/// * `serde_res` - A `Result` containing the deserialization result of the response.
+///
+/// # Returns
+///
+/// * `Result<Response<T>, Box<dyn Error>>` - A `Result` containing the deserialized response or an error.
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub fn check_deser<T>(
     serde_res: Result<Response<T>,reqwest::Error>
