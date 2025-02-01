@@ -1,23 +1,6 @@
 
 use crate::{
-    Utc,
-    Uuid,
-    GraphQLQuery,
-    Response,
-    Error,
-    SDK_VERSION,
-    to_console_debug,
-    to_console_error,
-    check_deser,
-    NavAbilityClient,
-    BlobEntry,
-    GetBlobEntry,
-    get_blob_entry,
-    DeleteBlobEntry,
-    delete_blob_entry,
-    UpdateBlobentryMetadata,
-    update_blobentry_metadata,
-    send_query_result,
+    check_deser, delete_blob_entry, get_blob_entry, parse_str_utc, send_query_result, to_console_debug, to_console_error, update_blobentry_metadata, BlobEntry, DeleteBlobEntry, Error, GetBlobEntry, GraphQLQuery, NavAbilityClient, Response, UpdateBlobentryMetadata, Utc, Uuid, SDK_VERSION
 };
 
 
@@ -35,88 +18,90 @@ impl BlobEntry {
         return be
     }
 
+    pub fn from_gql(
+        gqle: get_blob_entry::ResponseData
+    ) -> Self {
+        let gety = &gqle.blob_entries[0];
+        let mut be = BlobEntry::default();
+        be.id = Some(Uuid::parse_str(&gety.id).expect("failed to parse entry id to uuid"));
+        be.blobId = Uuid::parse_str(&gety.blob_id).expect("failed to parse entry blob_id to uuid");
+        be.label = gety.label.to_string();
+        if let Some(blobstore) = &gety.blobstore {
+            be.blobstore = blobstore.to_string();
+        }
+        if let Some(origin) = &gety.origin {
+            be.origin = origin.to_string();
+        }
+        if let Some(mime) = &gety.mime_type {
+            be.mimeType = mime.to_string();
+        }
+        if let Some(description) = &gety.description {
+            be.description = description.to_string();
+        }
+        if let Some(hash) = &gety.hash {
+            be.hash = hash.to_string();
+        }
+        if let Some(metadata) = &gety.metadata {
+            be.metadata = metadata.to_string();
+        }
+        if let Some(size) = &gety.size {
+            be.size = Some((*size).parse::<i64>().unwrap());
+        }
+        if let Some(timestamp) = &gety.timestamp {
+            // 2024-09-16T16:51:20.555Z
+            if let Ok(tms) = chrono::DateTime::parse_from_str(
+                &timestamp
+                    .replace("Z"," +00")
+                    .replace(" UTC", " +00"), 
+                "%Y-%m-%dT%H:%M:%S%.f %#z"
+            ) {
+                be.timestamp = tms.to_utc();
+            } else {
+                to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
+            }
+        }
+        {
+            let timestamp = &gety.created_timestamp;
+            // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
+            // 2024-09-16T16:51:20.555Z
+            if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                be.createdTimestamp = Some(tms.to_utc());
+            } else {
+                to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
+            }
+        }
+        {
+            let timestamp = &gety.last_updated_timestamp;
+            // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
+            // 2024-09-16T16:51:20.555Z
+            if let Ok(tms) = chrono::DateTime::parse_from_str(
+                &timestamp
+                    .replace("Z"," +00")
+                    .replace(" UTC", " +00"), 
+                "%Y-%m-%dT%H:%M:%S%.f %#z"
+            ) {
+                be.lastUpdatedTimestamp = Some(tms.to_utc());
+            } else {
+                to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
+            }
+        }
+        if let Some(_type) = &gety.type_ {
+            be._type = _type.to_string();
+        }
+        be._version = gety.version.to_string();
+
+        return be;
+    }
+
     pub fn try_from_receiver(
         rx: &std::sync::mpsc::Receiver<get_blob_entry::ResponseData>
     ) -> Option<Self> {
         
         match rx.try_recv() {
             Ok(gqle) => {
-                let gety = &gqle.blob_entries[0];
-                let mut be = BlobEntry::default();
-                be.id = Some(Uuid::parse_str(&gety.id).expect("failed to parse entry id to uuid"));
-                be.blobId = Uuid::parse_str(&gety.blob_id).expect("failed to parse entry blob_id to uuid");
-                be.label = gety.label.to_string();
-                if let Some(blobstore) = &gety.blobstore {
-                    be.blobstore = blobstore.to_string();
-                }
-                if let Some(origin) = &gety.origin {
-                    be.origin = origin.to_string();
-                }
-                if let Some(mime) = &gety.mime_type {
-                    be.mimeType = mime.to_string();
-                }
-                if let Some(description) = &gety.description {
-                    be.description = description.to_string();
-                }
-                if let Some(hash) = &gety.hash {
-                    be.hash = hash.to_string();
-                }
-                if let Some(metadata) = &gety.metadata {
-                    be.metadata = metadata.to_string();
-                }
-                if let Some(size) = &gety.size {
-                    be.size = Some((*size).parse::<i64>().unwrap());
-                }
-                if let Some(timestamp) = &gety.timestamp {
-                    // 2024-09-16T16:51:20.555Z
-                    if let Ok(tms) = chrono::DateTime::parse_from_str(
-                        &timestamp
-                            .replace("Z"," +00")
-                            .replace(" UTC", " +00"), 
-                        "%Y-%m-%dT%H:%M:%S%.f %#z"
-                    ) {
-                        be.timestamp = tms.to_utc();
-                    } else {
-                        to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
-                    }
-                }
-                {
-                    let timestamp = &gety.created_timestamp;
-                    // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
-                    // 2024-09-16T16:51:20.555Z
-                    if let Ok(tms) = chrono::DateTime::parse_from_str(
-                        &timestamp
-                            .replace("Z"," +00")
-                            .replace(" UTC", " +00"), 
-                        "%Y-%m-%dT%H:%M:%S%.f %#z"
-                    ) {
-                        be.createdTimestamp = Some(tms.to_utc());
-                    } else {
-                        to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
-                    }
-                }
-                {
-                    let timestamp = &gety.last_updated_timestamp;
-                    // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
-                    // 2024-09-16T16:51:20.555Z
-                    if let Ok(tms) = chrono::DateTime::parse_from_str(
-                        &timestamp
-                            .replace("Z"," +00")
-                            .replace(" UTC", " +00"), 
-                        "%Y-%m-%dT%H:%M:%S%.f %#z"
-                    ) {
-                        be.lastUpdatedTimestamp = Some(tms.to_utc());
-                    } else {
-                        to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
-                    }
-                }
-                if let Some(_type) = &gety.type_ {
-                    be._type = _type.to_string();
-                }
-                be._version = gety.version.to_string();
-                return Some(be)
+                return Some(Self::from_gql(gqle));
             }
-            Err(e) => {
+            Err(_e) => {
                 // to_console_debug(&"BlobEntry::try_from_receive nothing in channel");
             }
         }
