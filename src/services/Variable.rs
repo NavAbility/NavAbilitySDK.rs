@@ -137,7 +137,6 @@ impl VariableDFG {
     pub fn from_gql(
         vgql: &get_variable::GetVariableVariables
     ) -> Self {
-
         
         let timestamp = if let Ok(dt) = parse_str_utc(
             vgql.variable_summary_fields.timestamp.clone()
@@ -185,6 +184,7 @@ impl VariableDFG {
             ppes.push(MeanMaxPPE::from_gql(ppe));
         }
         variable.ppes = ppes;
+
         // variable.blobEntries
         // variable.solverData
 

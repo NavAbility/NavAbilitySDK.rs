@@ -1,5 +1,5 @@
 
-fragment entry_fields on BlobEntry {
+fragment blobEntry_fields on BlobEntry {
   id
   blobId
   originId
@@ -27,7 +27,7 @@ query GetBlobEntry(
       id: $entry_id
     }
   ) {
-    ...entry_fields
+    ...blobEntry_fields
   }
 }
 
@@ -41,7 +41,7 @@ query GetBlobEntry(
 #     input: $blob_entries
 #   ) {
 #     blobEntries {
-#       ...entry_fields
+#       ...blobEntry_fields
 #     }
 #   }
 # }

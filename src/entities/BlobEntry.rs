@@ -1,7 +1,6 @@
 
 use crate::{
-    Uuid,
-    Utc,
+    get_blob_entry, Utc, Uuid
 };
 
 
@@ -48,4 +47,8 @@ pub struct BlobEntry {
     pub _type: String,
     /// Type version of this BlobEntry. Consider upgrading to `::VersionNumber`.
     pub _version: String,
+}
+
+pub trait SameBlobEntryFields {
+    fn to_gql_blobentry(self) -> get_blob_entry::blobEntry_fields;
 }
