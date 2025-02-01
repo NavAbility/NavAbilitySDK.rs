@@ -1,6 +1,10 @@
 
+
 use crate::{
-    get_blob_entry, Utc, Uuid
+    get_blob_entry, Utc, Uuid, parse_str_utc,
+};
+use chrono::{
+    ParseError,
 };
 
 
@@ -49,6 +53,122 @@ pub struct BlobEntry {
     pub _version: String,
 }
 
+pub trait BlobEntryFieldsAccessors {
+    fn id(&self) -> Option<Uuid>;
+    fn blobId(&self) -> Uuid;
+    fn originId(&self) -> Option<Uuid>;
+    fn label(&self) -> String;
+    fn blobstore(&self) -> String;
+    fn hash(&self) -> String;
+    fn origin(&self) -> String;
+    fn size(&self) -> Option<i64>;
+    fn description(&self) -> String;
+    fn mimeType(&self) -> String;
+    fn metadata(&self) -> String;
+    fn timestamp(&self) -> Result<chrono::DateTime<Utc>, ParseError>;
+    fn createdTimestamp(&self) -> Option<chrono::DateTime<Utc>>;
+    fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>>;
+    fn _type(&self) -> String;
+    fn _version(&self) -> String;
+}
+
+// helper macro to avoid repetition of "basic" impl Coordinates
+#[macro_export]
+macro_rules! BlobEntry_accessors { 
+    ($T:ident) => {
+        impl BlobEntryFieldsAccessors for $T {
+            fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse entry id to uuid")) }
+            
+            fn blobId(&self) -> Uuid { Uuid::parse_str(&self.blob_id).expect("failed to parse entry blob_id to uuid") }
+            
+            fn originId(&self) -> Option<Uuid> {
+                if self.origin_id.is_some() {
+                    return Some(Uuid::parse_str(&self.origin_id.clone().unwrap()).expect("failed to parse entry origin_id to uuid"));
+                } else {
+                    return None;
+                }
+            }
+            
+            fn label(&self) -> String { self.label.to_string() }
+            
+            fn blobstore(&self) -> String {
+                if let Some(blobstore) = &self.blobstore {
+                    return blobstore.to_string();
+                } else {
+                    return "default".to_string();
+                }
+            }
+            
+            fn hash(&self) -> String { 
+                self.hash.clone().unwrap_or("".to_owned()).to_string() 
+            }
+
+            fn origin(&self) -> String { 
+                self.origin.clone().unwrap_or("".to_owned()).to_string() 
+            }
+
+            fn size(&self) -> Option<i64> {
+                if let Some(sz) = &self.size {
+                    return Some(sz.parse::<i64>().unwrap());
+                } else {
+                    return None;
+                }
+            }
+
+            fn description(&self) -> String { 
+                return self.description.clone().unwrap_or("".to_owned()).to_string();
+            }
+
+            fn mimeType(&self) -> String { 
+                return self.mime_type.clone().unwrap_or("".to_owned()).to_string();
+            }
+
+            fn metadata(&self) -> String { 
+                return self.metadata.clone().unwrap_or("".to_owned()).to_string();
+            }
+
+            fn timestamp(&self) -> Result<chrono::DateTime<Utc>, ParseError> {
+                return parse_str_utc(self.timestamp.clone().unwrap_or("".to_owned()));
+            }
+
+            fn createdTimestamp(&self) -> Option<chrono::DateTime<Utc>> {
+                let timestamp = &self.created_timestamp;
+                // 2024-09-16T16:51:20.555Z
+                if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                    return Some(tms);
+                } else {
+                    let errm = format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp);
+                    to_console_error(&errm);
+                }
+                return None;
+            }
+
+            fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>> {
+                let timestamp = &self.last_updated_timestamp;
+                // 2024-09-16T16:51:20.555Z
+                if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                    return Some(tms);
+                } else {
+                    let errm = format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp);
+                    to_console_error(&errm);
+                }
+                return None;
+            }
+
+            fn _type(&self) -> String { 
+                return self.type_.clone().unwrap_or("".to_owned()).to_string();
+            }
+
+            fn _version(&self) -> String { 
+                return self.version.to_string();
+            }
+        }
+    }
+}
+
+
+
 pub trait SameBlobEntryFields {
     fn to_gql_blobentry(self) -> get_blob_entry::blobEntry_fields;
 }
+

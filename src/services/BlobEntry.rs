@@ -12,8 +12,12 @@ use crate::{
     UpdateBlobentryMetadata, 
     Utc, 
     Uuid, 
-    SDK_VERSION
+    SDK_VERSION,
+    chrono::ParseError,
 };
+
+#[macro_use]
+use crate::BlobEntryFieldsAccessors;
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
@@ -26,6 +30,20 @@ use crate::{
     GraphQLQuery, 
     NavAbilityClient,
 };
+
+use crate::BlobEntry_accessors;
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use get_blob_entry::blobEntry_fields as GB_BlobEntryFields;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use get_variable::blobEntry_fields as GV_BlobEntryFields;
+
+// duplication in blobEntry_fields GQL fragments in get_blob_entry and  get_variable
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+BlobEntry_accessors!(GB_BlobEntryFields);
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+BlobEntry_accessors!(GV_BlobEntryFields);
+
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 impl SameBlobEntryFields for get_blob_entry::blobEntry_fields {
@@ -82,9 +100,34 @@ impl BlobEntry {
         return sgql.to_gql_blobentry();
     }
 
-    // get_blob_entry::blobEntry_fields
     #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
+        begql: &impl BlobEntryFieldsAccessors,
+    ) -> Self {
+        let mut be = BlobEntry::default();
+        be.id = begql.id();
+        be.blobId = begql.blobId();
+        be.originId = begql.originId();
+        be.label = begql.label();
+        be.blobstore = begql.blobstore();
+        be.hash = begql.hash();
+        be.origin = begql.origin();
+        be.size = begql.size();
+        be.description = begql.description();
+        be.mimeType = begql.mimeType();
+        be.metadata = begql.metadata();
+        be.timestamp = begql.timestamp().unwrap_or(Utc::now());
+        be.createdTimestamp = begql.createdTimestamp();
+        be.lastUpdatedTimestamp = begql.lastUpdatedTimestamp();        
+        be._type = begql._type();
+        be._version = begql._version();
+
+        return be;
+    }
+
+    // get_blob_entry::blobEntry_fields
+    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+    pub fn from_gql2(
         gety: &get_blob_entry::blobEntry_fields
     ) -> Self {
         let mut be = BlobEntry::default();
