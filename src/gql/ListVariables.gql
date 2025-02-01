@@ -1,9 +1,21 @@
 query ListVariables(
   $fgId: ID!, 
-  $varwhere: ListWhere = {}
+  $solvable_GT: Int, 
+  $solvable_GTE: Int , 
+  $solvable_IN: [Int!], 
+  $solvable_LT: Int, 
+  $solvable_LTE: Int, 
+  $tags_INCLUDES: String
 ) {
   listVariables(
-    fgId: $fgId, 
-    where: $varwhere
+    fgId: $fgId
+    where: {
+      solvable_GT: $solvable_GT, 
+      solvable_GTE: $solvable_GTE, 
+      solvable_IN: $solvable_IN, 
+      solvable_LT: $solvable_LT, 
+      solvable_LTE: $solvable_LTE, 
+      tags_INCLUDES: $tags_INCLUDES
+    }
   )
 }

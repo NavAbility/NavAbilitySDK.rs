@@ -194,13 +194,13 @@ pub struct GetBlobEntry;
 )]
 pub struct GetVariable;
 
-// #[derive(GraphQLQuery)]
-// #[graphql(
-//     schema_path = "src/schema.json",
-//     query_path = "src/gql/ListVariables.gql",
-//     response_derives = "Debug"
-// )]
-// pub struct ListVariables;
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/ListVariables.gql",
+    response_derives = "Debug"
+)]
+pub struct ListVariables;
 
 #[derive(GraphQLQuery)]
 #[graphql(

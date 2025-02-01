@@ -274,12 +274,13 @@ use crate::send_query_result;
                 return Ok(())
             },
             None => {
-                    to_console_error(&format!("GQL errors {:?}\n",ur_data.errors));
-                    return panic!("Problem with GQL response");
+                    let estr = format!("GQL errors {:?}\n",ur_data.errors);
+                    to_console_error(&estr);
+                    panic!("{}", estr);
                 }
         },
         Err(e) => {
-            return panic!("Something went wrong");
+            panic!("Something went wrong {:?}", e);
         }
     }
 }

@@ -1,21 +1,29 @@
 
 use crate::{
     Utc,
+    Uuid,
+    Sender,
     GraphQLQuery,
     Response,
     Error,
     GetId,
-    NavAbilityDFG,
     VariableDFG,
     PackedVariableNodeData,
     get_variable,
     GetVariable,
-    // list_variables,
-    // ListVariables,
-    check_deser,
+    list_variables,
+    ListVariables,
+    check_query_response_data,
     to_console_debug,
     to_console_error,
     SDK_VERSION,
+};
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::{
+    NavAbilityDFG,
+    check_deser,
+    send_query_result,
 };
 
 
@@ -129,8 +137,6 @@ pub fn getVariable<'a>(
     fields_summary: bool,
     fields_full: bool,
 ) -> Option<VariableDFG<'a>> {
-    use crate::check_query_response_data;
-
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -149,6 +155,7 @@ pub fn getVariable<'a>(
     match variable_data {
         Ok(vdata) => {
             if 0 < vdata.variables.len() {
+                // FIXME return the entire list of variables
                 return Some(VariableDFG::from_gql(&vdata.variables[0]))
             }
         },
@@ -160,29 +167,74 @@ pub fn getVariable<'a>(
 }
 
 
-// // TODO get better function signature
-// // #[allow(non_snake_case)]
-// #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-// pub async fn fetch_list_variables(
-//     nvafg: &NavAbilityDFG<'_>,
-// ) -> Result<Response<list_variables::ResponseData>, Box<dyn Error>> {
-//     let id = nvafg.fg.getId(""); 
-//     let request_body = ListVariables::build_query(
-//         list_variables::Variables {
-//             fg_id: id.to_string(),
-//         }
-//     );
+// TODO get better function signature
+// #[allow(non_snake_case)]
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn fetch_list_variables(
+    nvafg: &NavAbilityDFG<'_>,
+) -> Result<Response<list_variables::ResponseData>, Box<dyn Error>> {
+    let id = nvafg.fg.getId(""); 
+    let request_body = ListVariables::build_query(
+        list_variables::Variables {
+            fg_id: id.to_string(),
+            solvable_gt: None,
+            solvable_gte: None,
+            solvable_in: None,
+            solvable_lt: None,
+            solvable_lte: None,
+            tags_includes: None,
+        }
+    );
 
-//     let req_res = nvafg.client.client
-//     .post(&nvafg.client.apiurl)
-//     .json(&request_body)
-//     .send().await;
+    let req_res = nvafg.client.client
+    .post(&nvafg.client.apiurl)
+    .json(&request_body)
+    .send().await;
 
-//     if let Err(ref re) = req_res {
-//         to_console_error(&format!("API request error: {:?}", re));
-//     }
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
 
-//     return check_deser::<list_variables::ResponseData>(
-//         req_res?.json().await
-//     )
-// }
+    return check_deser::<list_variables::ResponseData>(
+        req_res?.json().await
+    )
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn send_list_variables(
+    send_into: Sender<list_variables::ResponseData>,
+    nvafg: &NavAbilityDFG<'_>,
+) {
+    let resp = fetch_list_variables(nvafg).await;
+    send_query_result::<list_variables::ResponseData>(send_into, resp);
+}
+
+
+#[cfg(feature = "tokio")]
+#[allow(non_snake_case)]
+pub fn listVariables(
+    nvafg: &NavAbilityDFG<'_>,
+) -> Option<Vec<String>> {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let response_body = rt.block_on(async { 
+        fetch_list_variables(
+            nvafg,
+        ).await
+    });
+
+    let list_data = check_query_response_data::<list_variables::ResponseData>(response_body);
+
+    match list_data {
+        Ok(vdata) => {
+            return Some(vdata.list_variables);
+        },
+        Err(e) => {
+            to_console_error(&format!("NvaSDK.rs error during listVariables: {:?}", e));
+        }
+    }
+    return None
+}
