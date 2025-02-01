@@ -11,6 +11,7 @@ use crate::{
     to_console_error, 
     Error, 
     GetId, 
+    BlobEntry,
     GetVariable, 
     GraphQLQuery,
     ListVariables, 
@@ -185,7 +186,11 @@ impl VariableDFG {
         }
         variable.ppes = ppes;
 
-        // variable.blobEntries
+        let mut bes = Vec::new();
+        for be in &vgql.variable_summary_fields.blob_entries {
+            bes.push(BlobEntry::from_gql(be));
+        }
+        variable.blobEntries = bes;
         // variable.solverData
 
         return variable
@@ -218,6 +223,34 @@ impl PackedVariableNodeData {
             solveKey: "".to_owned(),
             covar: Vec::new(),
             _version: SDK_VERSION.to_string(),
+        }
+    }
+
+    pub fn from_gql(
+        vndgql: &get_variable::solverdata_fields
+    ) -> Self {
+        return Self {
+            id: Some(Uuid::parse_str(&vndgql.id).expect("failed to parse variable solver data id to uuid")),
+            dimIDs: vndgql.dim_i_ds.clone().into_iter().map(|x| x as i32).collect(),
+            infoPerCoord: vndgql.info_per_coord.clone(),
+            BayesNetOutVertIDs: vndgql.bayes_net_out_vert_i_ds.clone().expect("PackedVariableNodeData to struct failed on BayesNetOutVertIDs"),
+            separator: vndgql.separator.clone().unwrap_or(Vec::new()),
+            vecval: vndgql.vecval.clone().expect("PackedVariableNodeData to struct failed on vecval"),
+            vecbw: vndgql.vecbw.clone().expect("PackedVariableNodeData to struct failed on vecbw"),
+            covar: vndgql.covar.clone().expect("PackedVariableNodeData to struct failed on covar"),
+            dimval: vndgql.dimval as i32,
+            dimbw: vndgql.dimbw as i32,
+            dims: vndgql.dims as i32,
+            solvedCount: vndgql.solved_count as i32,
+            solveInProgress: vndgql.solve_in_progress as i32,
+            initialized: vndgql.initialized,
+            ismargin: vndgql.ismargin,
+            dontmargin: vndgql.dontmargin,
+            eliminated: vndgql.eliminated,
+            BayesNetVertID: vndgql.bayes_net_vert_id.as_ref().unwrap_or(&"".to_string()).to_string(),
+            variableType: vndgql.variable_type.to_string(),
+            solveKey: vndgql.solve_key.to_string(), 
+            _version: vndgql.version.to_string(),
         }
     }
 }
