@@ -191,7 +191,12 @@ impl VariableDFG {
             bes.push(BlobEntry::from_gql(be));
         }
         variable.blobEntries = bes;
-        // variable.solverData
+
+        let mut vnds = Vec::new();
+        for vnd in &vgql.variable_full_fields.solver_data {
+            vnds.push(PackedVariableNodeData::from_gql(vnd));
+        }
+        variable.solverData = vnds;
 
         return variable
     }
