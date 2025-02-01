@@ -9,7 +9,6 @@ use crate::{
     SDK_VERSION,
     Agent,
     BlobEntry,
-    NavAbilityClient,
     AddAgent,
     add_agent,
     GetAgents,
@@ -20,7 +19,14 @@ use crate::{
     add_blob_entries,
     to_console_debug,
     to_console_error,
+};
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::{
+    NavAbilityClient,
     check_deser,
+    send_query_result,
 };
 
 
@@ -47,7 +53,7 @@ impl Agent {
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn add_agent_async(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     agent_label: &String,
 ) -> Result<Response<add_agent::ResponseData>,Box<dyn Error>> {
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
@@ -108,44 +114,83 @@ pub async fn fetch_robots_async(
 
 
 
-#[cfg(feature = "blocking")]
-pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseData {
-    let variables = get_robots::Variables {
-        user_label: client.user_label.clone(),
-    };
 
-    let response_body =
-        post_graphql_blocking::<GetRobots, _>(&client.client, &client.apiurl, variables)
-            .expect("Failure to post graphql");
-    
-    //debug print raw response body
-    dbg!(&response_body);
-
-    let response_data: get_robots::ResponseData =
-        response_body.data.expect("missing response data");
-
-    return response_data;
-}
-
-
-
-#[cfg(feature = "blocking")]
-pub fn fetch_ur_list_blocking(
-    send_into: &mut Sender<Vec<get_robots::GetRobotsUsers>>, 
+#[cfg(feature = "tokio")]
+pub fn fetch_ur_list_tokio(
+    send_into: &mut Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> {
+) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
 
-    // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = get_robots_blocking(&nvacl).users;
-    // dbg!(&ur_list);
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let ur_list_data = rt.block_on(async { 
+        fetch_robots_async(&nvacl).await
+    }); //.unwrap().data;
 
-    if let Err(e) = send_into.send(ur_list) {
-        tracing::error!("Error sending user robot list data: {}", e);
-    };
-
-    Ok(())
+    // TODO use common send_query_result -- TBD data.agents changes type
+    // send_query_result(send_into, ur_list_data);
+    match ur_list_data {
+        Ok(ur_data) => match ur_data.data { 
+            Some(data) => {
+                let ur_list = data.agents;
+                if let Err(e) = send_into.send(ur_list) {
+                    to_console_error(&format!("Error sending user robot list data: {:?}", e));
+                };
+                return Ok(())
+            },
+            None => {
+                    let estr = format!("GQL errors {:?}\n",ur_data.errors);
+                    to_console_error(&estr);
+                    panic!("{}", estr);
+                }
+        },
+        Err(e) => {
+            panic!("Something went wrong {:?}", e);
+        }
+    }
 }
 
+
+// FIXME FIXME FIXME update to newer pattern without requiring separate wasm config
+#[cfg(target_arch = "wasm32")]
+pub async fn fetch_ur_list_web(
+    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
+    nvacl: &NavAbilityClient
+) { // -> Vec<get_robots::GetRobotsUsers> {      
+    let result = fetch_robots_async(&nvacl).await;
+    // FIXME use common send_query_result
+    // send_query_result::<get_robots::GetAgentsAgents>(send_into, result);
+    if let Ok(response_body) = result {
+        let res_errs = response_body.errors;
+        match res_errs {
+            Some(ref err) => {
+                to_console_error(&format!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs));
+            },
+            None => {
+                let ur_list_data = response_body.data;
+                match ur_list_data {
+                    None => to_console_debug("NvaSDK.rs bad GQL response"),
+                    Some(resdata) => {
+                        let ur_list = resdata.agents;
+                        let res_len = ur_list.len();
+                        let resp = send_into.send(ur_list);
+                        if let Err(e) = resp {
+                            to_console_error(&format!("Error sending user robot list data: {}", e));
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        to_console_error("fetch_robots_async(&nvacl).await");
+    }
+
+}
+
+
+// ------------------------ Agent Entries Metadata ------------------------
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn fetch_agent_entries_metadata(
@@ -244,79 +289,3 @@ pub async fn add_entry_agent_async(
 // };
 
 
-
-
-#[cfg(feature = "tokio")]
-pub fn fetch_ur_list_tokio(
-    send_into: &mut Sender<Vec<get_agents::GetAgentsAgents>>, 
-    nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
-
-use crate::send_query_result;
-
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    let ur_list_data = rt.block_on(async { 
-        fetch_robots_async(&nvacl).await
-    }); //.unwrap().data;
-
-    // TODO use common send_query_result -- TBD data.agents changes type
-    // send_query_result(send_into, ur_list_data);
-    match ur_list_data {
-        Ok(ur_data) => match ur_data.data { 
-            Some(data) => {
-                let ur_list = data.agents;
-                if let Err(e) = send_into.send(ur_list) {
-                    to_console_error(&format!("Error sending user robot list data: {:?}", e));
-                };
-                return Ok(())
-            },
-            None => {
-                    let estr = format!("GQL errors {:?}\n",ur_data.errors);
-                    to_console_error(&estr);
-                    panic!("{}", estr);
-                }
-        },
-        Err(e) => {
-            panic!("Something went wrong {:?}", e);
-        }
-    }
-}
-
-
-
-// FIXME FIXME FIXME update to newer pattern without requiring separate wasm config
-#[cfg(target_arch = "wasm32")]
-pub async fn fetch_ur_list_web(
-    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
-    client: &NavAbilityClient
-) { // -> Vec<get_robots::GetRobotsUsers> {      
-    let result = fetch_robots_async(&client).await;
-    if let Ok(response_body) = result {
-        let res_errs = response_body.errors;
-        match res_errs {
-            Some(ref err) => {
-                to_console_error(&format!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs));
-            },
-            None => {
-                let ur_list_data = response_body.data;
-                match ur_list_data {
-                    None => to_console_debug("NvaSDK.rs bad GQL response"),
-                    Some(resdata) => {
-                        let ur_data = resdata.agents;
-                        let res_len = ur_data.len();
-                        let resp = send_into.send(ur_data);
-                        if let Err(e) = resp {
-                            to_console_error(&format!("Error sending user robot list data: {}", e));
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        to_console_error("fetch_robots_async(&client).await");
-    }
-
-}

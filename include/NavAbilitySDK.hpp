@@ -72,7 +72,7 @@ struct NavAbilityClient *NavAbilityClient_new(const char *api_url,
                                               const char *orgid,
                                               const char *api_token);
 
-struct NavAbilityDFG *NavAbilityDFG_new(const struct NavAbilityClient *nvacl,
+struct NavAbilityDFG *NavAbilityDFG_new(const struct NavAbilityClient *_nvacl,
                                         const char *fgLabel,
                                         const char *agentLabel,
                                         const char *storeLabel,
@@ -111,7 +111,7 @@ const char *getLabel_NavAbilityDFG(const struct NavAbilityDFG *input);
 
 const char *getLabel_NvaNode(const struct NvaNode_T *input);
 
-struct VariableDFG *getVariable(const struct NavAbilityDFG *nvacl, const char *label);
+struct VariableDFG *getVariable(const struct NavAbilityDFG *nvafg, const char *label);
 
 char *get_apiurl(const struct NavAbilityClient *nvacl);
 
@@ -119,7 +119,7 @@ struct Agent *get_index(const struct RVec_Agent *rv_agent, size_t index);
 
 size_t length(const struct RVec_Agent *rv_agent);
 
-struct RVec_Agent *listAgents(struct NavAbilityClient *_nvacl);
+struct RVec_Agent *listAgents(const struct NavAbilityClient *_nvacl);
 
 
 #define getLabel(obj)                                         \

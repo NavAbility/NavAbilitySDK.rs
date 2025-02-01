@@ -31,7 +31,12 @@ use ::core::slice;
 // };
 
 use crate::{
-    fetch_ur_list_tokio, get_agents, parse_str_utc, Agent, NavAbilityBlobStore
+    fetch_ur_list_tokio, 
+    get_agents, 
+    parse_str_utc, 
+    to_console_error, 
+    Agent, 
+    NavAbilityBlobStore
     // GetLabel,
     // getLabel,
 };
@@ -81,13 +86,18 @@ fn NavAbilityClient_new(
 #[allow(non_snake_case)]
 #[no_mangle] pub unsafe extern "C" 
 fn NavAbilityDFG_new<'a>(
-    nvacl: &'a crate::NavAbilityClient,
+    _nvacl: Option<&'a crate::NavAbilityClient>,
     fgLabel: *const c_char,
     agentLabel: *const c_char,
     storeLabel: Option<&'a c_char>,
     addAgentIfAbsent: Option<&'a bool>,
     addGraphIfAbsent: Option<&'a bool>,
-) -> Box<crate::NavAbilityDFG<'a>> {
+) -> Option<Box<crate::NavAbilityDFG<'a>>> {
+    if _nvacl.is_none() {
+        to_console_error("NavAbilityDFG: provided *NavAbilityClient is NULL/None");
+        return None;
+    }
+    let nvacl = _nvacl.unwrap();
 
     let fgl = cstr_to_str(fgLabel);
     let agl = cstr_to_str(agentLabel);
@@ -97,34 +107,46 @@ fn NavAbilityDFG_new<'a>(
         _storeLabel = Some(cstr_to_str(storeLabel.unwrap()));
     }
 
-    return Box::new(crate::NavAbilityDFG::new(
-        nvacl,
-        fgl,
-        agl,
-        _storeLabel,
-        addAgentIfAbsent.copied(),
-        addGraphIfAbsent.copied(),
+    return Some(Box::new(
+        crate::NavAbilityDFG::new(
+            nvacl,
+            fgl,
+            agl,
+            _storeLabel,
+            addAgentIfAbsent.copied(),
+            addGraphIfAbsent.copied(),
+        )
     ));
 }
 
 
 
 #[no_mangle] pub unsafe extern "C" 
-fn get_apiurl(nvacl: &crate::NavAbilityClient) -> *mut c_char {
-    return convert_str(&nvacl.apiurl)
+fn get_apiurl(
+    nvacl: Option<&crate::NavAbilityClient>,
+) -> *mut c_char {
+    if nvacl.is_none() {
+        to_console_error("get_apiurl: provided *NavAbilityClient is NULL/None");
+        return ptr::null_mut();
+    }
+    return convert_str(&(nvacl.unwrap()).apiurl);
 }
 
 
 #[allow(non_snake_case)]
 #[no_mangle] pub unsafe extern "C" 
 fn NavAbilityBlobStore_new(
-    nvacl: &crate::NavAbilityClient,
+    nvacl: Option<&crate::NavAbilityClient>,
     label: *const c_char,
-) -> Box<crate::NavAbilityBlobStore> {
-    return Box::new(crate::NavAbilityBlobStore {
-        client: nvacl.clone(),
+) -> Option<Box<crate::NavAbilityBlobStore>> {
+    if nvacl.is_none() {
+        to_console_error("NavAbilityBlobStore_new: provided *NavAbilityClient is NULL/None");
+        return None;
+    }
+    return Some(Box::new(crate::NavAbilityBlobStore {
+        client: nvacl.unwrap().clone(),
         label: cstr_to_str(label).to_string()
-    })
+    }));
 }
 
 
@@ -207,16 +229,15 @@ fn Pose3Pose3<'a>(
 #[allow(non_snake_case)]
 #[no_mangle] pub unsafe extern "C" 
 fn listAgents(
-    _nvacl: *mut crate::NavAbilityClient
-) -> Box<RVec<crate::Agent>> { // *mut Agent {
-    // if e.is_null() || (*e).is_null() {
-    //     return libc::EINVAL;
-    // }
-    // Reconstruct the obj into a box and then drop it so that it's freed.
-    // to_console_debug(&format!("HERE: {:?}\n",(*_nvacl).apiurl.clone()));
+    _nvacl: Option<&crate::NavAbilityClient>,
+) -> Option<Box<RVec<crate::Agent>>> {
+    if _nvacl.is_none() {
+        to_console_error("listAgents: provided *NavAbilityClient is NULL/None");
+        return None;
+    }
     
     let (tx,rx) = std::sync::mpsc::channel::<Vec<get_agents::GetAgentsAgents>>();
-    let _ = fetch_ur_list_tokio(&mut tx.clone(), &(*_nvacl));
+    let _ = fetch_ur_list_tokio(&mut tx.clone(), &(*_nvacl.unwrap()));
     match rx.try_recv() {
         Ok(res) => {
             // to_console_debug(&format!("got urlist {:?}",res[0]));
@@ -230,25 +251,32 @@ fn listAgents(
                 };
                 ls.push(agent);
             }
-            return Box::new(vec_to_ffi(ls))
+            return Some(Box::new(vec_to_ffi(ls)))
         }
-        Err(e) => {}
+        Err(e) => {
+            to_console_error(&format!("NvaSDK.rs error during listAgents: {:?}", e));
+        }
     }
 
-    return Box::new(RVec::<crate::Agent> { 
+    return Some(Box::new(RVec::<crate::Agent> { 
         ptr: ptr::null_mut(), 
         len: 0 as usize 
-    })
+    }))
 }
 
 
 #[no_mangle] pub unsafe extern "C" 
 fn getVariable<'a>(
-    nvacl: &'a crate::NavAbilityDFG<'a>,
+    nvafg: Option<&'a crate::NavAbilityDFG<'a>>,
     label: *const c_char,
 ) -> Option<Box<crate::VariableDFG<'a>>> {
+    if nvafg.is_none() {
+        to_console_error("getVariable: provided *NavAbilityDFG is NULL/None");
+        return None;
+    }
+
     let vari = crate::services::getVariable(
-        nvacl, 
+        nvafg.unwrap(), 
         &cstr_to_str(label).clone(),
         false,
         false,
@@ -329,7 +357,6 @@ fn getLabel_NavAbilityDFG(
 ) -> *const c_char {
     return convert_str(&(input.fg.label));
 }
-
 
 
 // ============================== Free / Drop =================================
