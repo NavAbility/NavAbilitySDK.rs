@@ -269,7 +269,7 @@ fn listAgents(
 fn getVariable<'a>(
     nvafg: Option<&'a crate::NavAbilityDFG<'a>>,
     label: *const c_char,
-) -> Option<Box<crate::VariableDFG<'a>>> {
+) -> Option<Box<crate::VariableDFG>> {
     if nvafg.is_none() {
         to_console_error("getVariable: provided *NavAbilityDFG is NULL/None");
         return None;
@@ -377,7 +377,7 @@ fn free_rvecagent (
 #[allow(non_snake_case)]
 #[no_mangle] pub extern "C" 
 fn free_VariableDFG(
-    _: Option<Box<crate::VariableDFG<'_>>>
+    _: Option<Box<crate::VariableDFG>>
 ) {}
 
 // Take ownership via passing by value, i.e. runs drop on fn exit. Option for null case.

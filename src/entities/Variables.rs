@@ -10,12 +10,12 @@ use crate::{
 /// Data container to store Parameteric Point Estimate (PPE) for mean and max.
 #[derive(Debug, Clone)]
 #[allow(non_snake_case)]
-pub struct MeanMaxPPE<'a> {
+pub struct MeanMaxPPE {
     pub id: Option<Uuid>,
     pub solveKey: String,
-    pub suggested: &'a [f64],
-    pub max: &'a [f64],
-    pub mean: &'a [f64],
+    pub suggested: Vec<f64>,
+    pub max: Vec<f64>,
+    pub mean: Vec<f64>,
     pub _type: String,
     pub _version: String, // TODO getVersion
     pub createdTimestamp: Option<chrono::DateTime<Utc>>,
@@ -53,13 +53,13 @@ pub struct PackedVariableNodeData {
 /// The Variable information packed in a way that accomdates multi-lang using json.
 #[derive(Debug, Clone)]
 #[allow(non_snake_case)]
-pub struct VariableDFG<'a> {
+pub struct VariableDFG {
     pub id: Option<Uuid>,
     pub label: String,
     pub tags: Vec<String>,
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub nstime: String,
-    pub ppes: Vec<MeanMaxPPE<'a>>,
+    pub nstime: usize,
+    pub ppes: Vec<MeanMaxPPE>,
     pub blobEntries: Vec<BlobEntry>,
     pub variableType: String,
     pub _version: String,
