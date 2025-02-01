@@ -446,7 +446,7 @@ fn vec_to_ffi (
 unsafe fn free_rvec<T> (
     rvec: RVec<T>
 ) {
-    let mut ptr = rvec.ptr;
+    let ptr = rvec.ptr;
     let len = rvec.len;
 
     // println!("dropping RVec");
