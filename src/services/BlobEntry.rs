@@ -114,13 +114,8 @@ impl BlobEntry {
         }
         if let Some(timestamp) = &gety.timestamp {
             // 2024-09-16T16:51:20.555Z
-            if let Ok(tms) = chrono::DateTime::parse_from_str(
-                &timestamp
-                    .replace("Z"," +00")
-                    .replace(" UTC", " +00"), 
-                "%Y-%m-%dT%H:%M:%S%.f %#z"
-            ) {
-                be.timestamp = tms.to_utc();
+            if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                be.timestamp = tms;
             } else {
                 to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
             }
@@ -130,7 +125,7 @@ impl BlobEntry {
             // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
             // 2024-09-16T16:51:20.555Z
             if let Ok(tms) = parse_str_utc(timestamp.clone()) {
-                be.createdTimestamp = Some(tms.to_utc());
+                be.createdTimestamp = Some(tms);
             } else {
                 to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
             }
@@ -142,7 +137,7 @@ impl BlobEntry {
             if let Ok(tms) = parse_str_utc(
                 timestamp.clone()
             ) {
-                be.lastUpdatedTimestamp = Some(tms.to_utc());
+                be.lastUpdatedTimestamp = Some(tms);
             } else {
                 to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
             }
