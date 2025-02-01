@@ -77,13 +77,13 @@ pub trait BlobEntryFieldsAccessors {
 macro_rules! BlobEntry_accessors { 
     ($T:ident) => {
         impl BlobEntryFieldsAccessors for $T {
-            fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse entry id to uuid")) }
+            fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse blobentry id to uuid")) }
             
-            fn blobId(&self) -> Uuid { Uuid::parse_str(&self.blob_id).expect("failed to parse entry blob_id to uuid") }
+            fn blobId(&self) -> Uuid { Uuid::parse_str(&self.blob_id).expect("failed to parse blobentry blob_id to uuid") }
             
             fn originId(&self) -> Option<Uuid> {
                 if self.origin_id.is_some() {
-                    return Some(Uuid::parse_str(&self.origin_id.clone().unwrap()).expect("failed to parse entry origin_id to uuid"));
+                    return Some(Uuid::parse_str(&self.origin_id.clone().unwrap()).expect("failed to parse blobentry origin_id to uuid"));
                 } else {
                     return None;
                 }
@@ -166,6 +166,8 @@ macro_rules! BlobEntry_accessors {
     }
 }
 
+
+// =============== DEPRECTED =================
 
 
 pub trait SameBlobEntryFields {
