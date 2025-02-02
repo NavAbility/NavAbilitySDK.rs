@@ -355,7 +355,7 @@ fn getLabel_NvaNode<T>(
 fn getLabel_NavAbilityDFG(
     input: &crate::NavAbilityDFG,
 ) -> *const c_char {
-    return convert_str(&(input.fg.label));
+    return convert_str(&(input.getLabel()));
 }
 
 
