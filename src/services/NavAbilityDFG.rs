@@ -4,26 +4,28 @@ use std::collections::HashMap;
 use crate::{
     Uuid,
     GetId,
-    NavAbilityClient,
-    NavAbilityDFG,
     NvaNode,
     Agent,
     Factorgraph,
+};
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::{
+    NavAbilityClient,
+    NavAbilityDFG,
     NavAbilityBlobStore,
 };
 
-// use super::Graph;
 
-
-// #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-// impl GetId for NavAbilityDFG<'_> {
-//     fn getId(
-//         &self, 
-//         label: &str
-//     ) -> Uuid {
-//         return self.fg.getId(label)
-//     }
-// }
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+impl GetId for NavAbilityDFG<'_> {
+    fn getId(
+        &self, 
+        label: &str
+    ) -> Uuid {
+        return self.fg.getId(label)
+    }
+}
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]

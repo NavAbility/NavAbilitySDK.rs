@@ -36,8 +36,8 @@ use crate::{
     parse_str_utc, 
     to_console_error, 
     Agent, 
-    NavAbilityBlobStore
-    // GetLabel,
+    NavAbilityBlobStore,
+    GetLabel,
     // getLabel,
 };
 
@@ -347,7 +347,7 @@ fn getLabel_NavAbilityClient(
 fn getLabel_NvaNode<T>(
     input: &crate::NvaNode<T>,
 ) -> *const c_char {
-    convert_str(&input.label)
+    convert_str(&input.getLabel())
 }
 
 #[allow(non_snake_case)]
@@ -355,7 +355,7 @@ fn getLabel_NvaNode<T>(
 fn getLabel_NavAbilityDFG(
     input: &crate::NavAbilityDFG,
 ) -> *const c_char {
-    return convert_str(&(input.fg.label));
+    return convert_str(&(input.getLabel()));
 }
 
 
