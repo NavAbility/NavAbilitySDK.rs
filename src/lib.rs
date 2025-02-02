@@ -331,17 +331,27 @@ macro_rules! genGetLabel {
 }
 
 
+// move some impl GetLabel to services
 genGetLabel!(User);
-// getLabel!(Graph);
+genGetLabel!(Agent);
 genGetLabel!(BlobEntry);
-// TO BE DEPRECATED
-genGetLabel!(Session);
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 genGetLabel!(NavAbilityBlobStore);
 
-// move to services
-genGetLabel!(Agent);
+// TO BE DEPRECATED
+genGetLabel!(Session);
 
+// move to services
+impl<T> GetLabel for NvaNode<'_, T> {
+    fn getLabel(&self) -> &String { &self.label }
+}
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+impl GetLabel for crate::entities::ClientDFG::NavAbilityDFG<'_> {
+    fn getLabel(&self) -> &String { &self.fg.getLabel() }
+}
+
+// ---------------- GetId trait ----------------
 
 pub trait GetId {
     /// Get the deterministic identifier (uuid v5) for a node.
