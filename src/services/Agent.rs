@@ -97,9 +97,9 @@ pub fn fetch_ur_list_tokio(
         .unwrap();
     let ur_list_data = rt.block_on(async { 
         fetch_agents(&nvacl).await
-    }); //.unwrap().data;
+    });
 
-    // TODO use common send_query_result -- TBD data.agents changes type
+    // use common send_query_result
     return send_query_result(
         send_into, 
         ur_list_data, 
@@ -108,14 +108,14 @@ pub fn fetch_ur_list_tokio(
 }
 
 
-// FIXME FIXME FIXME update to newer pattern without requiring separate wasm config
+// FIXME update to newer pattern without requiring separate wasm config
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
     send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
     let result = fetch_agents(&nvacl).await;
-    // FIXME use common send_query_result
+    // use common send_query_result
     return send_query_result(
         send_into, 
         result, 
