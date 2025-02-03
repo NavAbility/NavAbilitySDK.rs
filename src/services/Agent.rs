@@ -105,25 +105,6 @@ pub fn fetch_ur_list_tokio(
         ur_list_data, 
         |s| {s.agents}
     );
-    // match ur_list_data {
-    //     Ok(ur_data) => match ur_data.data { 
-    //         Some(data) => {
-    //             let ur_list = data.agents;
-    //             if let Err(e) = send_into.send(ur_list) {
-    //                 to_console_error(&format!("Error sending user robot list data: {:?}", e));
-    //             };
-    //             return Ok(())
-    //         },
-    //         None => {
-    //                 let estr = format!("GQL errors {:?}\n",ur_data.errors);
-    //                 to_console_error(&estr);
-    //                 panic!("{}", estr);
-    //             }
-    //     },
-    //     Err(e) => {
-    //         panic!("Something went wrong {:?}", e);
-    //     }
-    // }
 }
 
 
@@ -132,35 +113,14 @@ pub fn fetch_ur_list_tokio(
 pub async fn fetch_ur_list_web(
     send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
-) {
+) -> Result<(),Box<dyn Error>> {
     let result = fetch_agents(&nvacl).await;
     // FIXME use common send_query_result
-    // send_query_result::<get_robots::GetAgentsAgents>(send_into, result);
-    if let Ok(response_body) = result {
-        let res_errs = response_body.errors;
-        match res_errs {
-            Some(ref err) => {
-                to_console_error(&format!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs));
-            },
-            None => {
-                let ur_list_data = response_body.data;
-                match ur_list_data {
-                    None => to_console_debug("NvaSDK.rs bad GQL response"),
-                    Some(resdata) => {
-                        let ur_list = resdata.agents;
-                        let res_len = ur_list.len();
-                        let resp = send_into.send(ur_list);
-                        if let Err(e) = resp {
-                            to_console_error(&format!("Error sending user robot list data: {}", e));
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        to_console_error("fetch_agents(&nvacl).await");
-    }
-
+    return send_query_result(
+        send_into, 
+        result, 
+        |s| {s.agents}
+    );
 }
 
 
