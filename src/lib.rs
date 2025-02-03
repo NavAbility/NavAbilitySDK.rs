@@ -50,7 +50,7 @@ pub use crate::utils::*;
 
 pub mod services;
 pub use crate::services::{
-    fetch_robots_async,
+    fetch_agents,
     fetch_blob_entry,
     fetch_delete_blob,
     send_blob_entry,
@@ -64,7 +64,6 @@ pub use crate::services::{
     update_blobentry_metadata_async,
     fetch_agent_entries_metadata,
     add_entry_agent_async,
-    // fetch_robots_async,
     list_models_query,
     fetch_list_models,
     add_model_async,

@@ -2,13 +2,22 @@
 use crate::{
     Uuid,
     Utc,
+    Agent,
+};
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::{
     Sender,
     GraphQLQuery,
     Response,
     Error,
     SDK_VERSION,
-    Agent,
     BlobEntry,
+    to_console_error,
+    NavAbilityClient,
+    check_deser,
+    send_query_result,
     AddAgent,
     add_agent,
     GetAgents,
@@ -17,17 +26,11 @@ use crate::{
     GetAgentEntriesMetadata,
     AddBlobEntries,
     add_blob_entries,
-    to_console_debug,
-    to_console_error,
+    
 };
 
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-use crate::{
-    NavAbilityClient,
-    check_deser,
-    send_query_result,
-};
+#[cfg(feature = "wasm")]
+use crate::to_console_debug;
 
 
 impl Agent {
@@ -86,7 +89,7 @@ pub async fn add_agent_async(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_robots_async(
+pub async fn fetch_agents(
     nvacl: &NavAbilityClient,
 ) -> Result<Response<get_agents::ResponseData>, Box<dyn Error>> {
 
@@ -126,7 +129,7 @@ pub fn fetch_ur_list_tokio(
         .build()
         .unwrap();
     let ur_list_data = rt.block_on(async { 
-        fetch_robots_async(&nvacl).await
+        fetch_agents(&nvacl).await
     }); //.unwrap().data;
 
     // TODO use common send_query_result -- TBD data.agents changes type
@@ -158,8 +161,8 @@ pub fn fetch_ur_list_tokio(
 pub async fn fetch_ur_list_web(
     send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
-) { // -> Vec<get_robots::GetRobotsUsers> {      
-    let result = fetch_robots_async(&nvacl).await;
+) {
+    let result = fetch_agents(&nvacl).await;
     // FIXME use common send_query_result
     // send_query_result::<get_robots::GetAgentsAgents>(send_into, result);
     if let Ok(response_body) = result {
@@ -184,7 +187,7 @@ pub async fn fetch_ur_list_web(
             }
         }
     } else {
-        to_console_error("fetch_robots_async(&nvacl).await");
+        to_console_error("fetch_agents(&nvacl).await");
     }
 
 }
