@@ -315,7 +315,10 @@ pub fn getVariable(
         ).await
     });
 
-    let variable_data = check_query_response_data::<get_variable::ResponseData>(response_body);
+    let variable_data = check_query_response_data::<
+        get_variable::ResponseData,
+        get_variable::ResponseData
+    >(response_body, |s| {s});
 
     match variable_data {
         Ok(vdata) => {
@@ -383,7 +386,7 @@ pub async fn send_list_variables(
 #[allow(non_snake_case)]
 pub fn listVariables(
     nvafg: &NavAbilityDFG<'_>,
-) -> Option<Vec<String>> {
+) -> Result<Vec<String>, Box<dyn Error>> {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -394,15 +397,8 @@ pub fn listVariables(
         ).await
     });
 
-    let list_data = check_query_response_data::<list_variables::ResponseData>(response_body);
-
-    match list_data {
-        Ok(vdata) => {
-            return Some(vdata.list_variables);
-        },
-        Err(e) => {
-            to_console_error(&format!("NvaSDK.rs error during listVariables: {:?}", e));
-        }
-    }
-    return None
+    return check_query_response_data::<
+        list_variables::ResponseData,
+        Vec<String>
+    >(response_body, |s| {s.list_variables});
 }
