@@ -17,7 +17,7 @@ use crate::{
 };
 
 #[macro_use]
-use crate::BlobEntryFieldsAccessors;
+use crate::BlobEntryFieldsImporters;
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
@@ -62,7 +62,7 @@ impl BlobEntry {
 
     #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
-        begql: &impl BlobEntryFieldsAccessors,
+        begql: &impl BlobEntryFieldsImporters,
     ) -> Self {
         let mut be = BlobEntry::default();
         be.id = begql.id();

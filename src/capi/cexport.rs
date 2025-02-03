@@ -243,12 +243,13 @@ fn listAgents(
             // to_console_debug(&format!("got urlist {:?}",res[0]));
             let mut ls = Vec::new();
             for r in res {
-                let agent = crate::Agent {
-                    id: Some(Uuid::parse_str(&r.id).unwrap()),
-                    label: r.label.to_string(),
-                    created_timestamp: parse_str_utc(r.created_timestamp.clone()).unwrap(),
-                    last_updated_timestamp: parse_str_utc(r.created_timestamp.clone()).unwrap(), // FIXME use .last_updated_timestamp
-                };
+                let agent = Agent::new(
+                    &Uuid::parse_str(&r.id).unwrap(),
+                    r.label.to_string(),
+                    "".to_owned(),
+                    Vec::new(),
+                    parse_str_utc(r.created_timestamp.clone()).unwrap(), // FIXME use .last_updated_timestamp
+                );
                 ls.push(agent);
             }
             return Some(Box::new(vec_to_ffi(ls)))
@@ -277,7 +278,7 @@ fn getVariable<'a>(
 
     let vari = crate::services::getVariable(
         nvafg.unwrap(), 
-        &cstr_to_str(label).clone(),
+        &cstr_to_str(label),
         false,
         false,
     );

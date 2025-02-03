@@ -33,24 +33,6 @@ use crate::{
 use crate::to_console_debug;
 
 
-impl Agent {
-    pub fn new(
-        id: Option<Uuid>,
-        label: String,
-        // _version: String,
-        created_timestamp: chrono::DateTime<Utc>,
-        last_updated_timestamp: chrono::DateTime<Utc>,
-    ) -> Self {
-        Self {
-            id,
-            label,
-            // _version,
-            created_timestamp,
-            last_updated_timestamp,
-        }
-    }
-}
-
 
 // ===================== QUERIES ========================
 
