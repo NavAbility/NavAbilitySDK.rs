@@ -95,7 +95,7 @@ pub fn to_console_error(
 
 
 #[derive(Debug)]
-struct GQLResponseEmptyError {
+pub struct GQLResponseEmptyError {
     details: String,
 }
 
@@ -108,7 +108,7 @@ impl fmt::Display for GQLResponseEmptyError {
 impl Error for GQLResponseEmptyError {}
 
 #[derive(Debug)]
-struct GQLResponseErrors {
+pub struct GQLResponseErrors {
     details: Vec<graphql_client::Error>,
 }
 
@@ -119,6 +119,19 @@ impl fmt::Display for GQLResponseErrors {
 }
 
 impl Error for GQLResponseErrors {}
+
+#[derive(Debug)]
+pub struct GQLRequestError {
+    pub details: String,
+}
+
+impl fmt::Display for GQLRequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "NvaSDK, API request error {}", self.details)
+    }
+}
+
+impl Error for GQLRequestError {}
 
 
 /// Checks the ResponseData: F of a GraphQL query and applies a user specified modifier callback.
@@ -185,6 +198,28 @@ pub fn send_query_result<F,T>(
         },
         Err(e) => {
             return Err(e)
+        }
+    }
+}
+
+
+pub fn send_api_response<T>(
+    send_into: Sender<T>,
+    data: T,
+) -> Result<(),Box<dyn Error>> {
+    match send_into.send(data) {
+        Ok(_) => {
+            return Ok(())
+        },
+        Err(e) => {
+            // TODO upgrade to impl TryFrom: https://www.reddit.com/r/rust/comments/bu2fmn/how_print_a_generic_type_debugt/?rdt=63064
+            let erm = format!(
+                "Error Sender<{}> data on std::mspc::sync::channel: {:?}", 
+                std::any::type_name::<T>(), 
+                &e
+            );
+            to_console_error(&erm);
+            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, erm)));
         }
     }
 }

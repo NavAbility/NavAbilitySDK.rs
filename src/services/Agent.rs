@@ -18,15 +18,18 @@ use crate::{
     NavAbilityClient,
     check_deser,
     send_query_result,
+    send_api_response,
+    check_query_response_data,
     AddAgent,
     add_agent,
     GetAgents,
     get_agents,
+    ListAgents, // also use crate::list_agents,
     get_agent_entries_metadata,
     GetAgentEntriesMetadata,
     AddBlobEntries,
     add_blob_entries,
-    
+    GQLRequestError,
 };
 
 #[cfg(feature = "wasm")]
@@ -36,6 +39,71 @@ use crate::to_console_debug;
 
 // ===================== QUERIES ========================
 
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn list_agents(
+    nvacl: &NavAbilityClient,
+) -> Result<Vec<String>, Box<dyn Error>> {
+    // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
+    let variables = crate::list_agents::Variables {
+        org_id: nvacl.user_label.to_string(),
+    };
+
+    let request_body = ListAgents::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        let erm = format!("API request error: {:?}", &re);
+        to_console_error(&erm);
+        return Err(Box::new(GQLRequestError { details: erm }));
+    }
+
+    // generic transport and serde error checks
+    let response_body = check_deser::<crate::list_agents::ResponseData>(
+        req_res?.json().await
+    );
+
+    // unwrap ListAgents query response during error checks
+    return check_query_response_data(response_body, |s| {
+        let mut ags = Vec::new();
+        for oa in s.orgs {
+            for a in oa.agents {
+                ags.push(a.label);
+            }
+        }
+        return ags;
+    });
+}
+
+
+#[cfg(feature = "tokio")]
+pub fn listAgents(
+    nvacl: &NavAbilityClient,
+) -> Result<Vec<String>, Box<dyn Error>> {
+    return tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(list_agents(nvacl));
+}
+
+// FIXME update to newer pattern without requiring separate wasm config
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn fetch_ur_list_web(
+    send_into: Sender<Vec<String>>, 
+    nvacl: &NavAbilityClient
+) -> Result<(),Box<dyn Error>> {
+    let result = list_agents(&nvacl).await;
+    // use common send_query_result
+    return send_api_response(
+        send_into, 
+        result?,
+    );
+}
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -66,12 +134,11 @@ pub async fn fetch_agents(
 
 
 
-
 #[cfg(feature = "tokio")]
 pub fn fetch_ur_list_tokio(
     send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
+) -> Result<(),Box<dyn Error>> {
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()

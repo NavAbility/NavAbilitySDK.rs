@@ -106,6 +106,16 @@ type Latitude = f64;
 type Longitude = f64;
 type UUID = String;
 
+
+#[derive(GraphQLQuery, Clone)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/ListAgents.gql",
+    response_derives = "Debug"
+)]
+pub struct ListAgents;
+
+
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
