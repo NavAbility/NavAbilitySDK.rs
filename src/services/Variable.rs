@@ -372,7 +372,10 @@ pub async fn send_list_variables(
     nvafg: &NavAbilityDFG<'_>,
 ) {
     let resp = fetch_list_variables(nvafg).await;
-    send_query_result::<list_variables::ResponseData>(send_into, resp);
+    let _ = send_query_result::<
+        list_variables::ResponseData,
+        list_variables::ResponseData
+    >(send_into, resp, |s| {s});
 }
 
 

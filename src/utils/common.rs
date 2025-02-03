@@ -10,8 +10,10 @@ use crate::{
     Sender, 
     Response
 };
-use std::fmt;
-use std::convert::TryInto;
+use std::{
+    fmt,
+    convert::TryInto,
+};
 
 /// Returns the type name of a given value.
 ///
@@ -168,16 +170,21 @@ pub fn check_query_response_data<T>(
 ///
 /// * `send_into` - A sender to which the query result will be sent.
 /// * `response_body` - A `Result` containing the response body of the GraphQL query.
-pub fn send_query_result<T>(
+pub fn send_query_result<F,T>(
     send_into: Sender<T>,
-    response_body: Result<Response<T>,Box<dyn Error>>,
-) {
-    match check_query_response_data::<T>(response_body) {
+    response_body: Result<Response<F>,Box<dyn Error>>,
+    fn_modifier: fn(F) -> T,
+) -> Result<(),Box<dyn Error>> {
+    match check_query_response_data::<>(response_body) {
         Ok(data) => {
-            let _ = send_into.send(data);
+            // let _ = send_into.send(data);
+            if let Err(e) = send_into.send(fn_modifier(data)) {
+                to_console_error(&format!("Error sending data on channel: {:?}", e));
+            };
+            return Ok(())
         },
         Err(e) => {
-            // suppress panic
+            return Err(e)
         }
     }
 }

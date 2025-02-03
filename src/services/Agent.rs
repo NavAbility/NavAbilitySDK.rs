@@ -54,38 +54,6 @@ impl Agent {
 
 // ===================== QUERIES ========================
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn add_agent_async(
-    nvacl: &NavAbilityClient,
-    agent_label: &String,
-) -> Result<Response<add_agent::ResponseData>,Box<dyn Error>> {
-    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
-    let name = format!("{}",&agent_label).to_string();
-    let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
-
-    let variables = add_agent::Variables {
-        agent_id: agent_id.to_string(),
-        label: agent_label.to_string(),
-        version: SDK_VERSION.to_string(),
-        org_id: org_id.to_string(),
-    };
-
-    let request_body = AddAgent::build_query(variables);
-
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<add_agent::ResponseData>(
-        req_res?.json().await
-    )
-}
-
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -96,7 +64,6 @@ pub async fn fetch_agents(
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
     let variables = get_agents::Variables {
         org_id: nvacl.user_label.to_string(),
-        // Uuid::new_v4().to_string() // FIXME uuid
     };
 
     let request_body = GetAgents::build_query(variables);
@@ -120,7 +87,7 @@ pub async fn fetch_agents(
 
 #[cfg(feature = "tokio")]
 pub fn fetch_ur_list_tokio(
-    send_into: &mut Sender<Vec<get_agents::GetAgentsAgents>>, 
+    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
 
@@ -133,26 +100,30 @@ pub fn fetch_ur_list_tokio(
     }); //.unwrap().data;
 
     // TODO use common send_query_result -- TBD data.agents changes type
-    // send_query_result(send_into, ur_list_data);
-    match ur_list_data {
-        Ok(ur_data) => match ur_data.data { 
-            Some(data) => {
-                let ur_list = data.agents;
-                if let Err(e) = send_into.send(ur_list) {
-                    to_console_error(&format!("Error sending user robot list data: {:?}", e));
-                };
-                return Ok(())
-            },
-            None => {
-                    let estr = format!("GQL errors {:?}\n",ur_data.errors);
-                    to_console_error(&estr);
-                    panic!("{}", estr);
-                }
-        },
-        Err(e) => {
-            panic!("Something went wrong {:?}", e);
-        }
-    }
+    return send_query_result(
+        send_into, 
+        ur_list_data, 
+        |s| {s.agents}
+    );
+    // match ur_list_data {
+    //     Ok(ur_data) => match ur_data.data { 
+    //         Some(data) => {
+    //             let ur_list = data.agents;
+    //             if let Err(e) = send_into.send(ur_list) {
+    //                 to_console_error(&format!("Error sending user robot list data: {:?}", e));
+    //             };
+    //             return Ok(())
+    //         },
+    //         None => {
+    //                 let estr = format!("GQL errors {:?}\n",ur_data.errors);
+    //                 to_console_error(&estr);
+    //                 panic!("{}", estr);
+    //             }
+    //     },
+    //     Err(e) => {
+    //         panic!("Something went wrong {:?}", e);
+    //     }
+    // }
 }
 
 
@@ -190,6 +161,39 @@ pub async fn fetch_ur_list_web(
         to_console_error("fetch_agents(&nvacl).await");
     }
 
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn add_agent_async(
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+) -> Result<Response<add_agent::ResponseData>,Box<dyn Error>> {
+    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
+    let name = format!("{}",&agent_label).to_string();
+    let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
+
+    let variables = add_agent::Variables {
+        agent_id: agent_id.to_string(),
+        label: agent_label.to_string(),
+        version: SDK_VERSION.to_string(),
+        org_id: org_id.to_string(),
+    };
+
+    let request_body = AddAgent::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<add_agent::ResponseData>(
+        req_res?.json().await
+    )
 }
 
 

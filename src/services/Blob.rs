@@ -61,7 +61,10 @@ pub async fn send_create_download(
     store: Option<String>
 ) {
     let resp = create_download_async(nvacl,blob_id,store).await;
-    send_query_result::<create_download::ResponseData>(send_into,resp)
+    let _ = send_query_result::<
+        create_download::ResponseData,
+        create_download::ResponseData
+    >(send_into,resp,|s| {s});
 }
 
 
@@ -192,5 +195,5 @@ pub async fn create_upload_web(
         blob_id.expect("Must provide blob_id to create_upload_web"),
         nparts,
     ).await;
-    send_query_result(send_into, result);
+    send_query_result(send_into, result, |s| {s});
 }
