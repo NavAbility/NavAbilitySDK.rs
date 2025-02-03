@@ -315,7 +315,10 @@ pub fn getVariable(
         ).await
     });
 
-    let variable_data = check_query_response_data::<get_variable::ResponseData>(response_body);
+    let variable_data = check_query_response_data::<
+        get_variable::ResponseData,
+        get_variable::ResponseData
+    >(response_body, |s| {s});
 
     match variable_data {
         Ok(vdata) => {
@@ -394,7 +397,10 @@ pub fn listVariables(
         ).await
     });
 
-    let list_data = check_query_response_data::<list_variables::ResponseData>(response_body);
+    let list_data = check_query_response_data::<
+        list_variables::ResponseData,
+        list_variables::ResponseData
+    >(response_body, |s| {s});
 
     match list_data {
         Ok(vdata) => {

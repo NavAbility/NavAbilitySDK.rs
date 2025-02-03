@@ -121,7 +121,7 @@ impl fmt::Display for GQLResponseErrors {
 impl Error for GQLResponseErrors {}
 
 
-/// Checks the response data of a GraphQL query.
+/// Checks the ResponseData: F of a GraphQL query and applies a user specified modifier callback.
 ///
 /// # Arguments
 ///
@@ -130,16 +130,16 @@ impl Error for GQLResponseErrors {}
 /// # Returns
 ///
 /// * `Result<T, Box<dyn Error>>` - A `Result` containing the data of the response or an error.
-pub fn check_query_response_data<T>(
-    response_body: Result<Response<T>,Box<dyn Error>>,
+pub fn check_query_response_data<F,T>(
+    response_body: Result<Response<F>,Box<dyn Error>>,
+    fn_modifier: fn(F) -> T,
 ) -> Result<T,Box<dyn Error>> {
     match response_body {
         Ok(resbody) => {
             if resbody.errors.is_none() {
                 match resbody.data {
                     Some(data) => {
-                        return Ok(data)
-                        // let _ = send_into.send(data);
+                        return Ok(fn_modifier(data))
                     }
                     None => {
                         to_console_error(&"API query response data is empty.");
@@ -175,10 +175,10 @@ pub fn send_query_result<F,T>(
     response_body: Result<Response<F>,Box<dyn Error>>,
     fn_modifier: fn(F) -> T,
 ) -> Result<(),Box<dyn Error>> {
-    match check_query_response_data::<>(response_body) {
+    match check_query_response_data(response_body, fn_modifier) {
         Ok(data) => {
             // let _ = send_into.send(data);
-            if let Err(e) = send_into.send(fn_modifier(data)) {
+            if let Err(e) = send_into.send(data) {
                 to_console_error(&format!("Error sending data on channel: {:?}", e));
             };
             return Ok(())
