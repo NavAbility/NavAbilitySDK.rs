@@ -119,6 +119,15 @@ pub struct ListAgents;
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
+    query_path = "src/gql/UpdateAgent.gql",
+    response_derives = "Debug"
+)]
+pub struct UpdateAgentMetadata;
+
+
+#[derive(GraphQLQuery, Clone)]
+#[graphql(
+    schema_path = "src/schema.json",
     query_path = "src/gql/GetAgents.gql",
     response_derives = "Debug"
 )]
