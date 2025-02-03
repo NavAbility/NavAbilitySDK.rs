@@ -237,7 +237,7 @@ fn listAgents(
     }
     
     let (tx,rx) = std::sync::mpsc::channel::<Vec<get_agents::GetAgentsAgents>>();
-    let _ = fetch_ur_list_tokio(&mut tx.clone(), &(*_nvacl.unwrap()));
+    let _ = fetch_ur_list_tokio(tx.clone(), &(*_nvacl.unwrap()));
     match rx.try_recv() {
         Ok(res) => {
             // to_console_debug(&format!("got urlist {:?}",res[0]));

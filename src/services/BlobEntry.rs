@@ -197,7 +197,10 @@ pub async fn send_blob_entry(
     id: Uuid
 ) {
     let resp = fetch_blob_entry(nvacl, id).await;
-    send_query_result::<get_blob_entry::ResponseData>(send_into, resp);
+    let _ = send_query_result::<
+        get_blob_entry::ResponseData,
+        get_blob_entry::ResponseData
+    >(send_into, resp, |s| {s});
 }
 
 

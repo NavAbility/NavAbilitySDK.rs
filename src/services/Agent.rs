@@ -54,6 +54,76 @@ impl Agent {
 
 // ===================== QUERIES ========================
 
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn fetch_agents(
+    nvacl: &NavAbilityClient,
+) -> Result<Response<get_agents::ResponseData>, Box<dyn Error>> {
+
+    // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
+    let variables = get_agents::Variables {
+        org_id: nvacl.user_label.to_string(),
+    };
+
+    let request_body = GetAgents::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<get_agents::ResponseData>(
+        req_res?.json().await
+    )
+}
+
+
+
+
+#[cfg(feature = "tokio")]
+pub fn fetch_ur_list_tokio(
+    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
+    nvacl: &NavAbilityClient
+) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let ur_list_data = rt.block_on(async { 
+        fetch_agents(&nvacl).await
+    });
+
+    // use common send_query_result
+    return send_query_result(
+        send_into, 
+        ur_list_data, 
+        |s| {s.agents}
+    );
+}
+
+
+// FIXME update to newer pattern without requiring separate wasm config
+#[cfg(target_arch = "wasm32")]
+pub async fn fetch_ur_list_web(
+    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
+    nvacl: &NavAbilityClient
+) -> Result<(),Box<dyn Error>> {
+    let result = fetch_agents(&nvacl).await;
+    // use common send_query_result
+    return send_query_result(
+        send_into, 
+        result, 
+        |s| {s.agents}
+    );
+}
+
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn add_agent_async(
     nvacl: &NavAbilityClient,
@@ -84,112 +154,6 @@ pub async fn add_agent_async(
     return check_deser::<add_agent::ResponseData>(
         req_res?.json().await
     )
-}
-
-
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_agents(
-    nvacl: &NavAbilityClient,
-) -> Result<Response<get_agents::ResponseData>, Box<dyn Error>> {
-
-    // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
-    let variables = get_agents::Variables {
-        org_id: nvacl.user_label.to_string(),
-        // Uuid::new_v4().to_string() // FIXME uuid
-    };
-
-    let request_body = GetAgents::build_query(variables);
-
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<get_agents::ResponseData>(
-        req_res?.json().await
-    )
-}
-
-
-
-
-#[cfg(feature = "tokio")]
-pub fn fetch_ur_list_tokio(
-    send_into: &mut Sender<Vec<get_agents::GetAgentsAgents>>, 
-    nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> { // -> Vec<get_agents::GetAgentsAgents> {
-
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    let ur_list_data = rt.block_on(async { 
-        fetch_agents(&nvacl).await
-    }); //.unwrap().data;
-
-    // TODO use common send_query_result -- TBD data.agents changes type
-    // send_query_result(send_into, ur_list_data);
-    match ur_list_data {
-        Ok(ur_data) => match ur_data.data { 
-            Some(data) => {
-                let ur_list = data.agents;
-                if let Err(e) = send_into.send(ur_list) {
-                    to_console_error(&format!("Error sending user robot list data: {:?}", e));
-                };
-                return Ok(())
-            },
-            None => {
-                    let estr = format!("GQL errors {:?}\n",ur_data.errors);
-                    to_console_error(&estr);
-                    panic!("{}", estr);
-                }
-        },
-        Err(e) => {
-            panic!("Something went wrong {:?}", e);
-        }
-    }
-}
-
-
-// FIXME FIXME FIXME update to newer pattern without requiring separate wasm config
-#[cfg(target_arch = "wasm32")]
-pub async fn fetch_ur_list_web(
-    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
-    nvacl: &NavAbilityClient
-) {
-    let result = fetch_agents(&nvacl).await;
-    // FIXME use common send_query_result
-    // send_query_result::<get_robots::GetAgentsAgents>(send_into, result);
-    if let Ok(response_body) = result {
-        let res_errs = response_body.errors;
-        match res_errs {
-            Some(ref err) => {
-                to_console_error(&format!("NvaSDK.rs fetch_ur_list_web has response errors {:?}",&res_errs));
-            },
-            None => {
-                let ur_list_data = response_body.data;
-                match ur_list_data {
-                    None => to_console_debug("NvaSDK.rs bad GQL response"),
-                    Some(resdata) => {
-                        let ur_list = resdata.agents;
-                        let res_len = ur_list.len();
-                        let resp = send_into.send(ur_list);
-                        if let Err(e) = resp {
-                            to_console_error(&format!("Error sending user robot list data: {}", e));
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        to_console_error("fetch_agents(&nvacl).await");
-    }
-
 }
 
 
