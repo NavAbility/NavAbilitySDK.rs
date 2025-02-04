@@ -23,8 +23,8 @@ pub struct Agent {
     pub lastUpdatedTimestamp: Option<chrono::DateTime::<Utc>>,
     pub metadata: Option<String>,
     pub blobEntries: Option<HashMap<String, BlobEntry>>,
-    pub models: Option<HashMap<String, NvaNode<Model>>>,
-    pub fgs: Option<HashMap<String, NvaNode<Factorgraph>>>,
+    pub models: Option<Vec<(String,chrono::DateTime<Utc>)>>,
+    pub fgs: Option<Vec<(String,chrono::DateTime<Utc>)>>,
 }
 
 impl Agent {
@@ -35,19 +35,17 @@ impl Agent {
     tags: Vec<String>,
     createdTimestamp: chrono::DateTime<Utc>,
   ) -> Self {
-    Self {
-      id: Some(Uuid::new_v5(org_id, label.as_bytes())),
-      label,
-      description,
-      tags,
-      _version: SDK_VERSION.to_string(),
-      createdTimestamp,
-      lastUpdatedTimestamp: Some(createdTimestamp.clone()),
-      metadata: None,
-      blobEntries: None,
-      models: None,
-      fgs: None,
-    }
+    let mut ag = Self::default();
+    // mutate the non-default fields per new inputs
+    ag.id = Some(Uuid::new_v5(org_id, label.as_bytes()));
+    ag.label = label;
+    ag.description = description;
+    ag.tags = tags;
+    ag._version = SDK_VERSION.to_string();
+    ag.lastUpdatedTimestamp = Some(createdTimestamp.clone());
+    ag.createdTimestamp = createdTimestamp;
+
+    return ag;
   }
 }
 
@@ -59,8 +57,6 @@ pub trait AgentFieldImportersSummary {
   fn _version(&self) -> String;
   fn createdTimestamp(&self) -> chrono::DateTime<Utc>;
   fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>>;
-  // fn metadata(&self) -> Option<String>;
-  // fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>>;
 }
 
 // helper macro to avoid repetition of "basic" impl Coordinates
@@ -117,13 +113,11 @@ macro_rules! Agent_importers_summary {
 
 
 
-
-
 pub trait AgentFieldImportersFull {
   fn metadata(&self) -> Option<String>;
   fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>>;
-  fn models(&self) -> Option<HashMap<String, NvaNode<Model>>>;
-  fn fgs(&self) -> Option<HashMap<String, NvaNode<Factorgraph>>>;
+  fn models(&self) -> Option<Vec<(String,chrono::DateTime<Utc>)>>;
+  fn fgs(&self) -> Option<Vec<(String,chrono::DateTime<Utc>)>>;
 }
 
 // helper macro to avoid repetition of "basic" impl Coordinates
@@ -134,15 +128,30 @@ macro_rules! Agent_importers_full {
       fn metadata(&self) -> Option<String> { self.metadata.clone() }
 
       fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>> {
-        None
+        let mut blob_entries = HashMap::new();
+        for ge in &self.blob_entries {
+          let ne = BlobEntry::from_gql_summary(ge);
+          blob_entries.insert(ne.label.clone(), ne);
+        }
+        return Some(blob_entries);
       }
 
-      fn models(&self) -> Option<HashMap<String, NvaNode<Model>>> {
-        None
+      fn models(&self) -> Option<Vec<(String,chrono::DateTime<Utc>)>> {
+        let mut mdls = Vec::new();
+        for ms in &self.models {
+          let ts = parse_str_utc(ms.last_updated_timestamp.clone()).unwrap();
+          mdls.push((ms.label.clone(),ts));
+        }
+        return Some(mdls);
       }
 
-      fn fgs(&self) -> Option<HashMap<String, NvaNode<Factorgraph>>> {
-        None
+      fn fgs(&self) -> Option<Vec<(String,chrono::DateTime<Utc>)>> {
+        let mut grs = Vec::new();
+        for g in &self.fgs {
+          let ts = parse_str_utc(g.last_updated_timestamp.clone()).unwrap();
+          grs.push((g.label.clone(),ts));
+        }
+        return Some(grs);
       }
     }
   }

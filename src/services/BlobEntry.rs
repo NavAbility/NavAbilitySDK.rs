@@ -1,5 +1,6 @@
 
 use crate::{
+    chrono::ParseError, 
     get_variable, 
     parse_str_utc, 
     send_query_result, 
@@ -11,9 +12,8 @@ use crate::{
     Response, 
     UpdateBlobentryMetadata, 
     Utc, 
-    Uuid, 
-    SDK_VERSION,
-    chrono::ParseError,
+    Uuid,
+    SDK_VERSION
 };
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -25,10 +25,13 @@ use crate::{
     GetBlobEntry, 
     get_blob_entry, 
     SameBlobEntryFields,
+    get_agents,
     GraphQLQuery, 
     NavAbilityClient,
     BlobEntryFieldsImporters,
-    BlobEntry_importers
+    BlobEntry_importers,
+    BlobEntrySummaryImporters,
+    BlobEntry_importers_summary,
 };
 
 
@@ -37,11 +40,18 @@ use get_blob_entry::blobEntry_fields as GB_BlobEntryFields;
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use get_variable::blobEntry_fields as GV_BlobEntryFields;
 
-// duplication in blobEntry_fields GQL fragments in get_blob_entry and  get_variable
+// duplication in blobEntry_fields GQL fragments in different queries
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 BlobEntry_importers!(GB_BlobEntryFields);
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 BlobEntry_importers!(GV_BlobEntryFields);
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use get_agents::blobEntry_fields_summary as GA_BlobEntrySummary;
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+BlobEntry_importers_summary!(GA_BlobEntrySummary);
 
 
 
@@ -57,6 +67,19 @@ impl BlobEntry {
         be._type = "BlobEntry".to_string(); // for self assemply typed usage elsewhere
         be._version = SDK_VERSION.to_string(); // FIXME dont hardcode, pull from common source
         return be
+    }
+
+    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+    pub fn from_gql_summary(
+        begql: &impl BlobEntrySummaryImporters,
+    ) -> Self {
+        let mut be = BlobEntry::default();
+        be.label = begql.label();
+        be.size = begql.size();
+        be.mimeType = begql.mimeType();
+        be.lastUpdatedTimestamp = begql.lastUpdatedTimestamp();
+
+        return be;
     }
 
     #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]

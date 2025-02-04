@@ -53,6 +53,54 @@ pub struct BlobEntry {
     pub _version: String,
 }
 
+
+pub trait BlobEntrySummaryImporters {
+    fn label(&self) -> String;
+    fn size(&self) -> Option<i64>;
+    fn mimeType(&self) -> String;
+    fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>>;
+}
+
+
+// helper macro to avoid repetition of "basic" impl Coordinates
+#[macro_export]
+macro_rules! BlobEntry_importers_summary { 
+    ($T:ident) => {
+        impl BlobEntrySummaryImporters for $T {
+            
+            fn label(&self) -> String { self.label.to_string() }
+
+            fn size(&self) -> Option<i64> {
+                if let Some(sz) = &self.size {
+                    return Some(sz.parse::<i64>().unwrap());
+                } else {
+                    return None;
+                }
+            }
+
+            fn mimeType(&self) -> String { 
+                return self.mime_type.clone().unwrap_or("".to_owned()).to_string();
+            }
+
+            fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>> {
+                let timestamp = &self.last_updated_timestamp;
+                // 2024-09-16T16:51:20.555Z
+                if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                    return Some(tms);
+                } else {
+                    let errm = format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp);
+                    to_console_error(&errm);
+                }
+                return None;
+            }
+        }
+    }
+}
+
+
+
+
+
 pub trait BlobEntryFieldsImporters {
     fn id(&self) -> Option<Uuid>;
     fn blobId(&self) -> Uuid;

@@ -79,6 +79,8 @@ impl Agent {
     ) {
         ag.metadata = aggql.metadata();
         ag.blobEntries = aggql.blobEntries();
+        ag.models = aggql.models();
+        ag.fgs = aggql.fgs();
         
         return ();
     }
