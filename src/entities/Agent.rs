@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::{
   BlobEntry, 
+  NvaNode,
   Model,
   Factorgraph,
   Utc, 
@@ -22,8 +23,8 @@ pub struct Agent {
     pub lastUpdatedTimestamp: Option<chrono::DateTime::<Utc>>,
     pub metadata: Option<String>,
     pub blobEntries: Option<HashMap<String, BlobEntry>>,
-    pub models: Option<HashMap<String, Model>>,
-    pub fgs: Option<HashMap<String, Factorgraph>>,
+    pub models: Option<HashMap<String, NvaNode<Model>>>,
+    pub fgs: Option<HashMap<String, NvaNode<Factorgraph>>>,
 }
 
 impl Agent {
