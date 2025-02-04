@@ -1,23 +1,46 @@
 
+
+fragment agent_fields_summary on Agent {
+  id
+  label
+  description
+  tags
+  _version
+  createdTimestamp
+  lastUpdatedTimestamp
+}
+
+fragment blobEntry_fields_summary on BlobEntry {
+  label
+  size
+  mimeType
+  lastUpdatedTimestamp
+}
+
+fragment agent_fields_full on Agent {
+  metadata
+  blobEntries {
+    ...blobEntry_fields_summary
+  } 
+  fgs {
+    label
+    lastUpdatedTimestamp
+  }
+  models {
+    label
+    lastUpdatedTimestamp
+  }
+}
+
 query GetAgents(
   $org_id: ID!
+  $full: Boolean = false
 ) {
   agents {
-    id
-    label
     org(where: {id: $org_id}) {
       id
     }
-    blobEntries {
-      label
-      id
-      lastUpdatedTimestamp
-      createdTimestamp
-    }
-    createdTimestamp
-    models {
-      label
-      createdTimestamp
-    }
+    ...agent_fields_summary
+    ...agent_fields_full @include(if: $full)
   }
 }

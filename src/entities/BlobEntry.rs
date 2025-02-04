@@ -53,7 +53,7 @@ pub struct BlobEntry {
     pub _version: String,
 }
 
-pub trait BlobEntryFieldsAccessors {
+pub trait BlobEntryFieldsImporters {
     fn id(&self) -> Option<Uuid>;
     fn blobId(&self) -> Uuid;
     fn originId(&self) -> Option<Uuid>;
@@ -74,9 +74,9 @@ pub trait BlobEntryFieldsAccessors {
 
 // helper macro to avoid repetition of "basic" impl Coordinates
 #[macro_export]
-macro_rules! BlobEntry_accessors { 
+macro_rules! BlobEntry_importers { 
     ($T:ident) => {
-        impl BlobEntryFieldsAccessors for $T {
+        impl BlobEntryFieldsImporters for $T {
             fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse blobentry id to uuid")) }
             
             fn blobId(&self) -> Uuid { Uuid::parse_str(&self.blob_id).expect("failed to parse blobentry blob_id to uuid") }

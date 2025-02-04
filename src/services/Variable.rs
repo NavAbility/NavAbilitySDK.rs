@@ -1,35 +1,35 @@
 
 use crate::{
-    check_query_response_data,
-    get_variable::{
-        self, 
-        ppe_fields
-    }, 
-    list_variables, 
     parse_str_utc, 
-    to_console_debug, 
-    to_console_error, 
-    Error, 
-    GetId, 
     BlobEntry,
-    GetVariable, 
-    GraphQLQuery,
-    ListVariables, 
     MeanMaxPPE, 
     PackedVariableNodeData, 
-    Response, 
-    Sender, 
     Utc, 
-    Uuid, 
+    Uuid,
     VariableDFG, 
     SDK_VERSION
 };
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
+    Error,     
+    Sender, 
+    Response, 
     NavAbilityDFG,
     check_deser,
     send_query_result,
+    GetVariable, 
+    GraphQLQuery,
+    ListVariables,
+    GetId,
+    check_query_response_data,
+    get_variable::{
+        self, 
+        ppe_fields
+    }, 
+    list_variables, 
+    // to_console_debug, 
+    to_console_error, 
 };
 
 
@@ -58,6 +58,7 @@ impl MeanMaxPPE {
         }
     }
 
+    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
         ppe: &ppe_fields
     ) -> Self {
@@ -135,6 +136,7 @@ impl VariableDFG {
         }
     }
 
+    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
         vgql: &get_variable::GetVariableVariables
     ) -> Self {
@@ -231,6 +233,7 @@ impl PackedVariableNodeData {
         }
     }
 
+    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
         vndgql: &get_variable::solverdata_fields
     ) -> Self {

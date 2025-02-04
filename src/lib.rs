@@ -50,7 +50,7 @@ pub use crate::utils::*;
 
 pub mod services;
 pub use crate::services::{
-    fetch_agents,
+    get_agents,
     fetch_blob_entry,
     fetch_delete_blob,
     send_blob_entry,
@@ -81,7 +81,7 @@ pub use crate::services::{
 
 #[cfg(feature = "tokio")]
 pub use crate::services::{
-    fetch_ur_list_tokio,
+    getAgents_send,
 };
 
 pub mod deprecated;
@@ -105,6 +105,34 @@ type B64JSON = String;
 type Latitude = f64;
 type Longitude = f64;
 type UUID = String;
+
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/GetBlobEntry.gql",
+    response_derives = "Debug"
+)]
+pub struct GetBlobEntry;
+
+
+#[derive(GraphQLQuery, Clone)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/ListAgents.gql",
+    response_derives = "Debug"
+)]
+pub struct ListAgents;
+
+
+#[derive(GraphQLQuery, Clone)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/UpdateAgent.gql",
+    response_derives = "Debug"
+)]
+pub struct UpdateAgentMetadata;
+
 
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
@@ -179,19 +207,11 @@ pub struct CompleteUpload;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
-    query_path = "src/gql/GetBlobEntry.gql",
-    response_derives = "Debug"
-)]
-pub struct GetBlobEntry;
-
-
-#[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "src/schema.json",
     query_path = "src/gql/GetVariable.gql",
     response_derives = "Debug"
 )]
 pub struct GetVariable;
+
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -201,6 +221,7 @@ pub struct GetVariable;
 )]
 pub struct ListVariables;
 // Implicit ListWhere due to graphql-client limitation: https://github.com/graphql-rust/graphql-client/issues/508
+
 
 #[derive(GraphQLQuery)]
 #[graphql(

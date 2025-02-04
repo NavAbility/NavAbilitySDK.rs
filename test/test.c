@@ -33,11 +33,10 @@ int main(void) {
         printf("The elapsed time creating a NavAbilityClient is %f seconds\n", time_spent);
     
     char* api = get_apiurl(nvacl);
-
-    printf("nvacl.apiurl = %s\n", api);
+    printf("nvacl.apiurl = %s\n", "***");
 
     RVec_Agent* agents = NULL;
-    agents = listAgents(nvacl);
+    agents = getAgents(nvacl);
 
     printf("get agents length: %ld\n", length(agents));
     int i;
@@ -105,7 +104,7 @@ int main(void) {
 
     printf("check for NullPtr arg handling\n");
     get_apiurl(NULL);
-    listAgents(NULL); 
+    getAgents(NULL); 
     getVariable(NULL,"");
 
     printf("All done.\n");

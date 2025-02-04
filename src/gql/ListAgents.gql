@@ -1,0 +1,11 @@
+query ListAgents(
+  $org_id: ID!
+) {
+  orgs(where: {
+    id: $org_id
+  }) {
+    agents {
+      label
+    }
+  }
+}

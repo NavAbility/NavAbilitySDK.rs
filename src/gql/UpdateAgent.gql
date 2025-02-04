@@ -1,0 +1,14 @@
+
+mutation UpdateAgentMetadata(
+  $id: ID!, 
+  $metadata: String!
+) {
+  updateAgents(
+    where: { id: $id },
+    update: { metadata: $metadata }
+  ) {
+    agents {
+      metadata
+    }
+  }
+}
