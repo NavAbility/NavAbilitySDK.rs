@@ -362,12 +362,12 @@ genGetLabel!(NavAbilityBlobStore);
 genGetLabel!(Session);
 
 // move to services
-impl<T> GetLabel for NvaNode<'_, T> {
+impl<T> GetLabel for NvaNode<T> {
     fn getLabel(&self) -> &String { &self.label }
 }
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-impl GetLabel for crate::entities::ClientDFG::NavAbilityDFG<'_> {
+impl GetLabel for crate::entities::ClientDFG::NavAbilityDFG {
     fn getLabel(&self) -> &String { &self.fg.getLabel() }
 }
 
@@ -384,7 +384,7 @@ pub trait GetId {
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-impl<T> GetId for NvaNode<'_, T> {
+impl<T> GetId for NvaNode<T> {
     fn getId(
         &self, 
         label: &str

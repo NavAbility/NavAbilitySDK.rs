@@ -18,7 +18,7 @@ use crate::{
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-impl GetId for NavAbilityDFG<'_> {
+impl GetId for NavAbilityDFG {
     fn getId(
         &self, 
         label: &str
@@ -30,7 +30,7 @@ impl GetId for NavAbilityDFG<'_> {
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[allow(non_snake_case)]
-impl NavAbilityDFG<'_> {
+impl NavAbilityDFG {
     pub fn new(
         client: &NavAbilityClient,
         fgLabel: &str,
@@ -42,12 +42,12 @@ impl NavAbilityDFG<'_> {
         let _client = client.clone();
         let namespace = Uuid::parse_str(&client.user_label).unwrap();
         let storelb = storeLabel.unwrap_or("default");
-        let fg = NvaNode::<'_, Factorgraph>{
+        let fg = NvaNode::<Factorgraph>{
             namespace: namespace.clone(),
             label: fgLabel.to_string(),
             _marker: Default::default()
         };
-        let agent = NvaNode::<'_, Agent>{
+        let agent = NvaNode::<Agent>{
             namespace: namespace,
             label: agentLabel.to_string(),
             _marker: Default::default()

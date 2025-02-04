@@ -90,7 +90,7 @@ fn NavAbilityDFG_new<'a>(
     storeLabel: Option<&'a c_char>,
     addAgentIfAbsent: Option<&'a bool>,
     addGraphIfAbsent: Option<&'a bool>,
-) -> Option<Box<crate::NavAbilityDFG<'a>>> {
+) -> Option<Box<crate::NavAbilityDFG>> {
     if _nvacl.is_none() {
         to_console_error("NavAbilityDFG: provided *NavAbilityClient is NULL/None");
         return None;
@@ -236,30 +236,24 @@ fn getAgents(
 
     match crate::services::getAgents(_nvacl.unwrap()) {
         Ok(agents) => {
-            // // to_console_debug(&format!("got urlist {:?}",res[0]));
-            // let mut agents = Vec::new();
-            // for agent in res {
-            //     // let agent = Agent::from_gql(&r);
-            //     agents.push(agent);
-            // }
             return Some(Box::new(vec_to_ffi(agents)))
         }
         Err(e) => {
-            to_console_error(&format!("NvaSDK.rs error during listAgents: {:?}", e));
-            return None;
+            to_console_error(&format!("NvaSDK.rs error during getAgents: {:?}", e));
+            // return None;
+            return Some(Box::new(RVec::<crate::Agent> { 
+                ptr: ptr::null_mut(), 
+                len: 0 as usize 
+            }))
         }
     }
 
-    return Some(Box::new(RVec::<crate::Agent> { 
-        ptr: ptr::null_mut(), 
-        len: 0 as usize 
-    }))
 }
 
 
 #[no_mangle] pub unsafe extern "C" 
-fn getVariable<'a>(
-    nvafg: Option<&'a crate::NavAbilityDFG<'a>>,
+fn getVariable(
+    nvafg: Option<&crate::NavAbilityDFG>,
     label: *const c_char,
 ) -> Option<Box<crate::VariableDFG>> {
     if nvafg.is_none() {
@@ -483,8 +477,9 @@ unsafe fn free_rvec<T> (
 
     // println!("dropping RVec");
     if ptr.is_null() {
-        eprintln!("free_boxed_slice() errored: got NULL ptr!");
+        eprintln!("free_rvec() errored: got NULL ptr!");
         ::std::process::abort();
+        // return ();
     }
     let slice: &mut [T] =
         slice::from_raw_parts_mut(ptr, len)

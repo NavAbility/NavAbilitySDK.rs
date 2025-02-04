@@ -17,9 +17,9 @@ pub struct Model {}
 pub struct Factorgraph {}
 
 #[derive(Clone,Debug)]
-pub struct NvaNode<'a, T: 'a> {
+pub struct NvaNode<T> {
     pub namespace: Uuid,
     pub label: String,
-    pub _marker: marker::PhantomData<&'a T>
+    pub _marker: marker::PhantomData<T>
     // https://doc.rust-lang.org/nomicon/phantom-data.html
 }

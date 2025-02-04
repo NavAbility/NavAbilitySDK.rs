@@ -28,9 +28,9 @@ pub struct NavAbilityClient {
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(Debug)]
 #[allow(non_snake_case)]
-pub struct NavAbilityDFG<'a> {
+pub struct NavAbilityDFG {
     pub client: NavAbilityClient,
-    pub fg: NvaNode<'a,Factorgraph>,
-    pub agent: NvaNode<'a, Agent>,
+    pub fg: NvaNode<Factorgraph>,
+    pub agent: NvaNode<Agent>,
     pub blobStores: HashMap<String, NavAbilityBlobStore>,
 }
