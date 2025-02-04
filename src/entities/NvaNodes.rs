@@ -16,7 +16,7 @@ pub struct Model {}
 #[derive(Debug, Clone)]
 pub struct Factorgraph {}
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 pub struct NvaNode<'a, T: 'a> {
     pub namespace: Uuid,
     pub label: String,

@@ -196,17 +196,15 @@ pub fn getAgents(
 }
 
 // FIXME DEPRECATE
-#[cfg(feature = "tokio")]
-pub fn getAgents_send(
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn getAgents_send(
     send_into: Sender<Vec<Agent>>, 
     // send_into: Sender<Vec<crate::get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
-    use crate::send_api_response;
-
     return send_api_response(
         send_into, 
-        getAgents(&nvacl)?,
+        get_agents(nvacl).await?,
     );
 
     // let rt = tokio::runtime::Builder::new_current_thread()
@@ -226,20 +224,20 @@ pub fn getAgents_send(
 }
 
 
-// FIXME update to newer pattern without requiring separate wasm config
-#[cfg(target_arch = "wasm32")]
-pub async fn fetch_ur_list_web(
-    send_into: Sender<Vec<crate::get_agents::GetAgentsAgents>>, 
-    nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> {
-    let result = get_agents(&nvacl).await;
-    // use common send_query_result
-    return send_query_result(
-        send_into, 
-        result, 
-        |s| {s.agents}
-    );
-}
+// // FIXME update to newer pattern without requiring separate wasm config
+// #[cfg(target_arch = "wasm32")]
+// pub async fn fetch_ur_list_web(
+//     send_into: Sender<Vec<crate::get_agents::GetAgentsAgents>>, 
+//     nvacl: &NavAbilityClient
+// ) -> Result<(),Box<dyn Error>> {
+//     let result = get_agents(&nvacl).await;
+//     // use common send_query_result
+//     return send_query_result(
+//         send_into, 
+//         result, 
+//         |s| {s.agents}
+//     );
+// }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
