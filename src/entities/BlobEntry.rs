@@ -74,7 +74,7 @@ pub trait BlobEntryFieldsImporters {
 
 // helper macro to avoid repetition of "basic" impl Coordinates
 #[macro_export]
-macro_rules! BlobEntry_accessors { 
+macro_rules! BlobEntry_importers { 
     ($T:ident) => {
         impl BlobEntryFieldsImporters for $T {
             fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse blobentry id to uuid")) }

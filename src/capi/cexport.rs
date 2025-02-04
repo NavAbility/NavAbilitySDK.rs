@@ -31,14 +31,12 @@ use ::core::slice;
 // };
 
 use crate::{
-    fetch_ur_list_tokio, 
     get_agents, 
     parse_str_utc, 
     to_console_error, 
     Agent, 
     NavAbilityBlobStore,
     GetLabel,
-    // getLabel,
 };
 
 
@@ -228,34 +226,27 @@ fn Pose3Pose3<'a>(
 
 #[allow(non_snake_case)]
 #[no_mangle] pub unsafe extern "C" 
-fn listAgents(
+fn getAgents(
     _nvacl: Option<&crate::NavAbilityClient>,
 ) -> Option<Box<RVec<crate::Agent>>> {
     if _nvacl.is_none() {
         to_console_error("listAgents: provided *NavAbilityClient is NULL/None");
         return None;
     }
-    
-    let (tx,rx) = std::sync::mpsc::channel::<Vec<get_agents::GetAgentsAgents>>();
-    let _ = fetch_ur_list_tokio(tx.clone(), &(*_nvacl.unwrap()));
-    match rx.try_recv() {
-        Ok(res) => {
-            // to_console_debug(&format!("got urlist {:?}",res[0]));
-            let mut ls = Vec::new();
-            for r in res {
-                let agent = Agent::new(
-                    &Uuid::parse_str(&r.id).unwrap(),
-                    r.label.to_string(),
-                    "".to_owned(),
-                    Vec::new(),
-                    parse_str_utc(r.created_timestamp.clone()).unwrap(), // FIXME use .last_updated_timestamp
-                );
-                ls.push(agent);
-            }
-            return Some(Box::new(vec_to_ffi(ls)))
+
+    match crate::services::getAgents(_nvacl.unwrap()) {
+        Ok(agents) => {
+            // // to_console_debug(&format!("got urlist {:?}",res[0]));
+            // let mut agents = Vec::new();
+            // for agent in res {
+            //     // let agent = Agent::from_gql(&r);
+            //     agents.push(agent);
+            // }
+            return Some(Box::new(vec_to_ffi(agents)))
         }
         Err(e) => {
             to_console_error(&format!("NvaSDK.rs error during listAgents: {:?}", e));
+            return None;
         }
     }
 
@@ -458,18 +449,31 @@ fn free_NavAbilityBlobStore(
 // ============================ ADDITIONAL UTILS ==================================
 
 
-fn vec_to_ffi (
-    v: Vec<crate::Agent>
-) -> RVec<crate::Agent> {
+fn vec_to_ffi<T> (
+    v: Vec<T>
+) -> RVec<T> {
     // Going from Vec<_> to Box<[_]> just drops the (extra) `capacity`
-    let boxed_slice: Box<[crate::Agent]> = v.into_boxed_slice();
+    let boxed_slice: Box<[T]> = v.into_boxed_slice();
     let len = boxed_slice.len();
-    let fat_ptr: *mut [crate::Agent] =
+    let fat_ptr: *mut [T] =
         Box::into_raw(boxed_slice)
     ;
-    let slim_ptr: *mut crate::Agent = fat_ptr as _;
-    RVec::<crate::Agent> { ptr: slim_ptr, len }
+    let slim_ptr: *mut T = fat_ptr as _;
+    RVec::<T> { ptr: slim_ptr, len }
 }
+
+// fn vec_to_ffi_ (
+//     v: Vec<crate::Agent>
+// ) -> RVec<crate::Agent> {
+//     // Going from Vec<_> to Box<[_]> just drops the (extra) `capacity`
+//     let boxed_slice: Box<[crate::Agent]> = v.into_boxed_slice();
+//     let len = boxed_slice.len();
+//     let fat_ptr: *mut [crate::Agent] =
+//         Box::into_raw(boxed_slice)
+//     ;
+//     let slim_ptr: *mut crate::Agent = fat_ptr as _;
+//     RVec::<crate::Agent> { ptr: slim_ptr, len }
+// }
 
 unsafe fn free_rvec<T> (
     rvec: RVec<T>

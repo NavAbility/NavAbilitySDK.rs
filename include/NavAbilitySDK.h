@@ -99,6 +99,8 @@ void free_cstr(char *pointer);
 
 void free_rvecagent(struct RVec_Agent *rvec);
 
+struct RVec_Agent *getAgents(const struct NavAbilityClient *_nvacl);
+
 const char *getLabel_Agent(const struct Agent *agent);
 
 const char *getLabel_BlobEntry(const struct BlobEntry *bentry);
@@ -118,8 +120,6 @@ char *get_apiurl(const struct NavAbilityClient *nvacl);
 struct Agent *get_index(const struct RVec_Agent *rv_agent, size_t index);
 
 size_t length(const struct RVec_Agent *rv_agent);
-
-struct RVec_Agent *listAgents(const struct NavAbilityClient *_nvacl);
 
 
 #define getLabel(obj)                                         \

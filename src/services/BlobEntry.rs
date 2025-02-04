@@ -16,10 +16,8 @@ use crate::{
     chrono::ParseError,
 };
 
-#[macro_use]
-use crate::BlobEntryFieldsImporters;
-
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[macro_use]
 use crate::{
     check_deser, 
     DeleteBlobEntry,
@@ -29,9 +27,10 @@ use crate::{
     SameBlobEntryFields,
     GraphQLQuery, 
     NavAbilityClient,
+    BlobEntryFieldsImporters,
+    BlobEntry_importers
 };
 
-use crate::BlobEntry_accessors;
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use get_blob_entry::blobEntry_fields as GB_BlobEntryFields;
@@ -40,9 +39,9 @@ use get_variable::blobEntry_fields as GV_BlobEntryFields;
 
 // duplication in blobEntry_fields GQL fragments in get_blob_entry and  get_variable
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-BlobEntry_accessors!(GB_BlobEntryFields);
+BlobEntry_importers!(GB_BlobEntryFields);
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-BlobEntry_accessors!(GV_BlobEntryFields);
+BlobEntry_importers!(GV_BlobEntryFields);
 
 
 

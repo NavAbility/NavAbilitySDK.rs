@@ -44,7 +44,7 @@ impl Agent {
   }
 }
 
-pub trait AgentFieldImporters {
+pub trait AgentFieldImportersSummary {
   fn id(&self) -> Option<Uuid>;
   fn label(&self) -> String;
   fn description(&self) -> String;
@@ -52,15 +52,15 @@ pub trait AgentFieldImporters {
   fn _version(&self) -> String;
   fn createdTimestamp(&self) -> chrono::DateTime<Utc>;
   fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>>;
-  fn metadata(&self) -> Option<String>;
-  fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>>;
+  // fn metadata(&self) -> Option<String>;
+  // fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>>;
 }
 
 // helper macro to avoid repetition of "basic" impl Coordinates
 #[macro_export]
-macro_rules! Agent_accessors { 
+macro_rules! Agent_importers_summary { 
     ($T:ident) => {
-        impl AgentFieldImporters for $T {
+        impl AgentFieldImportersSummary for $T {
             fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse blobentry id to uuid")) }
             
             fn label(&self) -> String { self.label.to_string() }
@@ -70,14 +70,14 @@ macro_rules! Agent_accessors {
             }
 
             fn tags(&self) -> Vec<String> { 
-              return self.tags.to_string();
+              return self.tags.clone();
             }
 
             fn _version(&self) -> String { 
               return self.version.to_string();
             }
 
-            fn createdTimestamp(&self) -> Option<chrono::DateTime<Utc>> {
+            fn createdTimestamp(&self) -> chrono::DateTime<Utc> {
                 let timestamp = &self.created_timestamp;
                 match parse_str_utc(timestamp.clone()) {
                   Ok(tms) => { 
@@ -95,7 +95,7 @@ macro_rules! Agent_accessors {
               let timestamp = &self.last_updated_timestamp;
               match parse_str_utc(timestamp.clone()) {
                 Ok(tms) => { 
-                  return tms;
+                  return Some(tms);
                 },
                 Err(e) => {
                   let errm = format!("AgentImporter, lastUpdatedTimestamp failed chrono parse_from_str timestamp {:?} with error {:?}",timestamp,e);
@@ -105,15 +105,15 @@ macro_rules! Agent_accessors {
               }
             }
 
-            fn metadata(&self) -> String { 
-              return self.metadata.clone().unwrap_or("".to_owned()).to_string();
-            }
+            // fn metadata(&self) -> Option<String> { 
+            //   return self.metadata.clone();
+            // }
 
-            fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>> {
-              // FIXME: implement blobEntries HashMap importer
-              //   self.blobEntries;
-              return None;
-            }
+            // fn blobEntries(&self) -> Option<HashMap<String, BlobEntry>> {
+            //   // FIXME: implement blobEntries HashMap importer
+            //   //   self.blobEntries;
+            //   return None;
+            // }
 
         }
     }

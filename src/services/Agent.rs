@@ -5,8 +5,10 @@ use crate::{
     Agent,
 };
 
+use std::collections::HashMap;
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[macro_use]
 use crate::{
     Sender,
     GraphQLQuery,
@@ -15,6 +17,7 @@ use crate::{
     SDK_VERSION,
     BlobEntry,
     to_console_error,
+    parse_str_utc,
     NavAbilityClient,
     check_deser,
     send_query_result,
@@ -22,9 +25,10 @@ use crate::{
     check_query_response_data,
     AddAgent,
     add_agent,
-    GetAgents,
-    get_agents,
+    GetAgents, // also use crate::get_agents,
     ListAgents, // also use crate::list_agents,
+    AgentFieldImportersSummary,
+    Agent_importers_summary,
     get_agent_entries_metadata,
     GetAgentEntriesMetadata,
     AddBlobEntries,
@@ -35,6 +39,33 @@ use crate::{
 #[cfg(feature = "wasm")]
 use crate::to_console_debug;
 
+
+// ===================== HELPERS ========================
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::get_agents::agent_fields_summary as GA_AgentFieldsSummary;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+Agent_importers_summary!(GA_AgentFieldsSummary);
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+impl Agent {
+    pub fn from_gql(
+        aggql: &impl AgentFieldImportersSummary,
+    ) -> Self {
+        let mut ag = Agent::default();
+        ag.id = aggql.id();
+        ag.label = aggql.label();
+        ag.description = aggql.description();
+        ag._version = aggql._version();
+        ag.createdTimestamp = aggql.createdTimestamp();
+        ag.lastUpdatedTimestamp = aggql.lastUpdatedTimestamp();
+        // ag.metadata = aggql.metadata();
+        // ag.blobEntries = aggql.blobEntries();
+
+        return ag;
+    }
+}
 
 
 // ===================== QUERIES ========================
@@ -93,27 +124,30 @@ pub fn listAgents(
 
 // FIXME update to newer pattern without requiring separate wasm config
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_ur_list_web(
+#[allow(non_snake_case)]
+pub async fn listAgents_send(
     send_into: Sender<Vec<String>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
-    let result = list_agents(&nvacl).await;
     // use common send_query_result
     return send_api_response(
         send_into, 
-        result?,
+        list_agents(&nvacl).await?,
     );
 }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_agents(
+pub async fn get_agents(
     nvacl: &NavAbilityClient,
-) -> Result<Response<get_agents::ResponseData>, Box<dyn Error>> {
+) -> Result<Vec<Agent>, Box<dyn Error>> {
+// ) -> Result<Response<crate::get_agents::ResponseData>, Box<dyn Error>> {
 
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
-    let variables = get_agents::Variables {
+
+    let variables = crate::get_agents::Variables {
         org_id: nvacl.user_label.to_string(),
+        full: Some(false)
     };
 
     let request_body = GetAgents::build_query(variables);
@@ -123,47 +157,82 @@ pub async fn fetch_agents(
     .json(&request_body)
     .send().await;
 
+    // FIXME change to use common error handling before attempting to json deserialize
     if let Err(ref re) = req_res {
         to_console_error(&format!("API request error: {:?}", re));
     }
 
-    return check_deser::<get_agents::ResponseData>(
+    let response_body = check_deser::<crate::get_agents::ResponseData>(
         req_res?.json().await
-    )
+    );
+
+    // unwrap ListAgents query response during error checks
+    return check_query_response_data::<
+        crate::get_agents::ResponseData,
+        Vec<Agent>
+    >(
+        response_body, 
+        |s| {
+            let mut ags = Vec::new();
+            for a in s.agents {
+                ags.push(Agent::from_gql(&a.agent_fields_summary));
+            };
+            return ags;
+        }
+    );
 }
 
 
-
 #[cfg(feature = "tokio")]
-pub fn fetch_ur_list_tokio(
-    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
+pub fn getAgents(
+    // send_into: Sender<Vec<crate::get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> {
-
-    let rt = tokio::runtime::Builder::new_current_thread()
+) -> Result<Vec<Agent>, Box<dyn Error>> {
+    return tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
-        .unwrap();
-    let ur_list_data = rt.block_on(async { 
-        fetch_agents(&nvacl).await
-    });
+        .unwrap()
+        .block_on(get_agents(nvacl));
+}
 
-    // use common send_query_result
-    return send_query_result(
+// FIXME DEPRECATE
+#[cfg(feature = "tokio")]
+pub fn getAgents_send(
+    send_into: Sender<Vec<Agent>>, 
+    // send_into: Sender<Vec<crate::get_agents::GetAgentsAgents>>, 
+    nvacl: &NavAbilityClient
+) -> Result<(),Box<dyn Error>> {
+    use crate::send_api_response;
+
+    return send_api_response(
         send_into, 
-        ur_list_data, 
-        |s| {s.agents}
+        getAgents(&nvacl)?,
     );
+
+    // let rt = tokio::runtime::Builder::new_current_thread()
+    //     .enable_all()
+    //     .build()
+    //     .unwrap();
+    // let ur_list_data = rt.block_on(async { 
+    //     get_agents(&nvacl).await
+    // });
+
+    // // use common send_query_result
+    // return send_query_result(
+    //     send_into, 
+    //     ur_list_data, 
+    //     |s| {s.agents}
+    // );
 }
 
 
 // FIXME update to newer pattern without requiring separate wasm config
 #[cfg(target_arch = "wasm32")]
 pub async fn fetch_ur_list_web(
-    send_into: Sender<Vec<get_agents::GetAgentsAgents>>, 
+    send_into: Sender<Vec<crate::get_agents::GetAgentsAgents>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
-    let result = fetch_agents(&nvacl).await;
+    let result = get_agents(&nvacl).await;
     // use common send_query_result
     return send_query_result(
         send_into, 
