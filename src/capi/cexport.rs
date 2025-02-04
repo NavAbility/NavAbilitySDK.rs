@@ -236,24 +236,18 @@ fn getAgents(
 
     match crate::services::getAgents(_nvacl.unwrap()) {
         Ok(agents) => {
-            // // to_console_debug(&format!("got urlist {:?}",res[0]));
-            // let mut agents = Vec::new();
-            // for agent in res {
-            //     // let agent = Agent::from_gql(&r);
-            //     agents.push(agent);
-            // }
             return Some(Box::new(vec_to_ffi(agents)))
         }
         Err(e) => {
-            to_console_error(&format!("NvaSDK.rs error during listAgents: {:?}", e));
-            return None;
+            to_console_error(&format!("NvaSDK.rs error during getAgents: {:?}", e));
+            // return None;
+            return Some(Box::new(RVec::<crate::Agent> { 
+                ptr: ptr::null_mut(), 
+                len: 0 as usize 
+            }))
         }
     }
 
-    return Some(Box::new(RVec::<crate::Agent> { 
-        ptr: ptr::null_mut(), 
-        len: 0 as usize 
-    }))
 }
 
 

@@ -171,7 +171,7 @@ pub fn check_query_response_data<F,T>(
             }
         }
         Err(e) => {
-            to_console_error(&format!("Earlier query handling failure, unable to send: {:?}",&e));
+            to_console_error(&format!("failure before check_query_response_data: {:?}",&e));
             return Err(e);
         }
     }
