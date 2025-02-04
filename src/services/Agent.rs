@@ -25,8 +25,8 @@ use crate::{
     check_query_response_data,
     AddAgent,
     add_agent,
-    GetAgents, // also use crate::get_agents,
-    ListAgents, // also use crate::list_agents,
+    GetAgents, // query vs fn, unique crate::get_agents,
+    ListAgents, // query vs fn, unique crate::list_agents,
     AgentFieldImportersSummary,
     Agent_importers_summary,
     get_agent_entries_metadata,
@@ -147,7 +147,7 @@ pub async fn get_agents(
 
     let variables = crate::get_agents::Variables {
         org_id: nvacl.user_label.to_string(),
-        full: Some(false)
+        full: Some(true)
     };
 
     let request_body = GetAgents::build_query(variables);
