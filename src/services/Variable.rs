@@ -268,7 +268,7 @@ impl PackedVariableNodeData {
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn fetch_variable(
-    nvafg: &NavAbilityDFG<'_>,
+    nvafg: &NavAbilityDFG,
     label: &str,
     fields_summary: bool,
     fields_full: bool,
@@ -300,7 +300,7 @@ pub async fn fetch_variable(
 #[cfg(feature = "tokio")]
 #[allow(non_snake_case)]
 pub fn getVariable(
-    nvafg: &NavAbilityDFG<'_>,
+    nvafg: &NavAbilityDFG,
     label: &str,
     fields_summary: bool,
     fields_full: bool,
@@ -342,7 +342,7 @@ pub fn getVariable(
 // #[allow(non_snake_case)]
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn fetch_list_variables(
-    nvafg: &NavAbilityDFG<'_>,
+    nvafg: &NavAbilityDFG,
 ) -> Result<Response<list_variables::ResponseData>, Box<dyn Error>> {
     let id = nvafg.fg.getId(""); 
     let request_body = ListVariables::build_query(
@@ -375,7 +375,7 @@ pub async fn fetch_list_variables(
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn send_list_variables(
     send_into: Sender<list_variables::ResponseData>,
-    nvafg: &NavAbilityDFG<'_>,
+    nvafg: &NavAbilityDFG,
 ) {
     let resp = fetch_list_variables(nvafg).await;
     let _ = send_query_result::<
@@ -388,7 +388,7 @@ pub async fn send_list_variables(
 #[cfg(feature = "tokio")]
 #[allow(non_snake_case)]
 pub fn listVariables(
-    nvafg: &NavAbilityDFG<'_>,
+    nvafg: &NavAbilityDFG,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()

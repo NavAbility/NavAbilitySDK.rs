@@ -90,7 +90,7 @@ fn NavAbilityDFG_new<'a>(
     storeLabel: Option<&'a c_char>,
     addAgentIfAbsent: Option<&'a bool>,
     addGraphIfAbsent: Option<&'a bool>,
-) -> Option<Box<crate::NavAbilityDFG<'a>>> {
+) -> Option<Box<crate::NavAbilityDFG>> {
     if _nvacl.is_none() {
         to_console_error("NavAbilityDFG: provided *NavAbilityClient is NULL/None");
         return None;
@@ -258,8 +258,8 @@ fn getAgents(
 
 
 #[no_mangle] pub unsafe extern "C" 
-fn getVariable<'a>(
-    nvafg: Option<&'a crate::NavAbilityDFG<'a>>,
+fn getVariable(
+    nvafg: Option<&crate::NavAbilityDFG>,
     label: *const c_char,
 ) -> Option<Box<crate::VariableDFG>> {
     if nvafg.is_none() {
