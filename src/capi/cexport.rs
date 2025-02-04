@@ -477,8 +477,9 @@ unsafe fn free_rvec<T> (
 
     // println!("dropping RVec");
     if ptr.is_null() {
-        eprintln!("free_boxed_slice() errored: got NULL ptr!");
+        eprintln!("free_rvec() errored: got NULL ptr!");
         ::std::process::abort();
+        // return ();
     }
     let slice: &mut [T] =
         slice::from_raw_parts_mut(ptr, len)

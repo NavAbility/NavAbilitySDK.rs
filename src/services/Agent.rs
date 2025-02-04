@@ -19,6 +19,9 @@ use crate::{
     to_console_error,
     parse_str_utc,
     NavAbilityClient,
+    NvaNode,
+    Factorgraph,
+    Model,
     check_deser,
     send_query_result,
     send_api_response,
@@ -29,6 +32,8 @@ use crate::{
     ListAgents, // query vs fn, unique crate::list_agents,
     AgentFieldImportersSummary,
     Agent_importers_summary,
+    AgentFieldImportersFull,
+    Agent_importers_full,
     get_agent_entries_metadata,
     GetAgentEntriesMetadata,
     AddBlobEntries,
@@ -46,11 +51,15 @@ use crate::to_console_debug;
 use crate::get_agents::agent_fields_summary as GA_AgentFieldsSummary;
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 Agent_importers_summary!(GA_AgentFieldsSummary);
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::get_agents::agent_fields_full as GA_AgentFieldsFull;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+Agent_importers_full!(GA_AgentFieldsFull);
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 impl Agent {
-    pub fn from_gql(
+    pub fn from_gql_summary(
         aggql: &impl AgentFieldImportersSummary,
     ) -> Self {
         let mut ag = Agent::default();
@@ -60,10 +69,18 @@ impl Agent {
         ag._version = aggql._version();
         ag.createdTimestamp = aggql.createdTimestamp();
         ag.lastUpdatedTimestamp = aggql.lastUpdatedTimestamp();
-        // ag.metadata = aggql.metadata();
-        // ag.blobEntries = aggql.blobEntries();
 
-        return ag;
+        return ag
+    }
+
+    pub fn from_gql_full(
+        aggql: &impl AgentFieldImportersFull,
+        ag: &mut Self,
+    ) {
+        ag.metadata = aggql.metadata();
+        ag.blobEntries = aggql.blobEntries();
+        
+        return ();
     }
 }
 
@@ -174,7 +191,9 @@ pub async fn get_agents(
         |s| {
             let mut ags = Vec::new();
             for a in s.agents {
-                ags.push(Agent::from_gql(&a.agent_fields_summary));
+                let mut agent = Agent::from_gql_summary(&a.agent_fields_summary);
+                Agent::from_gql_full(&a.agent_fields_full, &mut agent);
+                ags.push(agent);
             };
             return ags;
         }
