@@ -3,6 +3,8 @@ use std::collections::HashMap;
 
 use crate::{
   BlobEntry, 
+  Model,
+  Factorgraph,
   Utc, 
   Uuid, 
   SDK_VERSION 
@@ -20,6 +22,8 @@ pub struct Agent {
     pub lastUpdatedTimestamp: Option<chrono::DateTime::<Utc>>,
     pub metadata: Option<String>,
     pub blobEntries: Option<HashMap<String, BlobEntry>>,
+    pub models: Option<HashMap<String, Model>>,
+    pub fgs: Option<HashMap<String, Factorgraph>>,
 }
 
 impl Agent {
@@ -40,6 +44,8 @@ impl Agent {
       lastUpdatedTimestamp: Some(createdTimestamp.clone()),
       metadata: None,
       blobEntries: None,
+      models: None,
+      fgs: None,
     }
   }
 }
