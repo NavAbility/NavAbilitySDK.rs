@@ -25,7 +25,7 @@ mutation AddBlobEntryModel(
       hash: $hash,
       size: $size,
       timestamp: $timestamp,
-      _version: "0.24", 
+      _version: "0.25", 
       parent: {
           Model: {
             connect: {

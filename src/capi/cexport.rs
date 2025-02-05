@@ -31,7 +31,7 @@ use ::core::slice;
 // };
 
 use crate::{
-    get_agents, 
+    // get_agents, 
     parse_str_utc, 
     to_console_error, 
     Agent, 
@@ -247,8 +247,35 @@ fn getAgents(
             }))
         }
     }
-
 }
+
+
+#[no_mangle] pub unsafe extern "C" 
+fn addAgentBlobEntry(
+    _nvacl: Option<&crate::NavAbilityClient>,
+    agent_label: *const c_char,
+    _entry: Option<&crate::BlobEntry>,
+) -> *const c_char {
+    if _nvacl.is_none() {
+        to_console_error("listAgents: provided *NavAbilityClient is NULL/None");
+        return convert_str("");
+    }
+
+    match crate::services::addAgentBlobEntry(
+        _nvacl.unwrap(),
+        &cstr_to_str(agent_label).to_string(),
+        _entry.unwrap()
+    ) {
+        Ok(id) => {
+            return convert_str(&id);
+        }
+        Err(e) => {
+            to_console_error(&format!("NvaSDK.rs error during addAgentBlobEntry: {:?}", e));
+            return convert_str("");
+        }
+    }
+}
+
 
 
 #[no_mangle] pub unsafe extern "C" 

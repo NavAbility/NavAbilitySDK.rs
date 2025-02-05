@@ -29,15 +29,15 @@ use crate::{
     AddAgent,
     add_agent,
     GetAgents, // query vs fn, unique crate::get_agents,
-    ListAgents, // query vs fn, unique crate::list_agents,
+    ListAgents, // query vs fn, unique crate::post_list_agents,
     AgentFieldImportersSummary,
     Agent_importers_summary,
     AgentFieldImportersFull,
     Agent_importers_full,
     get_agent_entries_metadata,
     GetAgentEntriesMetadata,
-    AddBlobEntries,
-    add_blob_entries,
+    AddBlobEntryAgent,
+    // add_blob_entry_agent,
     GQLRequestError,
 };
 
@@ -91,7 +91,7 @@ impl Agent {
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn list_agents(
+pub async fn post_list_agents(
     nvacl: &NavAbilityClient,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
@@ -138,7 +138,7 @@ pub fn listAgents(
         .enable_all()
         .build()
         .unwrap()
-        .block_on(list_agents(nvacl));
+        .block_on(post_list_agents(nvacl));
 }
 
 // FIXME update to newer pattern without requiring separate wasm config
@@ -151,16 +151,15 @@ pub async fn listAgents_send(
     // use common send_query_result
     return send_api_response(
         send_into, 
-        list_agents(&nvacl).await?,
+        post_list_agents(&nvacl).await?,
     );
 }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn get_agents(
+pub async fn post_get_agents(
     nvacl: &NavAbilityClient,
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
-// ) -> Result<Response<crate::get_agents::ResponseData>, Box<dyn Error>> {
 
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
     let variables = crate::get_agents::Variables {
@@ -211,7 +210,7 @@ pub fn getAgents(
         .enable_all()
         .build()
         .unwrap()
-        .block_on(get_agents(nvacl));
+        .block_on(post_get_agents(nvacl));
 }
 
 
@@ -222,7 +221,7 @@ pub async fn getAgents_send(
 ) -> Result<(),Box<dyn Error>> {
     return send_api_response(
         send_into, 
-        get_agents(nvacl).await?,
+        post_get_agents(nvacl).await?,
     );
 }
 
@@ -230,7 +229,7 @@ pub async fn getAgents_send(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn add_agent_async(
+pub async fn post_add_agent(
     nvacl: &NavAbilityClient,
     agent_label: &String,
 ) -> Result<Response<add_agent::ResponseData>,Box<dyn Error>> {
@@ -262,10 +261,11 @@ pub async fn add_agent_async(
 }
 
 
+
 // ------------------------ Agent Entries Metadata ------------------------
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_agent_entries_metadata(
+pub async fn post_get_agent_entries_metadata(
     nvacl: NavAbilityClient,
     agent_label: String,
     mime_type: Option<String>
@@ -298,13 +298,16 @@ pub async fn fetch_agent_entries_metadata(
 }
 
 
+
+// FIXME return Uuid (not string)
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn add_entry_agent_async(
-    nvacl: NavAbilityClient,
+pub async fn post_add_entry_agent(
+    nvacl: &NavAbilityClient,
     agent_label: &String,
     entry: &BlobEntry,
     _legacy: Option<String>,
-) -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
+) -> Result<String,Box<dyn Error>> {
+    //) -> Result<Response<crate::add_blob_entry_agent::ResponseData>, Box<dyn Error>> {
     
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}{}",&agent_label,&entry.label).to_string();
@@ -319,7 +322,7 @@ pub async fn add_entry_agent_async(
         metadata = "e30=".to_string();
     }
 
-    let variables = add_blob_entries::Variables {
+    let variables = crate::add_blob_entry_agent::Variables {
         agent_label: agent_label.to_string(),
         entry_id: entry_id.to_string(),
         entry_label: entry.label.to_string(),
@@ -334,7 +337,7 @@ pub async fn add_entry_agent_async(
         timestamp: Some(entry.timestamp.to_string()),
     };
 
-    let request_body = AddBlobEntries::build_query(variables);
+    let request_body = AddBlobEntryAgent::build_query(variables);
 
     let req_res = nvacl.client
         .post(&nvacl.apiurl)
@@ -345,19 +348,62 @@ pub async fn add_entry_agent_async(
         to_console_error(&format!("API request error: {:?}", re));
     }
 
-    return check_deser::<add_blob_entries::ResponseData>(
+    let response_body = check_deser::<crate::add_blob_entry_agent::ResponseData>(
         req_res?.json().await
-    )
+    );
+
+    return check_query_response_data(response_body, |s| {
+        s.add_blob_entries.blob_entries[0].id.clone()
+    });
 }
-// let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+
+// let gqlentry = add_blob_entries_agent::BlobEntryCreateInput::new(
 //     org_id,
 //     entry,
 //     agent_label.to_string(),
 // );
 // let mut blob_entries = Vec::new();
 // blob_entries.push(gqlentry);
-// let variables = add_blob_entries::Variables {
+// let variables = add_blob_entries_agent::Variables {
 //     blob_entries,
 // };
 
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn post_get_blob_entry_send(
+    send_into: std::sync::mpsc::Sender<String>,
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    entry: &BlobEntry,
+) -> Result<(),Box<dyn Error>> {
+    
+    return send_api_response(
+        send_into, 
+        post_add_entry_agent(
+            nvacl, 
+            agent_label,
+            entry,
+            None
+        ).await?,
+    );
+}
+
+
+#[cfg(feature = "tokio")]
+pub fn addAgentBlobEntry(
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    entry: &BlobEntry,
+) -> Result<String, Box<dyn Error>> {
+    return tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(post_add_entry_agent(
+            nvacl,
+            agent_label,
+            entry,
+            None // legacy
+        ));
+}
 

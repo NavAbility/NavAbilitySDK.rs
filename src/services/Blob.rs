@@ -195,5 +195,5 @@ pub async fn create_upload_web(
         blob_id.expect("Must provide blob_id to create_upload_web"),
         nparts,
     ).await;
-    send_query_result(send_into, result, |s| {s});
+    let _ = send_query_result(send_into, result, |s| {s});
 }

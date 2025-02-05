@@ -1,4 +1,4 @@
-mutation AddBlobEntries(
+mutation AddBlobEntryAgent(
   $agent_label: String!,
   $entry_id: ID!,
   $entry_label: String!,
@@ -25,13 +25,13 @@ mutation AddBlobEntries(
       hash: $hash,
       size: $size,
       timestamp: $timestamp,
-      _version: "0.24", 
+      _version: "0.25", 
       parent: {
-          Agent: {
-            connect: {
-              where: {
-                node: {
-                  label: $agent_label
+        Agent: {
+          connect: {
+            where: {
+              node: {
+                label: $agent_label
               }
             }
           }
@@ -39,8 +39,8 @@ mutation AddBlobEntries(
       }
     }
   ) {
-      blobEntries {
-        id
+    blobEntries {
+      id
     }
   }
 }

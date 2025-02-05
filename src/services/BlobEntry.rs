@@ -1,37 +1,43 @@
 
 use crate::{
-    chrono::ParseError, 
-    get_variable, 
-    parse_str_utc, 
-    send_query_result, 
-    to_console_debug, 
-    to_console_error, 
-    update_blobentry_metadata, 
     BlobEntry, 
-    Error, 
-    Response, 
-    UpdateBlobentryMetadata, 
     Utc, 
     Uuid,
     SDK_VERSION
 };
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-#[macro_use]
 use crate::{
+    chrono::ParseError, 
+    get_variable, 
+    parse_str_utc, 
+    check_query_response_data,
+    send_api_response,
+    // send_query_result, 
+    to_console_debug, 
+    to_console_error, 
+    update_blobentry_metadata, 
+    Error, 
+    Response, 
+    UpdateBlobentryMetadata, 
     check_deser, 
     DeleteBlobEntry,
     delete_blob_entry,
     GetBlobEntry, 
     get_blob_entry, 
-    SameBlobEntryFields,
     get_agents,
     GraphQLQuery, 
     NavAbilityClient,
-    BlobEntryFieldsImporters,
-    BlobEntry_importers,
+};
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[macro_use]
+use crate::{
     BlobEntrySummaryImporters,
     BlobEntry_importers_summary,
+    BlobEntryFieldsImporters,
+    BlobEntry_importers,
+    SameBlobEntryFields, // DEPRECATING
 };
 
 
@@ -109,14 +115,12 @@ impl BlobEntry {
 
     #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn try_from_receiver(
-        rx: &std::sync::mpsc::Receiver<get_blob_entry::ResponseData>
-    ) -> Option<Self> {
+        rx: &std::sync::mpsc::Receiver<Vec<BlobEntry>>, //get_blob_entry::ResponseData>
+    ) -> Option<Vec<Self>> {
         
         match rx.try_recv() {
             Ok(gqle) => {
-                // FIXME return Vec<BlobEntry>
-                let gety = &gqle.blob_entries[0];
-                return Some(Self::from_gql(gety));
+                return Some(gqle);
             }
             Err(_e) => {
                 // to_console_debug(&"BlobEntry::try_from_receive nothing in channel");
@@ -129,9 +133,74 @@ impl BlobEntry {
 
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_get_blob_entry(
+    nvacl: NavAbilityClient,
+    id: Uuid
+) -> Result<Vec<BlobEntry>, Box<dyn Error>> {
+
+    let variables = get_blob_entry::Variables {
+        entry_id: id.to_string(),
+    };
+
+    let request_body = GetBlobEntry::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    // generic transport and serde error checks
+    let response_body = check_deser::<get_blob_entry::ResponseData>(
+        req_res?.json().await
+    );
+
+    return check_query_response_data(response_body, |s| {
+        let mut bes = Vec::new();
+        for be in &s.blob_entries {
+            bes.push(BlobEntry::from_gql(be));
+        }
+        return bes
+    });
+}
+// Alt GQL input
+// # BlobEntryCreateInput
+// # Had difficulty with auto-gen BlobEntryCreateInput.parent
+// # mutation AddBlobEntries(
+// #   $blob_entries: [BlobEntryCreateInput!]!
+// # ) {
+// #   addBlobEntries(
+// #     input: $blob_entries
+// #   ) {
+// #     blobEntries {
+// #       ...blobEntry_fields
+// #     }
+// #   }
+// # }
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn get_blob_entry_send(
+    send_into: std::sync::mpsc::Sender<Vec<BlobEntry>>, //get_blob_entry::ResponseData>,
+    nvacl: NavAbilityClient,
+    id: Uuid
+) -> Result<(),Box<dyn Error>> {
+    
+    return send_api_response(
+        send_into, 
+        post_get_blob_entry(nvacl, id).await?,
+    );
+}
+
+
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_delete_blobentry(
+pub async fn post_delete_blobentry(
     nvacl: NavAbilityClient,
     id: Uuid,
 ) -> Result<Response<delete_blob_entry::ResponseData>, Box<dyn Error>> {
@@ -155,8 +224,10 @@ pub async fn fetch_delete_blobentry(
     )
 }
 
+
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn update_blobentry_metadata_async(
+pub async fn post_update_blobentry_metadata(
     nvacl: NavAbilityClient,
     id: &Uuid,
     metadata_b64: &str
@@ -182,49 +253,6 @@ pub async fn update_blobentry_metadata_async(
         req_res?.json().await
     )
 }
-
-
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_blob_entry(
-    nvacl: NavAbilityClient,
-    id: Uuid
-) -> Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>> {
-
-    let variables = get_blob_entry::Variables {
-        entry_id: id.to_string(),
-    };
-
-    let request_body = GetBlobEntry::build_query(variables);
-
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<get_blob_entry::ResponseData>(
-        req_res?.json().await
-    )
-}
-
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn send_blob_entry(
-    send_into: std::sync::mpsc::Sender<get_blob_entry::ResponseData>,
-    nvacl: NavAbilityClient,
-    id: Uuid
-) {
-    let resp = fetch_blob_entry(nvacl, id).await;
-    let _ = send_query_result::<
-        get_blob_entry::ResponseData,
-        get_blob_entry::ResponseData
-    >(send_into, resp, |s| {s});
-}
-
 
 
 // =============== FUTURE IDEAS ==============
@@ -377,7 +405,7 @@ impl BlobEntry {
         return sgql.to_gql_blobentry();
     }
 
-    // get_blob_entry::blobEntry_fields
+    // DEPRECATING
     pub fn from_gql2(
         gety: &get_blob_entry::blobEntry_fields
     ) -> Self {

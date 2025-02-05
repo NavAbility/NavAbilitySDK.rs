@@ -81,6 +81,10 @@ struct NavAbilityDFG *NavAbilityDFG_new(const struct NavAbilityClient *_nvacl,
 
 struct Pose3Pose3_FullNormal *Pose3Pose3(const struct FullNormal *Z);
 
+const char *addAgentBlobEntry(const struct NavAbilityClient *_nvacl,
+                              const char *agent_label,
+                              const struct BlobEntry *_entry);
+
 void free_BlobEntry(struct BlobEntry*);
 
 void free_FullNormal(struct FullNormal*);

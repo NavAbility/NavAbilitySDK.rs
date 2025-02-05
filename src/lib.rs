@@ -50,20 +50,20 @@ pub use crate::utils::*;
 
 pub mod services;
 pub use crate::services::{
-    get_agents,
-    fetch_blob_entry,
+    post_get_agents,
+    // post_get_blob_entry,
     fetch_delete_blob,
-    send_blob_entry,
+    get_blob_entry_send,
     create_upload_async,
     create_download_async,
     send_create_download,
     complete_upload_async,
     fetch_org_id,
-    fetch_delete_blobentry,
-    add_agent_async,
-    update_blobentry_metadata_async,
-    fetch_agent_entries_metadata,
-    add_entry_agent_async,
+    post_delete_blobentry,
+    post_add_agent,
+    post_update_blobentry_metadata,
+    post_get_agent_entries_metadata,
+    post_add_entry_agent,
     list_models_query,
     fetch_list_models,
     add_model_async,
@@ -229,7 +229,7 @@ pub struct ListVariables;
     query_path = "src/gql/AddBlobEntryAgent.gql",
     response_derives = "Debug"
 )]
-pub struct AddBlobEntries;
+pub struct AddBlobEntryAgent;
 
 
 #[derive(GraphQLQuery)]

@@ -31,18 +31,3 @@ query GetBlobEntry(
   }
 }
 
-# BlobEntryCreateInput
-
-# Had difficulty with auto-gen BlobEntryCreateInput.parent
-# mutation AddBlobEntries(
-#   $blob_entries: [BlobEntryCreateInput!]!
-# ) {
-#   addBlobEntries(
-#     input: $blob_entries
-#   ) {
-#     blobEntries {
-#       ...blobEntry_fields
-#     }
-#   }
-# }
-
