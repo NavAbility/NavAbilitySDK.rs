@@ -100,9 +100,26 @@ pub async fn post_create_upload(
     )
 }
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn create_upload_send(
+    send_into: Sender<create_upload::ResponseData>, 
+    client: &NavAbilityClient,
+    name: &String,
+    blob_size: i64,
+    nparts: Option<i64>,
+    blob_id: Option<Uuid>, // doenst work yet, leave None
+) {
+    let result = post_create_upload(
+        client.clone(), 
+        blob_id.expect("Must provide blob_id to create_upload_web"),
+        nparts,
+    ).await;
+    let _ = send_query_result(send_into, result, |s| {s});
+}
+
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn complete_upload_async(
+pub async fn post_complete_upload(
     nvacl: NavAbilityClient,
     blob_id: Uuid,
     upload_id: String,
@@ -182,19 +199,3 @@ pub async fn post_delete_blob(
 
 
 
-#[cfg(target_arch = "wasm32")]
-pub async fn create_upload_web(
-    send_into: Sender<create_upload::ResponseData>, 
-    client: &NavAbilityClient,
-    name: &String,
-    blob_size: i64,
-    nparts: Option<i64>,
-    blob_id: Option<Uuid>, // doenst work yet, leave None
-) {
-    let result = post_create_upload(
-        client.clone(), 
-        blob_id.expect("Must provide blob_id to create_upload_web"),
-        nparts,
-    ).await;
-    let _ = send_query_result(send_into, result, |s| {s});
-}

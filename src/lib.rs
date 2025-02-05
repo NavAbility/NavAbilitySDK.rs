@@ -49,6 +49,7 @@ pub use crate::utils::*;
 
 
 pub mod services;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub use crate::services::{
     post_get_agents,
     // post_get_blob_entry,
@@ -57,7 +58,7 @@ pub use crate::services::{
     post_create_upload,
     post_create_download,
     create_download_send,
-    complete_upload_async,
+    post_complete_upload,
     fetch_org_id,
     post_delete_blobentry,
     post_add_agent,
@@ -72,12 +73,6 @@ pub use crate::services::{
     fetch_list_graphs,
 };
 
-// #[cfg(feature = "wasm")]
-// pub use crate::services::{
-//     fetch_ur_list_web,
-//     create_upload_web,
-//     fetch_context_web,
-// };
 
 #[cfg(feature = "tokio")]
 pub use crate::services::{
