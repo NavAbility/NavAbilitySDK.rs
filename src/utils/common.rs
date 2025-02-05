@@ -15,6 +15,7 @@ use std::{
     convert::TryInto,
 };
 
+
 /// Returns the type name of a given value.
 ///
 /// # Arguments
@@ -89,6 +90,7 @@ pub fn to_console_error(
     #[cfg(target_arch = "wasm32")]
     gloo_console::log!(&format!("ERROR NvaSDK.rs {}",&text));
 }
+
 
 
 // ===================== COMMON QUERY TOOLS ======================
@@ -247,6 +249,27 @@ pub fn check_deser<T>(
 
 
 // ====================== FUTURE IDEAS ======================
+
+
+// // TODO complete common executor
+// #[cfg(feature = "wasm")]
+// use std::future::Future;
+// #[cfg(feature = "tokio")]
+// fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
+//     // TODO, use any executor of your choice instead
+//     return tokio::runtime::Builder::new_current_thread()
+//         .enable_all()
+//         .build()
+//         .unwrap()
+//         .block_on(f);
+//     // std::thread::spawn(move || futures::executor::block_on(f));
+// }
+
+// #[cfg(feature = "wasm")]
+// fn execute<F: Future<Output = ()> + 'static>(f: F) {
+//     wasm_bindgen_futures::spawn_local(f);
+// }
+
 
 // missing traits for generic serde on query types
 // async fn post_query_serde<V,R>(
