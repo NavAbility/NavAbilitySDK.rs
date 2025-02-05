@@ -116,15 +116,13 @@ impl BlobEntry {
     // LEGACY FIXME REMOVE
     #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn try_from_receiver(
-        rx: &std::sync::mpsc::Receiver<BlobEntry>, //get_blob_entry::ResponseData>
-    ) -> Option<Self> {
+        rx: &std::sync::mpsc::Receiver<Vec<BlobEntry>>, //get_blob_entry::ResponseData>
+    ) -> Option<Vec<Self>> {
         
         match rx.try_recv() {
             Ok(gqle) => {
                 // FIXME return Vec<BlobEntry>
                 return Some(gqle);
-                // let gety = &gqle.blob_entries[0];
-                // return Some(Self::from_gql(gety));
             }
             Err(_e) => {
                 // to_console_debug(&"BlobEntry::try_from_receive nothing in channel");
@@ -197,7 +195,7 @@ pub async fn update_blobentry_metadata_async(
 pub async fn post_get_blob_entry(
     nvacl: NavAbilityClient,
     id: Uuid
-) -> Result<BlobEntry, Box<dyn Error>> {
+) -> Result<Vec<BlobEntry>, Box<dyn Error>> {
 
     let variables = get_blob_entry::Variables {
         entry_id: id.to_string(),
@@ -220,14 +218,18 @@ pub async fn post_get_blob_entry(
     );
 
     return check_query_response_data(response_body, |s| {
-        return BlobEntry::from_gql(&s.blob_entries[0]);
+        let mut bes = Vec::new();
+        for be in &s.blob_entries {
+            bes.push(BlobEntry::from_gql(be));
+        }
+        return bes
     });
 }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 pub async fn get_blob_entry_send(
-    send_into: std::sync::mpsc::Sender<BlobEntry>, //get_blob_entry::ResponseData>,
+    send_into: std::sync::mpsc::Sender<Vec<BlobEntry>>, //get_blob_entry::ResponseData>,
     nvacl: NavAbilityClient,
     id: Uuid
 ) -> Result<(),Box<dyn Error>> {
