@@ -50,7 +50,7 @@ pub use crate::utils::*;
 
 pub mod services;
 pub use crate::services::{
-    get_agents,
+    post_get_agents,
     // post_get_blob_entry,
     fetch_delete_blob,
     get_blob_entry_send,

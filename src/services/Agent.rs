@@ -157,10 +157,9 @@ pub async fn listAgents_send(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn get_agents(
+pub async fn post_get_agents(
     nvacl: &NavAbilityClient,
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
-// ) -> Result<Response<crate::get_agents::ResponseData>, Box<dyn Error>> {
 
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
     let variables = crate::get_agents::Variables {
@@ -211,7 +210,7 @@ pub fn getAgents(
         .enable_all()
         .build()
         .unwrap()
-        .block_on(get_agents(nvacl));
+        .block_on(post_get_agents(nvacl));
 }
 
 
@@ -222,7 +221,7 @@ pub async fn getAgents_send(
 ) -> Result<(),Box<dyn Error>> {
     return send_api_response(
         send_into, 
-        get_agents(nvacl).await?,
+        post_get_agents(nvacl).await?,
     );
 }
 

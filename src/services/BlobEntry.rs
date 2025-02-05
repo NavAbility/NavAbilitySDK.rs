@@ -232,11 +232,6 @@ pub async fn get_blob_entry_send(
         send_into, 
         post_get_blob_entry(nvacl, id).await?,
     );
-    // let resp = post_get_blob_entry(nvacl, id).await;
-    // let _ = send_query_result::<
-    //     get_blob_entry::ResponseData,
-    //     get_blob_entry::ResponseData
-    // >(send_into, resp, |s| {s});
 }
 
 
