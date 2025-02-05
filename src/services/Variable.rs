@@ -18,9 +18,11 @@ use crate::{
     NavAbilityDFG,
     check_deser,
     send_query_result,
+    send_api_response,
     GetVariable, 
     GraphQLQuery,
     ListVariables,
+    AddVariable,
     GetId,
     check_query_response_data,
     get_variable::{
@@ -404,4 +406,124 @@ pub fn listVariables(
         list_variables::ResponseData,
         Vec<String>
     >(response_body, |s| {s.list_variables});
+}
+
+
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_add_variable(
+    nvafg: &NavAbilityDFG,
+    label: &String,
+    variableType: &String,
+    _tags: Option<Vec<String>>,
+    _solvable: Option<i64>,
+    _timestamp: Option<chrono::DateTime<Utc>>,
+    _nstime: Option<usize>,
+    _metadata: Option<String>,
+) -> Result<Uuid,Box<dyn Error>> {
+
+    let metadata = Some(if _metadata.is_some() {
+        _metadata.unwrap().clone()
+    } else {
+        "e30=".to_string()
+    });
+    let tags = if _tags.is_some() {
+        _tags.clone().unwrap()
+    } else {
+        let mut v = Vec::new();
+        v.push("VARIABLE".to_owned());
+        v
+    };
+    let solvable = Some(_solvable.unwrap_or(1));
+    let timestamp = Some(_timestamp.unwrap_or(Utc::now()).to_string());
+    let nstime = Some(_nstime.unwrap_or(0).to_string());
+    
+    let variables = crate::add_variable::Variables {
+        id: nvafg.getId(label).to_string(),
+        label: label.to_string(),
+        variable_type: variableType.to_string(),
+        tags,
+        timestamp,
+        nstime,
+        solvable,
+        metadata
+    };
+
+    let request_body = AddVariable::build_query(variables);
+
+    let req_res = nvafg.client.client
+        .post(&nvafg.client.apiurl)
+        .json(&request_body)
+        .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    let response_body = check_deser::<crate::add_variable::ResponseData>(
+        req_res?.json().await
+    );
+
+    return check_query_response_data(response_body, |s| {
+        Uuid::parse_str(&s.add_variables.variables[0].id).expect("post_add_variable not able to parse uuid from API response")
+    });
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn add_variable_send(
+    send_into: std::sync::mpsc::Sender<Uuid>,
+    nvafg: &NavAbilityDFG,
+    label: &String,
+    variableType: &String,
+    _tags: Option<Vec<String>>,
+    _solvable: Option<i64>,
+    _timestamp: Option<chrono::DateTime<Utc>>,
+    _nstime: Option<usize>,
+    _metadata: Option<String>,
+) -> Result<(),Box<dyn Error>> {
+    
+    return send_api_response(
+        send_into, 
+        post_add_variable(
+            nvafg,
+            label,
+            variableType,
+            _tags,
+            _solvable,
+            _timestamp,
+            _nstime,
+            _metadata,
+        ).await?,
+    );
+}
+
+
+#[cfg(feature = "tokio")]
+pub fn addVariable(
+    nvafg: &NavAbilityDFG,
+    label: &String,
+    variableType: &String,
+    _tags: Option<Vec<String>>,
+    _solvable: Option<i64>,
+    _timestamp: Option<chrono::DateTime<Utc>>,
+    _nstime: Option<usize>,
+    _metadata: Option<String>,
+) -> Result<Uuid, Box<dyn Error>> {
+    return tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(post_add_variable(
+            nvafg,
+            label,
+            variableType,
+            _tags,
+            _solvable,
+            _timestamp,
+            _nstime,
+            _metadata,
+        ));
 }

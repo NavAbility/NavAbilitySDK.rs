@@ -410,7 +410,7 @@ pub fn addAgentBlobEntry(
 }
 
 
-// FIXME return Uuid (not string)
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_update_agent_metadata(
     nvacl: &NavAbilityClient,
