@@ -32,6 +32,16 @@ typedef struct NavAbilityDFG NavAbilityDFG;
 
 typedef struct NvaNode_T NvaNode_T;
 
+typedef struct Option_Vec______c_char Option_Vec______c_char;
+
+typedef struct Option______c_char Option______c_char;
+
+typedef struct Option_____c_char Option_____c_char;
+
+typedef struct Option_i64 Option_i64;
+
+typedef struct Option_usize Option_usize;
+
 /**
  * Create a Pose3->Pose3 factor with a distribution Z representing the (x,y,z,a,b,c) relationship
  * between the variables, e.g. `FullNormal([1;zeros(5)], diagm(0.01*ones(6)))`.
@@ -84,6 +94,15 @@ struct Pose3Pose3_FullNormal *Pose3Pose3(const struct FullNormal *Z);
 const char *addAgentBlobEntry(const struct NavAbilityClient *_nvacl,
                               const char *agent_label,
                               const struct BlobEntry *_entry);
+
+struct Option_____c_char addVariable(const struct NavAbilityDFG *nvafg,
+                                     const char *label,
+                                     const char *variableType,
+                                     struct Option_Vec______c_char _tags,
+                                     struct Option_i64 _solvable,
+                                     struct Option______c_char _timestamp,
+                                     struct Option_usize _nstime,
+                                     struct Option______c_char _metadata);
 
 void free_BlobEntry(struct BlobEntry*);
 

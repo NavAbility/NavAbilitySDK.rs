@@ -226,6 +226,15 @@ pub struct ListVariables;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
+    query_path = "src/gql/AddVariable.gql",
+    response_derives = "Debug"
+)]
+pub struct AddVariable;
+
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
     query_path = "src/gql/AddBlobEntryAgent.gql",
     response_derives = "Debug"
 )]

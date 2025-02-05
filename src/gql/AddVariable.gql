@@ -1,0 +1,29 @@
+
+mutation AddVariable(
+  $id: ID!,
+  $label: String!,
+  $variableType: String!,
+  $tags: [String!]! = ["VARIABLE"],
+  $solvable: Int = 1,
+  $timestamp: DateTime = "",
+  $nstime: BigInt = "",
+  $metadata: String = "e30="
+) {
+  addVariables(
+    input: {
+      id: $id, 
+      label: $label, 
+      variableType: $variableType, 
+      tags: $tags
+      solvable: $solvable,
+      timestamp: $timestamp, 
+      nstime: $nstime,
+      metadata: $metadata, 
+      _version: "0.25"
+    }
+  ) {
+    variables {
+      id
+    }
+  }
+}
