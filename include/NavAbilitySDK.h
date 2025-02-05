@@ -125,6 +125,10 @@ struct Agent *get_index(const struct RVec_Agent *rv_agent, size_t index);
 
 size_t length(const struct RVec_Agent *rv_agent);
 
+const char *updateAgentMetadata(const struct NavAbilityClient *_nvacl,
+                                const char *agent_label,
+                                const char *metadata);
+
 
 #define getLabel(obj)                                         \
     _Generic(obj,                                             \
