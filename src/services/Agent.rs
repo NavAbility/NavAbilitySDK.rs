@@ -29,7 +29,7 @@ use crate::{
     AddAgent,
     add_agent,
     GetAgents, // query vs fn, unique crate::get_agents,
-    ListAgents, // query vs fn, unique crate::list_agents,
+    ListAgents, // query vs fn, unique crate::post_list_agents,
     AgentFieldImportersSummary,
     Agent_importers_summary,
     AgentFieldImportersFull,
@@ -91,7 +91,7 @@ impl Agent {
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn list_agents(
+pub async fn post_list_agents(
     nvacl: &NavAbilityClient,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
@@ -138,7 +138,7 @@ pub fn listAgents(
         .enable_all()
         .build()
         .unwrap()
-        .block_on(list_agents(nvacl));
+        .block_on(post_list_agents(nvacl));
 }
 
 // FIXME update to newer pattern without requiring separate wasm config
@@ -151,7 +151,7 @@ pub async fn listAgents_send(
     // use common send_query_result
     return send_api_response(
         send_into, 
-        list_agents(&nvacl).await?,
+        post_list_agents(&nvacl).await?,
     );
 }
 

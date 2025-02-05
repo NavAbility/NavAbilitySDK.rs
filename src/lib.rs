@@ -51,9 +51,9 @@ pub use crate::utils::*;
 pub mod services;
 pub use crate::services::{
     get_agents,
-    fetch_blob_entry,
+    // post_get_blob_entry,
     fetch_delete_blob,
-    send_blob_entry,
+    get_blob_entry_send,
     create_upload_async,
     create_download_async,
     send_create_download,

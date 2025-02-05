@@ -1,37 +1,43 @@
 
 use crate::{
-    chrono::ParseError, 
-    get_variable, 
-    parse_str_utc, 
-    send_query_result, 
-    to_console_debug, 
-    to_console_error, 
-    update_blobentry_metadata, 
     BlobEntry, 
-    Error, 
-    Response, 
-    UpdateBlobentryMetadata, 
     Utc, 
     Uuid,
     SDK_VERSION
 };
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-#[macro_use]
 use crate::{
+    chrono::ParseError, 
+    get_variable, 
+    parse_str_utc, 
+    check_query_response_data,
+    send_api_response,
+    // send_query_result, 
+    to_console_debug, 
+    to_console_error, 
+    update_blobentry_metadata, 
+    Error, 
+    Response, 
+    UpdateBlobentryMetadata, 
     check_deser, 
     DeleteBlobEntry,
     delete_blob_entry,
     GetBlobEntry, 
     get_blob_entry, 
-    SameBlobEntryFields,
     get_agents,
     GraphQLQuery, 
     NavAbilityClient,
-    BlobEntryFieldsImporters,
-    BlobEntry_importers,
+};
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[macro_use]
+use crate::{
     BlobEntrySummaryImporters,
     BlobEntry_importers_summary,
+    BlobEntryFieldsImporters,
+    BlobEntry_importers,
+    SameBlobEntryFields, // DEPRECATING
 };
 
 
@@ -186,10 +192,10 @@ pub async fn update_blobentry_metadata_async(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_blob_entry(
+pub async fn post_get_blob_entry(
     nvacl: NavAbilityClient,
     id: Uuid
-) -> Result<Response<get_blob_entry::ResponseData>, Box<dyn Error>> {
+) -> Result<get_blob_entry::ResponseData, Box<dyn Error>> {
 
     let variables = get_blob_entry::Variables {
         entry_id: id.to_string(),
@@ -206,23 +212,31 @@ pub async fn fetch_blob_entry(
         to_console_error(&format!("API request error: {:?}", re));
     }
 
-    return check_deser::<get_blob_entry::ResponseData>(
+    // generic transport and serde error checks
+    let response_body = check_deser::<get_blob_entry::ResponseData>(
         req_res?.json().await
-    )
+    );
+
+    return check_query_response_data(response_body, |s| {s});
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn send_blob_entry(
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn get_blob_entry_send(
     send_into: std::sync::mpsc::Sender<get_blob_entry::ResponseData>,
     nvacl: NavAbilityClient,
     id: Uuid
-) {
-    let resp = fetch_blob_entry(nvacl, id).await;
-    let _ = send_query_result::<
-        get_blob_entry::ResponseData,
-        get_blob_entry::ResponseData
-    >(send_into, resp, |s| {s});
+) -> Result<(),Box<dyn Error>> {
+    
+    return send_api_response(
+        send_into, 
+        post_get_blob_entry(nvacl, id).await?,
+    );
+    // let resp = post_get_blob_entry(nvacl, id).await;
+    // let _ = send_query_result::<
+    //     get_blob_entry::ResponseData,
+    //     get_blob_entry::ResponseData
+    // >(send_into, resp, |s| {s});
 }
 
 
