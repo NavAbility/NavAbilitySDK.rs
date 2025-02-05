@@ -1,4 +1,5 @@
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
     Utc,
     Uuid,
@@ -25,7 +26,7 @@ use crate::{
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn create_download_async(
+pub async fn post_create_download(
     nvacl: NavAbilityClient,
     blob_id: Uuid,
     store: Option<String>,
@@ -54,13 +55,13 @@ pub async fn create_download_async(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn send_create_download(
+pub async fn create_download_send(
     send_into: Sender<create_download::ResponseData>,
     nvacl: NavAbilityClient,
     blob_id: Uuid,
     store: Option<String>
 ) {
-    let resp = create_download_async(nvacl,blob_id,store).await;
+    let resp = post_create_download(nvacl,blob_id,store).await;
     let _ = send_query_result::<
         create_download::ResponseData,
         create_download::ResponseData
@@ -69,7 +70,7 @@ pub async fn send_create_download(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn create_upload_async(
+pub async fn post_create_upload(
     nvacl: NavAbilityClient,
     // label: String,
     // blob_size: i64,
@@ -148,7 +149,7 @@ pub async fn complete_upload_async(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_delete_blob(
+pub async fn post_delete_blob(
     nvacl: NavAbilityClient,
     blob_id: Uuid,
     label: Option<&str>,
@@ -190,7 +191,7 @@ pub async fn create_upload_web(
     nparts: Option<i64>,
     blob_id: Option<Uuid>, // doenst work yet, leave None
 ) {
-    let result = create_upload_async(
+    let result = post_create_upload(
         client.clone(), 
         blob_id.expect("Must provide blob_id to create_upload_web"),
         nparts,
