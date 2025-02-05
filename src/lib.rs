@@ -229,7 +229,7 @@ pub struct ListVariables;
     query_path = "src/gql/AddBlobEntryAgent.gql",
     response_derives = "Debug"
 )]
-pub struct AddBlobEntries;
+pub struct AddBlobEntryAgent;
 
 
 #[derive(GraphQLQuery)]

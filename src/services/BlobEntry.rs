@@ -113,7 +113,6 @@ impl BlobEntry {
         return be;
     }
 
-    // LEGACY FIXME REMOVE
     #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
     pub fn try_from_receiver(
         rx: &std::sync::mpsc::Receiver<Vec<BlobEntry>>, //get_blob_entry::ResponseData>
@@ -121,7 +120,6 @@ impl BlobEntry {
         
         match rx.try_recv() {
             Ok(gqle) => {
-                // FIXME return Vec<BlobEntry>
                 return Some(gqle);
             }
             Err(_e) => {

@@ -36,8 +36,8 @@ use crate::{
     Agent_importers_full,
     get_agent_entries_metadata,
     GetAgentEntriesMetadata,
-    AddBlobEntries,
-    add_blob_entries,
+    AddBlobEntryAgent,
+    // add_blob_entry_agent,
     GQLRequestError,
 };
 
@@ -303,7 +303,7 @@ pub async fn add_entry_agent_async(
     agent_label: &String,
     entry: &BlobEntry,
     _legacy: Option<String>,
-) -> Result<Response<add_blob_entries::ResponseData>, Box<dyn Error>> {
+) -> Result<Response<crate::add_blob_entry_agent::ResponseData>, Box<dyn Error>> {
     
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}{}",&agent_label,&entry.label).to_string();
@@ -318,7 +318,7 @@ pub async fn add_entry_agent_async(
         metadata = "e30=".to_string();
     }
 
-    let variables = add_blob_entries::Variables {
+    let variables = crate::add_blob_entry_agent::Variables {
         agent_label: agent_label.to_string(),
         entry_id: entry_id.to_string(),
         entry_label: entry.label.to_string(),
@@ -333,7 +333,7 @@ pub async fn add_entry_agent_async(
         timestamp: Some(entry.timestamp.to_string()),
     };
 
-    let request_body = AddBlobEntries::build_query(variables);
+    let request_body = AddBlobEntryAgent::build_query(variables);
 
     let req_res = nvacl.client
         .post(&nvacl.apiurl)
@@ -344,18 +344,18 @@ pub async fn add_entry_agent_async(
         to_console_error(&format!("API request error: {:?}", re));
     }
 
-    return check_deser::<add_blob_entries::ResponseData>(
+    return check_deser::<crate::add_blob_entry_agent::ResponseData>(
         req_res?.json().await
     )
 }
-// let gqlentry = add_blob_entries::BlobEntryCreateInput::new(
+// let gqlentry = add_blob_entries_agent::BlobEntryCreateInput::new(
 //     org_id,
 //     entry,
 //     agent_label.to_string(),
 // );
 // let mut blob_entries = Vec::new();
 // blob_entries.push(gqlentry);
-// let variables = add_blob_entries::Variables {
+// let variables = add_blob_entries_agent::Variables {
 //     blob_entries,
 // };
 
