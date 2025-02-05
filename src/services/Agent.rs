@@ -15,6 +15,7 @@ use crate::{
     Response,
     Error,
     SDK_VERSION,
+    GetId,
     BlobEntry,
     to_console_error,
     parse_str_utc,
@@ -36,6 +37,7 @@ use crate::{
     Agent_importers_full,
     get_agent_entries_metadata,
     GetAgentEntriesMetadata,
+    UpdateAgentMetadata,
     AddBlobEntryAgent,
     // add_blob_entry_agent,
     GQLRequestError,
@@ -301,7 +303,7 @@ pub async fn post_get_agent_entries_metadata(
 
 // FIXME return Uuid (not string)
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn post_add_entry_agent(
+pub async fn post_add_agent_entry(
     nvacl: &NavAbilityClient,
     agent_label: &String,
     entry: &BlobEntry,
@@ -370,7 +372,7 @@ pub async fn post_add_entry_agent(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm"))]
-pub async fn post_get_blob_entry_send(
+pub async fn add_agent_entry_send(
     send_into: std::sync::mpsc::Sender<String>,
     nvacl: &NavAbilityClient,
     agent_label: &String,
@@ -379,7 +381,7 @@ pub async fn post_get_blob_entry_send(
     
     return send_api_response(
         send_into, 
-        post_add_entry_agent(
+        post_add_agent_entry(
             nvacl, 
             agent_label,
             entry,
@@ -399,7 +401,7 @@ pub fn addAgentBlobEntry(
         .enable_all()
         .build()
         .unwrap()
-        .block_on(post_add_entry_agent(
+        .block_on(post_add_agent_entry(
             nvacl,
             agent_label,
             entry,
@@ -407,3 +409,72 @@ pub fn addAgentBlobEntry(
         ));
 }
 
+
+// FIXME return Uuid (not string)
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_update_agent_metadata(
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    metadata: &String,
+) -> Result<String,Box<dyn Error>> {
+    let variables = crate::update_agent_metadata::Variables {
+        id: nvacl.getId(agent_label).to_string(),
+        metadata: metadata.clone(),
+    };
+
+    let request_body = UpdateAgentMetadata::build_query(variables);
+
+    let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    let response_body = check_deser::<crate::update_agent_metadata::ResponseData>(
+        req_res?.json().await
+    );
+
+    return check_query_response_data(response_body, |s| {
+        s.update_agents.agents[0].metadata.clone().unwrap_or("".to_string())
+    });
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn update_agent_metadata_send(
+    send_into: std::sync::mpsc::Sender<String>,
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    metadata: &String,
+) -> Result<(),Box<dyn Error>> {
+    
+    return send_api_response(
+        send_into, 
+        post_update_agent_metadata(
+            nvacl, 
+            agent_label,
+            metadata
+        ).await?,
+    );
+}
+
+
+#[cfg(feature = "tokio")]
+pub fn updateAgentMetadata(
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    metadata: &String,
+) -> Result<String, Box<dyn Error>> {
+    return tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(post_update_agent_metadata(
+            nvacl,
+            agent_label,
+            metadata
+        ));
+}

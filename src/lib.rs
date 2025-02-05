@@ -63,7 +63,7 @@ pub use crate::services::{
     post_add_agent,
     post_update_blobentry_metadata,
     post_get_agent_entries_metadata,
-    post_add_entry_agent,
+    post_add_agent_entry,
     list_models_query,
     fetch_list_models,
     add_model_async,
