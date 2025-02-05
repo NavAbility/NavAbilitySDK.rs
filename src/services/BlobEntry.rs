@@ -133,62 +133,6 @@ impl BlobEntry {
 
 
 
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_delete_blobentry(
-    nvacl: NavAbilityClient,
-    id: Uuid,
-) -> Result<Response<delete_blob_entry::ResponseData>, Box<dyn Error>> {
-    
-    let variables = delete_blob_entry::Variables {
-        id: id.to_string(),
-    };
-    let request_body = DeleteBlobEntry::build_query(variables);
-
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<delete_blob_entry::ResponseData>(
-        req_res?.json().await
-    )
-}
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn update_blobentry_metadata_async(
-    nvacl: NavAbilityClient,
-    id: &Uuid,
-    metadata_b64: &str
-) -> Result<Response<update_blobentry_metadata::ResponseData>,Box<dyn Error>> {
-
-    let variables = update_blobentry_metadata::Variables {
-        id: id.to_string(),
-        metadata: metadata_b64.to_string(),
-    };
-
-    let request_body = UpdateBlobentryMetadata::build_query(variables);
-
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<update_blobentry_metadata::ResponseData>(
-        req_res?.json().await
-    )
-}
-
-
-
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_blob_entry(
     nvacl: NavAbilityClient,
@@ -223,6 +167,21 @@ pub async fn post_get_blob_entry(
         return bes
     });
 }
+// Alt GQL input
+// # BlobEntryCreateInput
+// # Had difficulty with auto-gen BlobEntryCreateInput.parent
+// # mutation AddBlobEntries(
+// #   $blob_entries: [BlobEntryCreateInput!]!
+// # ) {
+// #   addBlobEntries(
+// #     input: $blob_entries
+// #   ) {
+// #     blobEntries {
+// #       ...blobEntry_fields
+// #     }
+// #   }
+// # }
+
 
 
 #[cfg(any(feature = "tokio", feature = "wasm"))]
@@ -238,6 +197,62 @@ pub async fn get_blob_entry_send(
     );
 }
 
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_delete_blobentry(
+    nvacl: NavAbilityClient,
+    id: Uuid,
+) -> Result<Response<delete_blob_entry::ResponseData>, Box<dyn Error>> {
+    
+    let variables = delete_blob_entry::Variables {
+        id: id.to_string(),
+    };
+    let request_body = DeleteBlobEntry::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<delete_blob_entry::ResponseData>(
+        req_res?.json().await
+    )
+}
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_update_blobentry_metadata(
+    nvacl: NavAbilityClient,
+    id: &Uuid,
+    metadata_b64: &str
+) -> Result<Response<update_blobentry_metadata::ResponseData>,Box<dyn Error>> {
+
+    let variables = update_blobentry_metadata::Variables {
+        id: id.to_string(),
+        metadata: metadata_b64.to_string(),
+    };
+
+    let request_body = UpdateBlobentryMetadata::build_query(variables);
+
+    let req_res = nvacl.client
+    .post(&nvacl.apiurl)
+    .json(&request_body)
+    .send().await;
+
+    if let Err(ref re) = req_res {
+        to_console_error(&format!("API request error: {:?}", re));
+    }
+
+    return check_deser::<update_blobentry_metadata::ResponseData>(
+        req_res?.json().await
+    )
+}
 
 
 // =============== FUTURE IDEAS ==============
@@ -390,7 +405,7 @@ impl BlobEntry {
         return sgql.to_gql_blobentry();
     }
 
-    // get_blob_entry::blobEntry_fields
+    // DEPRECATING
     pub fn from_gql2(
         gety: &get_blob_entry::blobEntry_fields
     ) -> Self {

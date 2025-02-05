@@ -229,7 +229,7 @@ pub async fn getAgents_send(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn add_agent_async(
+pub async fn post_add_agent(
     nvacl: &NavAbilityClient,
     agent_label: &String,
 ) -> Result<Response<add_agent::ResponseData>,Box<dyn Error>> {
@@ -261,10 +261,11 @@ pub async fn add_agent_async(
 }
 
 
+
 // ------------------------ Agent Entries Metadata ------------------------
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_agent_entries_metadata(
+pub async fn post_get_agent_entries_metadata(
     nvacl: NavAbilityClient,
     agent_label: String,
     mime_type: Option<String>
@@ -297,13 +298,16 @@ pub async fn fetch_agent_entries_metadata(
 }
 
 
+
+// FIXME return Uuid (not string)
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn add_entry_agent_async(
-    nvacl: NavAbilityClient,
+pub async fn post_add_entry_agent(
+    nvacl: &NavAbilityClient,
     agent_label: &String,
     entry: &BlobEntry,
     _legacy: Option<String>,
-) -> Result<Response<crate::add_blob_entry_agent::ResponseData>, Box<dyn Error>> {
+) -> Result<String,Box<dyn Error>> {
+    //) -> Result<Response<crate::add_blob_entry_agent::ResponseData>, Box<dyn Error>> {
     
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}{}",&agent_label,&entry.label).to_string();
@@ -344,10 +348,15 @@ pub async fn add_entry_agent_async(
         to_console_error(&format!("API request error: {:?}", re));
     }
 
-    return check_deser::<crate::add_blob_entry_agent::ResponseData>(
+    let response_body = check_deser::<crate::add_blob_entry_agent::ResponseData>(
         req_res?.json().await
-    )
+    );
+
+    return check_query_response_data(response_body, |s| {
+        s.add_blob_entries.blob_entries[0].id.clone()
+    });
 }
+
 // let gqlentry = add_blob_entries_agent::BlobEntryCreateInput::new(
 //     org_id,
 //     entry,
@@ -359,4 +368,42 @@ pub async fn add_entry_agent_async(
 //     blob_entries,
 // };
 
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn post_get_blob_entry_send(
+    send_into: std::sync::mpsc::Sender<String>,
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    entry: &BlobEntry,
+) -> Result<(),Box<dyn Error>> {
+    
+    return send_api_response(
+        send_into, 
+        post_add_entry_agent(
+            nvacl, 
+            agent_label,
+            entry,
+            None
+        ).await?,
+    );
+}
+
+
+#[cfg(feature = "tokio")]
+pub fn addAgentBlobEntry(
+    nvacl: &NavAbilityClient,
+    agent_label: &String,
+    entry: &BlobEntry,
+) -> Result<String, Box<dyn Error>> {
+    return tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(post_add_entry_agent(
+            nvacl,
+            agent_label,
+            entry,
+            None // legacy
+        ));
+}
 
