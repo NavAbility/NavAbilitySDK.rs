@@ -2,7 +2,7 @@
 
 Copyright 2025, NavAbility(TM) Contributors.  This repo is licensed according to Apache 2.0.  See the LICENSE file.
 
-[![CI](https://github.com/NavAbility/NavAbilitySDK.rs/actions/workflows/ci.yml/badge.svg)](https://github.com/NavAbility/NavAbilitySDK.rs/actions/workflows/ci.yml)
+[![CI](https://github.com/NavAbility/NavAbilitySDK.rs/actions/workflows/ci-rs.yml/badge.svg)](https://github.com/NavAbility/NavAbilitySDK.rs/actions/workflows/ci-rs.yml)
 
 ## Introduction
 
@@ -30,16 +30,4 @@ make build-tokio
 
 ```shell
 make test-tokio
-```
-
-## Exporting Shared Library
-
-Build the shared library:
-```shell
-make build-lib
-```
-
-Or run the `test/test.c` file with
-```shell
-make test-capi
 ```
