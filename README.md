@@ -1,12 +1,12 @@
 # NavAbilitySDK.rs
 
-Copyright 2025, NavAbility Contributors.  This repo is licensed according to Apache 2.0.  See the LICENSE file.
+Copyright 2025, NavAbility(TM) Contributors.  This repo is licensed according to Apache 2.0.  See the LICENSE file.
 
 [![CI](https://github.com/NavAbility/NavAbilitySDK.rs/actions/workflows/ci.yml/badge.svg)](https://github.com/NavAbility/NavAbilitySDK.rs/actions/workflows/ci.yml)
 
 ## Introduction
 
-Access NavAbility Cloud factor graph features from Rust.  See related repos at Gihub.com/NavAbility for other language interfaces such as Julia, C/C++*, Python, JS.
+Access NavAbility(TM) Accelerator features from Rust.  See related multi-language SDKs at Github.com/NavAbility/NavAbilitySDK.*.
 
 ## Docs
 
