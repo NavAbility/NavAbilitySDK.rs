@@ -6,17 +6,19 @@ clean:
 	cargo clean
 	rm -rf test/build
 
-install-deps:
-	cargo install graphql_client_cli --force
-
-build-wasm:
-	cargo build -F wasm
+test-tokio:
+	cargo test -F tokio
 
 build-tokio:
 	cargo build -F tokio
 
-fetch-schema:
+build-wasm:
+	cargo build -F wasm
+
+fetch-schema: install-deps
 	@graphql-client introspect-schema --authorization $(NVA_API_TOKEN) --output src/schema.json $(NVA_API_URL)
 
-test-tokio:
-	cargo test -F tokio
+# partial-duplicate of cargo.toml::build-dependencies
+install-deps:
+	cargo install graphql_client_cli
+

@@ -23,8 +23,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Setup
-      run: make install-deps
     - name: Build Native (tokio)
       run: |
         echo "Trigger build.rs with tokio build"
