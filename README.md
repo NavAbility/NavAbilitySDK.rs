@@ -14,13 +14,12 @@ Documentation for [Python](https://navability.github.io/NavAbilitySDK.py/) or [J
 
 ## Compiling
 
-Get the schema with NVA_API_URL and NVA_API_TOKEN args/env var set:
+Get deps
 ```shell
 make install-deps # modifies system cargo crates
-make fetch-schema
 ```
 
-Compile for either native or wasm:
+Set required NVA_API_URL and NVA_API_TOKEN args/env variables and compile for either native or wasm:
 ```shell
 make build-wasm
 make build-tokio
