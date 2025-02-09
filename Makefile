@@ -5,6 +5,7 @@ NVA_API_TOKEN ?= ""
 clean:
 	cargo clean
 	rm -rf test/build
+	rm -f src/schema.json
 
 test-tokio:
 	cargo test -F tokio
