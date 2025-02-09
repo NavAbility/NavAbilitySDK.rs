@@ -15,10 +15,10 @@ build-tokio:
 build-wasm:
 	cargo build -F wasm
 
-fetch-schema:
+fetch-schema: install-deps
 	@graphql-client introspect-schema --authorization $(NVA_API_TOKEN) --output src/schema.json $(NVA_API_URL)
 
-# duplicate of cargo.toml::build-dependencies
+# partial-duplicate of cargo.toml::build-dependencies
 install-deps:
 	cargo install graphql_client_cli
 
