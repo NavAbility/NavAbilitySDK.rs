@@ -27,6 +27,13 @@ pub async fn fetch_list_graphs(
         id: id.to_string()
     });
 
+    // TBD
+    // let query = MyQuery::build_query(my_query::Variables {});
+    // match query {
+    //     Ok(q) => () // println!("Query: {:?}", q),
+    //     Err(e) => eprintln!("Failed to build query: {:?}", e),
+    // }
+
     let req_res = nvacl.client
     .post(&nvacl.apiurl)
     .json(&request_body)
