@@ -80,6 +80,7 @@ impl BlobEntry {
         begql: &impl BlobEntrySummaryImporters,
     ) -> Self {
         let mut be = BlobEntry::default();
+        be.id = begql.id();
         be.label = begql.label();
         be.size = begql.size();
         be.mimeType = begql.mimeType();
