@@ -18,6 +18,7 @@ use crate::{
     add_blob_entry_model,
     ListModelsGraphs,
     list_models_graphs,
+    GetId,
     check_deser,
     to_console_debug,
     to_console_error,
@@ -150,31 +151,35 @@ pub async fn add_entry_model_async(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_list_model_graphs(
+pub async fn post_list_model_graphs(
     nvacl: NavAbilityClient,
-    model_label_contains: Option<&str>,
+    mlabel: Option<&str>, // FIXME must exist
 ) -> Result<Response<list_models_graphs::ResponseData>, Box<dyn Error>> {
     
-    let mut model_lbl_contains = Some("".to_string());
-    if let Some(mt) = model_label_contains {
-        model_lbl_contains = Some(mt.to_string());
-    }
-
+    // let label = mlabel.unwrap_or("").to_string();
+    
     let variables = list_models_graphs::Variables {
-        label_contains: model_lbl_contains,
+        id: nvacl.getId(mlabel.unwrap_or("")).to_string(),
     };
     let request_body = ListModelsGraphs::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
+    let mut trycount = 3;
+    while 0 < trycount {
+        let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
 
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
+        if let Err(ref re) = req_res {
+            to_console_error(&format!("API request error at {}: {:?}", "ListModelsGraphs", re));
+        } else {
+            return check_deser::<list_models_graphs::ResponseData>(
+                req_res?.json().await
+            )
+        }
+        trycount -= 1;
     }
-
-    return check_deser::<list_models_graphs::ResponseData>(
-        req_res?.json().await
-    )
+    return Err(Box::new(crate::GQLRequestError { 
+        details: "API request retries failed for ListModelsGraphs.".to_owned()
+    }));
 }
