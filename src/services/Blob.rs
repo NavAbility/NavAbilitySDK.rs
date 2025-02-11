@@ -111,7 +111,7 @@ pub async fn create_upload_send(
 ) {
   let result = post_create_upload(
     client.clone(), 
-    blob_id.expect("Must provide blob_id to create_upload_web"),
+    blob_id.expect("Must provide blob_id to create_upload_send"),
     nparts,
   ).await;
   let _ = send_query_result(send_into, result, |s| {s});

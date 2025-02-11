@@ -69,7 +69,7 @@ pub use crate::services::{
     fetch_list_models,
     add_model_async,
     add_entry_model_async,
-    fetch_list_model_graphs,
+    post_list_model_graphs,
     fetch_list_graphs,
 };
 
