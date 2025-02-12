@@ -45,32 +45,30 @@ pub fn list_models_query(
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn fetch_list_models(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     model_label_contains: Option<&str>,
-) -> Result<Response<list_models::ResponseData>, Box<dyn Error>> {
+) -> Result<list_models::ResponseData, Box<dyn Error>> {
     
     let request_body = list_models_query(model_label_contains);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<list_models::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        list_models::Variables,
+        list_models::ResponseData,
+        list_models::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(3)
+    ).await;
 }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn add_model_async(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     model_label: &String,
-) -> Result<Response<add_model::ResponseData>,Box<dyn Error>> {
+) -> Result<add_model::ResponseData,Box<dyn Error>> {
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}",&model_label).to_string();
     let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
@@ -84,27 +82,25 @@ pub async fn add_model_async(
 
     let request_body = AddModel::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<add_model::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        add_model::Variables,
+        add_model::ResponseData,
+        add_model::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
 }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn add_entry_model_async(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     model_label: &String,
     entry: &BlobEntry,
-) -> Result<Response<add_blob_entry_model::ResponseData>, Box<dyn Error>> {
+) -> Result<add_blob_entry_model::ResponseData, Box<dyn Error>> {
     
     let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
     let name = format!("{}{}",&model_label,&entry.label).to_string();
@@ -136,18 +132,16 @@ pub async fn add_entry_model_async(
 
     let request_body = AddBlobEntryModel::build_query(variables);
 
-    let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<add_blob_entry_model::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        add_blob_entry_model::Variables,
+        add_blob_entry_model::ResponseData,
+        add_blob_entry_model::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
 }
 
 

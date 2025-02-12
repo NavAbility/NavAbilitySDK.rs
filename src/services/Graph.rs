@@ -38,17 +38,4 @@ pub async fn fetch_list_graphs(
         |s| s,
         Some(3)
     ).await;
-
-    // let req_res = nvacl.client
-    // .post(&nvacl.apiurl)
-    // .json(&request_body)
-    // .send().await;
-
-    // if let Err(ref re) = req_res {
-    //     to_console_error(&format!("API request error: {:?}", re));
-    // }
-
-    // return check_deser::<list_graphs::ResponseData>(
-    //     req_res?.json().await
-    // )
 }
