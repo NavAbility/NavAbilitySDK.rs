@@ -11,8 +11,10 @@ use crate::{
     chrono::ParseError, 
     get_variable, 
     parse_str_utc, 
+    post_to_nvaapi,
     check_query_response_data,
-    send_api_response,
+    send_api_result,
+    // send_api_response,
     // send_query_result, 
     to_console_debug, 
     to_console_error, 
@@ -136,7 +138,7 @@ impl BlobEntry {
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_blob_entry(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: Uuid
 ) -> Result<Vec<BlobEntry>, Box<dyn Error>> {
 
@@ -146,27 +148,22 @@ pub async fn post_get_blob_entry(
 
     let request_body = GetBlobEntry::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    // generic transport and serde error checks
-    let response_body = check_deser::<get_blob_entry::ResponseData>(
-        req_res?.json().await
-    );
-
-    return check_query_response_data(response_body, |s| {
-        let mut bes = Vec::new();
-        for be in &s.blob_entries {
-            bes.push(BlobEntry::from_gql(be));
-        }
-        return bes
-    });
+    return post_to_nvaapi::<
+        get_blob_entry::Variables,
+        get_blob_entry::ResponseData,
+        Vec<BlobEntry>
+    >(
+        nvacl,
+        request_body, 
+        |s| {
+            let mut bes = Vec::new();
+            for be in &s.blob_entries {
+                bes.push(BlobEntry::from_gql(be));
+            }
+            return bes
+        },
+        Some(1)
+    ).await;
 }
 // Alt GQL input
 // # BlobEntryCreateInput
@@ -188,13 +185,13 @@ pub async fn post_get_blob_entry(
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 pub async fn get_blob_entry_send(
     send_into: std::sync::mpsc::Sender<Vec<BlobEntry>>, //get_blob_entry::ResponseData>,
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: Uuid
 ) -> Result<(),Box<dyn Error>> {
     
-    return send_api_response(
+    return send_api_result(
         send_into, 
-        post_get_blob_entry(nvacl, id).await?,
+        post_get_blob_entry(nvacl, id).await,
     );
 }
 

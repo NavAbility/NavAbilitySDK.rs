@@ -18,7 +18,8 @@ use crate::{
     NavAbilityDFG,
     check_deser,
     send_query_result,
-    send_api_response,
+    send_api_result,
+    // send_api_response,
     GetVariable, 
     GraphQLQuery,
     ListVariables,
@@ -485,7 +486,7 @@ pub async fn add_variable_send(
     _metadata: Option<String>,
 ) -> Result<(),Box<dyn Error>> {
     
-    return send_api_response(
+    return send_api_result(
         send_into, 
         post_add_variable(
             nvafg,
@@ -496,7 +497,7 @@ pub async fn add_variable_send(
             _timestamp,
             _nstime,
             _metadata,
-        ).await?,
+        ).await,
     );
 }
 

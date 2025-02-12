@@ -12,8 +12,12 @@ use crate::{
 };
 use std::{
     fmt,
+    any::type_name,
     convert::TryInto,
 };
+
+use serde::{Serialize,Deserialize};
+
 
 
 /// Returns the type name of a given value.
@@ -205,25 +209,42 @@ pub fn send_query_result<F,T>(
 }
 
 
+pub fn send_api_result<T>(
+    send_into: Sender<T>,
+    api_result: Result<T,Box<dyn Error>>,
+) -> Result<(),Box<dyn Error>> {
+    match api_result {
+        Ok(data) => {
+            match send_into.send(data) {
+                Ok(_) => {
+                    return Ok(())
+                },
+                Err(e) => {
+                    // TODO upgrade to impl TryFrom: https://www.reddit.com/r/rust/comments/bu2fmn/how_print_a_generic_type_debugt/?rdt=63064
+                    let erm = format!(
+                        "Error Sender<{}> data on std::mspc::sync::channel: {:?}", 
+                        std::any::type_name::<T>(), 
+                        &e
+                    );
+                    to_console_error(&erm);
+                    return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, erm)));
+                }
+            }
+        }
+        Err(e) => {
+            to_console_error(&format!("send_api_result cannot send error {:?}", &e));
+            return Err(e);
+        }
+    }
+}
+
+
+#[deprecated(since="0.1.0", note="please use send_api_result(send_into, `response_body=Ok(data)`) instead")]
 pub fn send_api_response<T>(
     send_into: Sender<T>,
     data: T,
 ) -> Result<(),Box<dyn Error>> {
-    match send_into.send(data) {
-        Ok(_) => {
-            return Ok(())
-        },
-        Err(e) => {
-            // TODO upgrade to impl TryFrom: https://www.reddit.com/r/rust/comments/bu2fmn/how_print_a_generic_type_debugt/?rdt=63064
-            let erm = format!(
-                "Error Sender<{}> data on std::mspc::sync::channel: {:?}", 
-                std::any::type_name::<T>(), 
-                &e
-            );
-            to_console_error(&erm);
-            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, erm)));
-        }
-    }
+    return send_api_result(send_into,Ok(data));
 }
 
 /// Checks the deserialization result of a GraphQL query response.
@@ -245,6 +266,48 @@ pub fn check_deser<T>(
     }
 
     return Ok(serde_res?)
+}
+
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_to_nvaapi<
+    V: Serialize,
+    R: for<'de> Deserialize<'de>,
+    T
+>(
+    nvacl: &crate::NavAbilityClient,
+    request_body: crate::QueryBody<V>,
+    fn_modifier: fn(R) -> T,
+    retries: Option<i32>
+) -> Result<T, Box<dyn Error>> {
+
+    let mut trycount = retries.unwrap_or(3);
+    while 0 < trycount {
+
+        let req_res = nvacl.client
+        .post(&nvacl.apiurl)
+        .json(&request_body)
+        .send().await;
+        
+        if let Err(ref re) = req_res {
+            let erm = format!("API request error for {:?}: {:?}",  type_name::<V>(), &re);
+            to_console_error(&erm);
+        } else {
+            // generic transport and serde error checks
+            let response_body = check_deser::<R>(
+                req_res?.json().await
+            );
+            
+            // query response during error checks
+            return check_query_response_data(response_body, fn_modifier);
+        }
+        trycount -= 1;
+    }
+    return Err(Box::new(crate::GQLRequestError { 
+        details: format!("API request failed after {} retries {:?}", retries.unwrap_or(3), type_name::<V>()).to_owned()
+    }));
 }
 
 
