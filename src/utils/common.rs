@@ -12,8 +12,10 @@ use crate::{
 };
 use std::{
     fmt,
+    any::type_name,
     convert::TryInto,
 };
+
 
 
 /// Returns the type name of a given value.
@@ -247,6 +249,12 @@ pub fn check_deser<T>(
     return Ok(serde_res?)
 }
 
+
+
+
+pub fn print_type_of<T>(_: &T) {
+    println!("{}", type_name::<T>());
+}
 
 // ====================== FUTURE IDEAS ======================
 
