@@ -40,7 +40,8 @@ pub async fn post_start_worker(
     request_body, 
     |s|{
       return s.start_worker.unwrap_or("{}".to_owned());
-    }
+    },
+    Some(1)
   ).await;
 }
 

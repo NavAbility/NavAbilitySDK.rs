@@ -22,6 +22,7 @@ use crate::{
     check_deser,
     to_console_debug,
     to_console_error,
+    post_to_nvaapi,
 };
 
 
@@ -154,7 +155,7 @@ pub async fn add_entry_model_async(
 pub async fn post_list_model_graphs(
     nvacl: NavAbilityClient,
     mlabel: Option<&str>, // FIXME must exist
-) -> Result<Response<list_models_graphs::ResponseData>, Box<dyn Error>> {
+) -> Result<list_models_graphs::ResponseData, Box<dyn Error>> {
     
     // let label = mlabel.unwrap_or("").to_string();
     
@@ -163,23 +164,37 @@ pub async fn post_list_model_graphs(
     };
     let request_body = ListModelsGraphs::build_query(variables);
 
-    let mut trycount = 3;
-    while 0 < trycount {
-        let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
 
-        if let Err(ref re) = req_res {
-            to_console_error(&format!("API request error at {}: {:?}", "ListModelsGraphs", re));
-        } else {
-            return check_deser::<list_models_graphs::ResponseData>(
-                req_res?.json().await
-            )
-        }
-        trycount -= 1;
-    }
-    return Err(Box::new(crate::GQLRequestError { 
-        details: "API request retries failed for ListModelsGraphs.".to_owned()
-    }));
+    return post_to_nvaapi::<
+        crate::list_models_graphs::Variables,
+        crate::list_models_graphs::ResponseData,
+        list_models_graphs::ResponseData
+    >(
+        &nvacl,
+        request_body, 
+        |s|{
+            s
+        },
+        Some(3)
+    ).await;
+
+    // let mut trycount = 3;
+    // while 0 < trycount {
+    //     let req_res = nvacl.client
+    //     .post(&nvacl.apiurl)
+    //     .json(&request_body)
+    //     .send().await;
+
+    //     if let Err(ref re) = req_res {
+    //         to_console_error(&format!("API request error at {}: {:?}", "ListModelsGraphs", re));
+    //     } else {
+    //         return check_deser::<list_models_graphs::ResponseData>(
+    //             req_res?.json().await
+    //         )
+    //     }
+    //     trycount -= 1;
+    // }
+    // return Err(Box::new(crate::GQLRequestError { 
+    //     details: "API request retries failed for ListModelsGraphs.".to_owned()
+    // }));
 }
