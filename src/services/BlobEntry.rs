@@ -199,37 +199,35 @@ pub async fn get_blob_entry_send(
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_delete_blobentry(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: Uuid,
-) -> Result<Response<delete_blob_entry::ResponseData>, Box<dyn Error>> {
+) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
     
     let variables = delete_blob_entry::Variables {
         id: id.to_string(),
     };
     let request_body = DeleteBlobEntry::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<delete_blob_entry::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        delete_blob_entry::Variables,
+        delete_blob_entry::ResponseData,
+        delete_blob_entry::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
 }
 
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_update_blobentry_metadata(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: &Uuid,
     metadata_b64: &str
-) -> Result<Response<update_blobentry_metadata::ResponseData>,Box<dyn Error>> {
+) -> Result<update_blobentry_metadata::ResponseData,Box<dyn Error>> {
 
     let variables = update_blobentry_metadata::Variables {
         id: id.to_string(),
@@ -238,18 +236,16 @@ pub async fn post_update_blobentry_metadata(
 
     let request_body = UpdateBlobentryMetadata::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<update_blobentry_metadata::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        update_blobentry_metadata::Variables,
+        update_blobentry_metadata::ResponseData,
+        update_blobentry_metadata::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
 }
 
 
