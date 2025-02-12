@@ -199,37 +199,35 @@ pub async fn get_blob_entry_send(
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_delete_blobentry(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: Uuid,
-) -> Result<Response<delete_blob_entry::ResponseData>, Box<dyn Error>> {
+) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
     
     let variables = delete_blob_entry::Variables {
         id: id.to_string(),
     };
     let request_body = DeleteBlobEntry::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<delete_blob_entry::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        delete_blob_entry::Variables,
+        delete_blob_entry::ResponseData,
+        delete_blob_entry::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
 }
 
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_update_blobentry_metadata(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: &Uuid,
     metadata_b64: &str
-) -> Result<Response<update_blobentry_metadata::ResponseData>,Box<dyn Error>> {
+) -> Result<update_blobentry_metadata::ResponseData,Box<dyn Error>> {
 
     let variables = update_blobentry_metadata::Variables {
         id: id.to_string(),
@@ -238,18 +236,16 @@ pub async fn post_update_blobentry_metadata(
 
     let request_body = UpdateBlobentryMetadata::build_query(variables);
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<update_blobentry_metadata::ResponseData>(
-        req_res?.json().await
-    )
+    return post_to_nvaapi::<
+        update_blobentry_metadata::Variables,
+        update_blobentry_metadata::ResponseData,
+        update_blobentry_metadata::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
 }
 
 
@@ -393,114 +389,3 @@ pub async fn post_update_blobentry_metadata(
 
 
 
-// ================== DEPRECATED ===================
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-impl BlobEntry {
-    pub fn same_gql(
-        sgql: impl SameBlobEntryFields,
-    ) -> get_blob_entry::blobEntry_fields {
-        return sgql.to_gql_blobentry();
-    }
-
-    // DEPRECATING
-    pub fn from_gql2(
-        gety: &get_blob_entry::blobEntry_fields
-    ) -> Self {
-        let mut be = BlobEntry::default();
-        be.id = Some(Uuid::parse_str(&gety.id).expect("failed to parse entry id to uuid"));
-        be.blobId = Uuid::parse_str(&gety.blob_id).expect("failed to parse entry blob_id to uuid");
-        be.label = gety.label.to_string();
-        if let Some(blobstore) = &gety.blobstore {
-            be.blobstore = blobstore.to_string();
-        }
-        if let Some(origin) = &gety.origin {
-            be.origin = origin.to_string();
-        }
-        if let Some(mime) = &gety.mime_type {
-            be.mimeType = mime.to_string();
-        }
-        if let Some(description) = &gety.description {
-            be.description = description.to_string();
-        }
-        if let Some(hash) = &gety.hash {
-            be.hash = hash.to_string();
-        }
-        if let Some(metadata) = &gety.metadata {
-            be.metadata = metadata.to_string();
-        }
-        if let Some(size) = &gety.size {
-            be.size = Some((*size).parse::<i64>().unwrap());
-        }
-        if let Some(timestamp) = &gety.timestamp {
-            // 2024-09-16T16:51:20.555Z
-            if let Ok(tms) = parse_str_utc(timestamp.clone()) {
-                be.timestamp = tms;
-            } else {
-                to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
-            }
-        }
-        {
-            let timestamp = &gety.created_timestamp;
-            // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
-            // 2024-09-16T16:51:20.555Z
-            if let Ok(tms) = parse_str_utc(timestamp.clone()) {
-                be.createdTimestamp = Some(tms);
-            } else {
-                to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
-            }
-        }
-        {
-            let timestamp = &gety.last_updated_timestamp;
-            // to_console_debug(&format!("BlobEntry from rx timestamp string {}",&timestamp));
-            // 2024-09-16T16:51:20.555Z
-            if let Ok(tms) = parse_str_utc(
-                timestamp.clone()
-            ) {
-                be.lastUpdatedTimestamp = Some(tms);
-            } else {
-                to_console_error(&format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp));
-            }
-        }
-        if let Some(_type) = &gety.type_ {
-            be._type = _type.to_string();
-        }
-        be._version = gety.version.to_string();
-
-        return be;
-    }
-}
-
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-impl SameBlobEntryFields for get_blob_entry::blobEntry_fields {
-    fn to_gql_blobentry(self) -> get_blob_entry::blobEntry_fields {
-        return self;
-    }
-}
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-impl SameBlobEntryFields for get_variable::blobEntry_fields {
-    fn to_gql_blobentry(
-        self
-    ) -> get_blob_entry::blobEntry_fields {
-        return get_blob_entry::blobEntry_fields {
-            id: self.id.clone(),
-            blob_id: self.blob_id.clone(),
-            origin_id: self.origin_id.clone(),
-            label: self.label.clone(),
-            blobstore: self.blobstore.clone(),
-            hash: self.hash.clone(),
-            origin: self.origin.clone(),
-            size: self.size.clone(),
-            description: self.description.clone(),
-            mime_type: self.mime_type.clone(),
-            metadata: self.metadata.clone(),
-            timestamp: self.timestamp.clone(),
-            created_timestamp: self.created_timestamp.clone(),
-            last_updated_timestamp: self.last_updated_timestamp.clone(),
-            version: self.version.clone(),
-            type_: self.type_.clone(),
-        }
-    }
-}
