@@ -24,6 +24,7 @@ use crate::{
     Factorgraph,
     Model,
     check_deser,
+    post_to_nvaapi,
     send_query_result,
     send_api_result,
     // send_api_response,
@@ -425,22 +426,19 @@ pub async fn post_update_agent_metadata(
 
     let request_body = UpdateAgentMetadata::build_query(variables);
 
-    let req_res = nvacl.client
-        .post(&nvacl.apiurl)
-        .json(&request_body)
-        .send().await;
 
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    let response_body = check_deser::<crate::update_agent_metadata::ResponseData>(
-        req_res?.json().await
-    );
-
-    return check_query_response_data(response_body, |s| {
-        s.update_agents.agents[0].metadata.clone().unwrap_or("".to_string())
-    });
+    return post_to_nvaapi::<
+        crate::update_agent_metadata::Variables,
+        crate::update_agent_metadata::ResponseData,
+        String
+    >(
+        nvacl,
+        request_body, 
+        |s| {
+            s.update_agents.agents[0].metadata.clone().unwrap_or("".to_string())
+        },
+        Some(1)
+    ).await;
 }
 
 
