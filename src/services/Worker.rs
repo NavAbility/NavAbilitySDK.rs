@@ -12,44 +12,8 @@ use crate::{
   to_console_error,
   NavAbilityClient,
   post_to_nvaapi,
-  StartWorker,
-  // start_worker
+  StartWorker, // start_worker
 };
-
-// use serde::{Serialize,,Deserialize};
-
-// use std::any::type_name;
-
-
-// #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-// pub async fn post_to_nvaapi<
-//   V: Serialize,
-//   R: for<'de> Deserialize<'de>,
-//   T
-// >(
-//   nvacl: &NavAbilityClient,
-//   request_body: crate::QueryBody<V>,
-//   fn_modifier: fn(R) -> T
-// ) -> Result<T, Box<dyn Error>> {
-//   let req_res = nvacl.client
-//   .post(&nvacl.apiurl)
-//   .json(&request_body)
-//   .send().await;
-  
-//   if let Err(ref re) = req_res {
-//     let erm = format!("API request error for {:?}: {:?}",  type_name::<V>(), &re);
-//     to_console_error(&erm);
-//     return Err(Box::new(GQLRequestError { details: erm }));
-//   }
-  
-//   // generic transport and serde error checks
-//   let response_body = check_deser::<R>(
-//     req_res?.json().await
-//   );
-  
-//   // unwrap StartWorker query response during error checks
-//   return check_query_response_data(response_body, fn_modifier);
-// }
 
 
 
