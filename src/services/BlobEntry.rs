@@ -12,7 +12,8 @@ use crate::{
     get_variable, 
     parse_str_utc, 
     check_query_response_data,
-    send_api_response,
+    send_api_result,
+    // send_api_response,
     // send_query_result, 
     to_console_debug, 
     to_console_error, 
@@ -192,9 +193,9 @@ pub async fn get_blob_entry_send(
     id: Uuid
 ) -> Result<(),Box<dyn Error>> {
     
-    return send_api_response(
+    return send_api_result(
         send_into, 
-        post_get_blob_entry(nvacl, id).await?,
+        post_get_blob_entry(nvacl, id).await,
     );
 }
 

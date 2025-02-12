@@ -25,7 +25,8 @@ use crate::{
     Model,
     check_deser,
     send_query_result,
-    send_api_response,
+    send_api_result,
+    // send_api_response,
     check_query_response_data,
     AddAgent,
     add_agent,
@@ -151,9 +152,9 @@ pub async fn listAgents_send(
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
     // use common send_query_result
-    return send_api_response(
+    return send_api_result(
         send_into, 
-        post_list_agents(&nvacl).await?,
+        post_list_agents(&nvacl).await,
     );
 }
 
@@ -221,9 +222,9 @@ pub async fn getAgents_send(
     send_into: Sender<Vec<Agent>>,
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
-    return send_api_response(
+    return send_api_result(
         send_into, 
-        post_get_agents(nvacl).await?,
+        post_get_agents(nvacl).await,
     );
 }
 
@@ -379,14 +380,14 @@ pub async fn add_agent_entry_send(
     entry: &BlobEntry,
 ) -> Result<(),Box<dyn Error>> {
     
-    return send_api_response(
+    return send_api_result(
         send_into, 
         post_add_agent_entry(
             nvacl, 
             agent_label,
             entry,
             None
-        ).await?,
+        ).await,
     );
 }
 
@@ -451,13 +452,13 @@ pub async fn update_agent_metadata_send(
     metadata: &String,
 ) -> Result<(),Box<dyn Error>> {
     
-    return send_api_response(
+    return send_api_result(
         send_into, 
         post_update_agent_metadata(
             nvacl, 
             agent_label,
             metadata
-        ).await?,
+        ).await,
     );
 }
 
