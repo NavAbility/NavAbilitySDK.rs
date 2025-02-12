@@ -1,4 +1,5 @@
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
     Utc,
     Uuid,
@@ -26,7 +27,7 @@ use crate::{
 };
 
 
-
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub fn list_models_query(
     model_label_contains: Option<&str>,
 ) -> QueryBody<list_models::Variables> {
@@ -164,37 +165,14 @@ pub async fn post_list_model_graphs(
     };
     let request_body = ListModelsGraphs::build_query(variables);
 
-
     return post_to_nvaapi::<
-        crate::list_models_graphs::Variables,
-        crate::list_models_graphs::ResponseData,
+        list_models_graphs::Variables,
+        list_models_graphs::ResponseData,
         list_models_graphs::ResponseData
     >(
         &nvacl,
         request_body, 
-        |s|{
-            s
-        },
+        |s| s,
         Some(3)
     ).await;
-
-    // let mut trycount = 3;
-    // while 0 < trycount {
-    //     let req_res = nvacl.client
-    //     .post(&nvacl.apiurl)
-    //     .json(&request_body)
-    //     .send().await;
-
-    //     if let Err(ref re) = req_res {
-    //         to_console_error(&format!("API request error at {}: {:?}", "ListModelsGraphs", re));
-    //     } else {
-    //         return check_deser::<list_models_graphs::ResponseData>(
-    //             req_res?.json().await
-    //         )
-    //     }
-    //     trycount -= 1;
-    // }
-    // return Err(Box::new(crate::GQLRequestError { 
-    //     details: "API request retries failed for ListModelsGraphs.".to_owned()
-    // }));
 }
