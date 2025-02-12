@@ -217,10 +217,4 @@ macro_rules! BlobEntry_importers {
 }
 
 
-// =============== DEPRECTED =================
-
-
-pub trait SameBlobEntryFields {
-    fn to_gql_blobentry(self) -> get_blob_entry::blobEntry_fields;
-}
 

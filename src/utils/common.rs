@@ -239,13 +239,6 @@ pub fn send_api_result<T>(
 }
 
 
-#[deprecated(since="0.1.0", note="please use send_api_result(send_into, `response_body=Ok(data)`) instead")]
-pub fn send_api_response<T>(
-    send_into: Sender<T>,
-    data: T,
-) -> Result<(),Box<dyn Error>> {
-    return send_api_result(send_into,Ok(data));
-}
 
 /// Checks the deserialization result of a GraphQL query response.
 ///
