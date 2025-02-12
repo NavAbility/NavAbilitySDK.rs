@@ -300,7 +300,7 @@ pub async fn post_to_nvaapi<
                 req_res?.json().await
             );
             
-            // unwrap StartWorker query response during error checks
+            // query response during error checks
             return check_query_response_data(response_body, fn_modifier);
         }
         trycount -= 1;
