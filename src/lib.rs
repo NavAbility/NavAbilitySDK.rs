@@ -86,16 +86,31 @@ pub use crate::deprecated::*;
 const SDK_VERSION: &str = "0.25";
 
 
-type EmailAddress = String;
-type DateTime = String;
-type Metadata = String;
+type UUID = String;
 type BigInt = String;
+type DateTime = String;
+type EmailAddress = String;
+type Metadata = String;
+type JSON = String;
 type B64JSON = String;
 type Latitude = f64;
 type Longitude = f64;
-type UUID = String;
+// type mutationInput_post_startWorker_workerLabel = String;
+
+// pub enum mutationInput_post_startWorker_workerLabel {
+//     addAffordance_kNNvisual,
+//     solveGraph_Wkr,
+//     solveGraphParametric_Wkr,
+//     runLambda_Wkr,
+//     saveDFG_Wkr,
+//     loadDFG_Wkr,
+//     simulateIMU,
+//     runGenericMapper,
+//     echo
+// }
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -105,6 +120,7 @@ type UUID = String;
 pub struct GetBlobEntry;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -114,6 +130,7 @@ pub struct GetBlobEntry;
 pub struct ListAgents;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -123,6 +140,7 @@ pub struct ListAgents;
 pub struct UpdateAgentMetadata;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -132,6 +150,7 @@ pub struct UpdateAgentMetadata;
 pub struct GetAgents;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -141,6 +160,7 @@ pub struct GetAgents;
 pub struct GetURS;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -150,6 +170,7 @@ pub struct GetURS;
 pub struct ListModels;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -158,6 +179,8 @@ pub struct ListModels;
 )]
 pub struct ListModelsGraphs;
 
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -166,6 +189,8 @@ pub struct ListModelsGraphs;
 )]
 pub struct GetAgentEntriesMetadata;
 
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -175,6 +200,7 @@ pub struct GetAgentEntriesMetadata;
 pub struct CreateDownload;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -184,6 +210,7 @@ pub struct CreateDownload;
 pub struct CreateUpload;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -193,6 +220,17 @@ pub struct CreateUpload;
 pub struct CompleteUpload;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/StartWorker.gql",
+    response_derives = "Debug"
+)]
+pub struct StartWorker;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -202,6 +240,7 @@ pub struct CompleteUpload;
 pub struct GetVariable;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -212,6 +251,7 @@ pub struct ListVariables;
 // Implicit ListWhere due to graphql-client limitation: https://github.com/graphql-rust/graphql-client/issues/508
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -221,6 +261,7 @@ pub struct ListVariables;
 pub struct AddVariable;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -230,6 +271,7 @@ pub struct AddVariable;
 pub struct AddBlobEntryAgent;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -239,6 +281,7 @@ pub struct AddBlobEntryAgent;
 pub struct AddBlobEntryModel;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -247,6 +290,7 @@ pub struct AddBlobEntryModel;
 )]
 pub struct DeleteBlobEntry;
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -255,6 +299,7 @@ pub struct DeleteBlobEntry;
 )]
 pub struct DeleteBlob;
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -264,6 +309,7 @@ pub struct DeleteBlob;
 pub struct GetOrg;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -273,6 +319,7 @@ pub struct GetOrg;
 pub struct ListGraphs;
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -281,6 +328,7 @@ pub struct ListGraphs;
 )]
 pub struct AddAgent;
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
@@ -289,6 +337,7 @@ pub struct AddAgent;
 )]
 pub struct AddModel;
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
