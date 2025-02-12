@@ -95,19 +95,6 @@ type JSON = String;
 type B64JSON = String;
 type Latitude = f64;
 type Longitude = f64;
-// type mutationInput_post_startWorker_workerLabel = String;
-
-// pub enum mutationInput_post_startWorker_workerLabel {
-//     addAffordance_kNNvisual,
-//     solveGraph_Wkr,
-//     solveGraphParametric_Wkr,
-//     runLambda_Wkr,
-//     saveDFG_Wkr,
-//     loadDFG_Wkr,
-//     simulateIMU,
-//     runGenericMapper,
-//     echo
-// }
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
