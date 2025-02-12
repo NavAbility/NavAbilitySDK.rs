@@ -7,6 +7,7 @@ use crate::{
     Response,
     Error,
     NavAbilityClient,
+    post_to_nvaapi,
     ListGraphs,
     list_graphs,
     check_deser,
@@ -19,31 +20,35 @@ use crate::{
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn fetch_list_graphs(
-    nvacl: NavAbilityClient,
+    nvacl: &NavAbilityClient,
     id: &Uuid,
-) -> Result<Response<list_graphs::ResponseData>, Box<dyn Error>> {
+) -> Result<list_graphs::ResponseData, Box<dyn Error>> {
     
     let request_body = ListGraphs::build_query(list_graphs::Variables {
         id: id.to_string()
     });
 
-    // TBD
-    // let query = MyQuery::build_query(my_query::Variables {});
-    // match query {
-    //     Ok(q) => () // println!("Query: {:?}", q),
-    //     Err(e) => eprintln!("Failed to build query: {:?}", e),
+    return post_to_nvaapi::<
+        list_graphs::Variables,
+        list_graphs::ResponseData,
+        list_graphs::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(3)
+    ).await;
+
+    // let req_res = nvacl.client
+    // .post(&nvacl.apiurl)
+    // .json(&request_body)
+    // .send().await;
+
+    // if let Err(ref re) = req_res {
+    //     to_console_error(&format!("API request error: {:?}", re));
     // }
 
-    let req_res = nvacl.client
-    .post(&nvacl.apiurl)
-    .json(&request_body)
-    .send().await;
-
-    if let Err(ref re) = req_res {
-        to_console_error(&format!("API request error: {:?}", re));
-    }
-
-    return check_deser::<list_graphs::ResponseData>(
-        req_res?.json().await
-    )
+    // return check_deser::<list_graphs::ResponseData>(
+    //     req_res?.json().await
+    // )
 }

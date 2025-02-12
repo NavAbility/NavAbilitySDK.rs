@@ -276,6 +276,13 @@ pub async fn post_to_nvaapi<
     retries: Option<i32>
 ) -> Result<T, Box<dyn Error>> {
 
+    // TBD
+    // let query = MyQuery::build_query(my_query::Variables {});
+    // match query {
+    //     Ok(q) => () // println!("Query: {:?}", q),
+    //     Err(e) => eprintln!("Failed to build query: {:?}", e),
+    // }
+
     let mut trycount = retries.unwrap_or(3);
     while 0 < trycount {
 
