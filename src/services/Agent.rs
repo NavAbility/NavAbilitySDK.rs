@@ -246,6 +246,27 @@ pub async fn post_add_agent(
 
 // ------------------------ Agent Entries Metadata ------------------------
 
+
+            // // let add_data_cache = cache.add_data_window.as_mut().unwrap().cache.as_mut().unwrap();
+            // cache.try_update_fields();
+            // if let Some(agents) = &cache.agent_data {
+            //     for agent in &agents.agents {
+            //         if agent.label.eq(&cache.selected_agent) {
+            //             cache.rtrs.clear();
+            //             for entry in &agent.blob_entries {
+            //                 if let Some(metadata) = &entry.metadata {
+            //                     let mcof = crate::AgentConfigROS::from_json_b64(metadata);
+            //                     cache.rtrs.insert(agent.label.to_string(),mcof);
+            //                     cache.agent_entry = Some(entry.label.to_string());
+            //                 }
+            //             }
+            //             cache.config_agent = cache.selected_agent.to_string();
+            //         }
+            //     }
+            // }
+
+
+// FIXME parse result to Vec<Agent> with metadata and Vec<BlobEntry_summary> populated
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_agent_entries_metadata(
   nvacl: &NavAbilityClient,
@@ -276,6 +297,7 @@ pub async fn post_get_agent_entries_metadata(
     Some(3)
   ).await;
 }
+
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
