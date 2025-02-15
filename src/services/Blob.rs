@@ -170,7 +170,7 @@ pub async fn post_complete_upload(
 // TODO , feature = "blocking"
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 #[allow(non_snake_case)]
-async fn post_blob_singlepart(
+pub async fn post_blob_singlepart(
   _nvacl: &NavAbilityClient,
   blobId: Uuid,
   filename: &str,
