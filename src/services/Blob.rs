@@ -165,39 +165,6 @@ pub async fn post_complete_upload(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn post_delete_blob(
-  nvacl: NavAbilityClient,
-  blob_id: Uuid,
-  label: Option<&str>,
-) -> Result<Response<delete_blob::ResponseData>, Box<dyn Error>> {
-  
-  let mut store = "default".to_owned();
-  if let Some(lb) = label {
-    store = lb.to_owned();
-  }
-  
-  let variables = delete_blob::Variables {
-    blob_id: blob_id.to_string(),
-    label: Some(store)
-  };
-  let request_body = DeleteBlob::build_query(variables);
-  
-  let req_res = nvacl.client
-  .post(&nvacl.apiurl)
-  .json(&request_body)
-  .send().await;
-  
-  if let Err(ref re) = req_res {
-    to_console_error(&format!("API request error: {:?}", re));
-  }
-  
-  return check_deser::<delete_blob::ResponseData>(
-    req_res?.json().await
-  )
-}
-
-
 
 
 // TODO , feature = "blocking"
@@ -216,7 +183,7 @@ async fn post_blob_singlepart(
     blobId,
     Some(1) // one part upload
   ).await;
-
+  
   // send the single part blob
   let upld = upl.unwrap().data.unwrap();
   if let Some(crup) = upld.create_upload {
@@ -238,11 +205,11 @@ async fn post_blob_singlepart(
         bytes,
         url
       ).await;
-
+      
       let mut etags = Vec::new();
       match upload_result {
         Ok(et_res) => {
-        etags.push(et_res);
+          etags.push(et_res);
         }
         Err(e) => {
           to_console_error(&format!("upload of part did not produce required eTag {:?}", &e));
@@ -258,3 +225,73 @@ async fn post_blob_singlepart(
     }
   }
 }
+
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_delete_blob(
+  nvacl: &NavAbilityClient,
+  blob_id: Uuid,
+  label: Option<&str>,
+) -> Result<delete_blob::ResponseData, Box<dyn Error>> {
+  
+  let mut store = "default".to_owned();
+  if let Some(lb) = label {
+    store = lb.to_owned();
+  }
+  
+  let variables = delete_blob::Variables {
+    blob_id: blob_id.to_string(),
+    label: Some(store)
+  };
+  let request_body = DeleteBlob::build_query(variables);
+  
+  return crate::post_to_nvaapi::<
+    delete_blob::Variables,
+    delete_blob::ResponseData,
+    delete_blob::ResponseData,
+  >(
+    nvacl,
+    request_body, 
+    |s| s,
+    Some(3)
+  ).await;
+}
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn delete_blob_send(
+  send_into: std::sync::mpsc::Sender<delete_blob::ResponseData>,
+  nvacl: &NavAbilityClient,
+  blob_id: Uuid,
+  label: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+  return crate::send_api_result(
+    send_into, 
+    post_delete_blob(nvacl, blob_id, label).await,
+  );
+}
+
+
+#[cfg(feature = "tokio")]
+#[allow(non_snake_case)]
+pub fn deleteBlob(
+  nvacl: &NavAbilityClient,
+  blob_id: Uuid,
+  label: Option<&str>,
+) -> Result<delete_blob::ResponseData, Box<dyn Error>> {
+  return tokio::runtime::Builder::new_current_thread()
+  .enable_all()
+  .build()
+  .unwrap()
+  .block_on(
+    post_delete_blob(
+      nvacl,
+      blob_id,
+      label,
+    )
+  );
+}
+
