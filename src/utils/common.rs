@@ -93,6 +93,7 @@ pub fn to_console_error(
     // tracing::error!("ERROR NvaSDK.rs {}",&text);
     #[cfg(target_arch = "wasm32")]
     gloo_console::log!(&format!("ERROR NvaSDK.rs {}",&text));
+    // web_sys::console::log_1 // alternative
 }
 
 
