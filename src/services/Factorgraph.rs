@@ -13,6 +13,8 @@ use crate::{
   ListGraphs,
   list_graphs,
   AddFactorgraph,
+  AddFactorgraphBlobEntry,
+  add_factorgraph_blob_entry,
   // add_factorgraph,
   check_deser,
   to_console_debug,
@@ -114,4 +116,60 @@ pub fn addFactorgraph(
       metadata
     )
   );
+}
+
+
+
+
+
+// FIXME return Uuid (not string)
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_add_graph_entry(
+  nvacl: &NavAbilityClient,
+  fg_label: &String,
+  entry: &crate::BlobEntry,
+) -> Result<String,Box<dyn Error>> {
+  
+  let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
+  let name = format!("{}{}",&fg_label,&entry.label).to_string();
+  let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
+  
+  let mut size_s: Option<String> = None;
+  if let Some(sz) = entry.size {
+    size_s = Some(format!("{}",sz));
+  }
+  let mut metadata = entry.metadata.to_string();
+  if metadata.is_empty() {
+    metadata = "e30=".to_string();
+  }
+  
+  let variables = crate::add_factorgraph_blob_entry::Variables {
+    fg_label: fg_label.to_string(),
+    entry_id: entry_id.to_string(),
+    entry_label: entry.label.to_string(),
+    blob_id: entry.blobId.to_string(),
+    blobstore: Some(entry.blobstore.to_string()),
+    origin: Some(entry.origin.to_string()),
+    mime_type: Some(entry.mimeType.to_string()),
+    metadata: metadata,
+    description: Some(entry.description.to_string()),
+    hash: entry.hash.to_string(),
+    size: size_s,
+    timestamp: Some(entry.timestamp.to_string()),
+  };
+  
+  let request_body = AddFactorgraphBlobEntry::build_query(variables);
+  
+  return post_to_nvaapi::<
+  crate::add_factorgraph_blob_entry::Variables,
+  crate::add_factorgraph_blob_entry::ResponseData,
+  String
+  >(
+    nvacl,
+    request_body, 
+    |s| {
+      s.add_blob_entries.blob_entries[0].id.clone()
+    },
+    Some(1)
+  ).await;
 }

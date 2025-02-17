@@ -272,6 +272,16 @@ pub struct AddBlobEntryAgent;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
+    query_path = "src/gql/AddFactorgraphBlobEntry.gql",
+    response_derives = "Debug"
+)]
+pub struct AddFactorgraphBlobEntry;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
     query_path = "src/gql/AddBlobEntryModel.gql",
     response_derives = "Debug"
 )]
