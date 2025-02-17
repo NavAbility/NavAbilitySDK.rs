@@ -173,3 +173,34 @@ pub async fn post_add_graph_entry(
     Some(1)
   ).await;
 }
+
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_connect_graph_agent(
+  nvacl: &NavAbilityClient,
+  graph: &str,
+  agent: &str,
+) -> Result<crate::connect_graph_agent::ResponseData, Box<dyn Error>> {
+  
+  let oid = Uuid::parse_str(&nvacl.user_label).expect("cannot parse org_id");
+  let gid = Uuid::new_v5(&oid, graph.as_bytes()).to_string();
+  let aid = Uuid::new_v5(&oid, agent.as_bytes()).to_string();
+  let request_body = crate::ConnectGraphAgent::build_query(crate::connect_graph_agent::Variables {
+    fg_id: gid,
+    agent_id: aid,
+  });
+  
+  return post_to_nvaapi::<
+    crate::connect_graph_agent::Variables,
+    crate::connect_graph_agent::ResponseData,
+    crate::connect_graph_agent::ResponseData
+  >(
+    nvacl,
+    request_body, 
+    |s| s,
+    Some(3)
+  ).await;
+}
+
