@@ -36,9 +36,9 @@ pub mod Model;
 pub use Model::*;
 
 #[allow(non_snake_case)]
-pub mod Graph;
+pub mod Factorgraph;
 #[allow(non_snake_case)]
-pub use Graph::*;
+pub use Factorgraph::*;
 
 #[allow(non_snake_case)]
 pub mod Variable;
