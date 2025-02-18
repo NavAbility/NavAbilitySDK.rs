@@ -15,8 +15,7 @@ use crate::{
   AddFactorgraph,
   AddFactorgraphBlobEntry,
   add_factorgraph_blob_entry,
-  // add_factorgraph,
-  check_deser,
+  FindOrgModelGraphs,
   to_console_debug,
   to_console_error,
   SDK_VERSION
@@ -204,3 +203,72 @@ pub async fn post_connect_graph_agent(
   ).await;
 }
 
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_find_org_model_fgs(
+  nvacl: &NavAbilityClient,
+  model_label_contains: Option<String>,
+  fg_label_contains: Option<String>,
+) -> Result<crate::find_org_model_graphs::ResponseData, Box<dyn Error>> {
+  
+  // let oid = Uuid::parse_str(&nvacl.user_label).expect("cannot parse org_id");
+  let request_body = crate::FindOrgModelGraphs::build_query(
+    crate::find_org_model_graphs::Variables {
+      org_id: nvacl.user_label.clone(),
+      model_label_contains,
+      fg_label_contains,
+    }
+  );
+  
+  return post_to_nvaapi::<
+    crate::find_org_model_graphs::Variables,
+    crate::find_org_model_graphs::ResponseData,
+    crate::find_org_model_graphs::ResponseData
+  >(
+    nvacl,
+    request_body, 
+    |s| s,
+    Some(3)
+  ).await;
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn find_org_model_fgs_send(
+  send_into: std::sync::mpsc::Sender<crate::find_org_model_graphs::ResponseData>, //get_blob_entry::ResponseData>,
+  nvacl: &NavAbilityClient,
+  model_label_contains: Option<String>,
+  fg_label_contains: Option<String>,
+) -> Result<(), Box<dyn Error>> {
+  return crate::send_api_result(
+    send_into, 
+    post_find_org_model_fgs(
+      nvacl, 
+      model_label_contains,
+      fg_label_contains
+    ).await,
+  );
+}
+
+
+#[cfg(feature = "tokio")]
+#[allow(non_snake_case)]
+pub fn findFactorgraphs(
+  nvacl: &NavAbilityClient,
+  model_label_contains: Option<String>,
+  fg_label_contains: Option<String>,
+) -> Result<crate::find_org_model_graphs::ResponseData, Box<dyn Error>> {
+  return tokio::runtime::Builder::new_current_thread()
+  .enable_all()
+  .build()
+  .unwrap()
+  .block_on(
+    post_find_org_model_fgs(
+      nvacl,
+      model_label_contains,
+      fg_label_contains,
+    )
+  );
+}
