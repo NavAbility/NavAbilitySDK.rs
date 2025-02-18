@@ -1,5 +1,6 @@
 
 
+use crate::GetLabel;
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
   Utc,
