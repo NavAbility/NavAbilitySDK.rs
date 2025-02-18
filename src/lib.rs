@@ -340,6 +340,16 @@ pub struct ListGraphs;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
+    query_path = "src/gql/FindOrgModelGraphs.gql",
+    response_derives = "Debug"
+)]
+pub struct FindOrgModelGraphs;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
     query_path = "src/gql/AddAgent.gql",
     response_derives = "Debug"
 )]
