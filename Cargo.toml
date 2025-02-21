@@ -9,7 +9,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 serde = "^1.0.218"
-serde_json = "^1.0"
+serde_json = "^1.0.139"
 chrono = "^0.4"
 log = "^0.4"
 # hyper-util = "^0.1.3"
