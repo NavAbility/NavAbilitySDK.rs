@@ -30,7 +30,7 @@ build-wasm:
 	cargo build -F wasm
 .PHONY: build-wasm
 
-fetch-schema: install-deps
+fetch-schema:
 	@graphql-client introspect-schema --authorization $(NVA_API_TOKEN) --output src/schema.json $(NVA_API_URL)
 .PHONY: fetch-schema
 
