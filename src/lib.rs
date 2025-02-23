@@ -74,10 +74,6 @@ pub use crate::services::{
 };
 
 
-#[cfg(feature = "tokio")]
-pub use crate::services::{
-    getAgents_send,
-};
 
 pub mod deprecated;
 pub use crate::deprecated::*;

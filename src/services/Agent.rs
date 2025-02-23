@@ -180,11 +180,17 @@ pub fn q_listAgents(
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_agents(
   nvacl: &NavAbilityClient,
+  agent_lbl_contains: Option<String>
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
+  let mut label_contains = None; 
+  if let Some(lbl) = agent_lbl_contains {
+    label_contains = Some(lbl.to_string());
+  }
 
   // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
   let variables = crate::get_agents::Variables {
     org_id: nvacl.user_label.to_string(),
+    label_contains,
     full: Some(true)
   };
   
@@ -214,27 +220,43 @@ pub async fn post_get_agents(
 #[cfg(feature = "tokio")]
 pub fn getAgents(
   nvacl: &NavAbilityClient,
-  agent_label: Option<&str>,
+  agent_label: Option<String>,
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
-  // return crate::execute(post_get_agents(nvacl, agent_label));
-  return tokio::runtime::Builder::new_current_thread()
-  .enable_all()
-  .build()
-  .unwrap()
-  .block_on(post_get_agents(nvacl));
+  return crate::execute(post_get_agents(nvacl, agent_label));
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm"))]
-pub async fn getAgents_send(
-  send_into: Sender<Vec<Agent>>,
+
+#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
+pub fn q_getAgents(
+  send_into: Sender<Vec<Agent>>, 
   nvacl: &NavAbilityClient,
-  agent_label: Option<&str>,
-) -> Result<(),Box<dyn Error>> {
-  return send_api_result(
-    send_into, 
-    post_get_agents(nvacl).await,
-  );
+  agent_label: Option<String>,
+) -> Result<(), Box<dyn Error>> {
+  crate::execute(async {
+    return send_api_result(
+      send_into, 
+      post_get_agents(&nvacl, agent_label).await,
+    );
+  })
+}
+
+#[cfg(feature = "wasm")]
+pub fn q_getAgents(
+  send_into: Sender<Vec<Agent>>, 
+  nvacl: &NavAbilityClient,
+  agent_label: Option<String>,
+) {
+  // wasmbindgen limitation?  overcome +'static requirement
+  let nvacl_ = nvacl.clone();
+  let send_into_ = send_into.clone();
+  let agent_label_ = agent_label.clone();
+  crate::execute(async move {
+    let _ = send_api_result(
+      send_into_, 
+      post_get_agents(&nvacl_, agent_label_).await,
+    );
+  });
 }
 
 
