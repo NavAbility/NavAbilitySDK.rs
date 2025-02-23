@@ -138,6 +138,16 @@ pub struct GetAgents;
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery, Clone)]
+#[graphql(
+    schema_path = "src/schema.json",
+    query_path = "src/gql/GetAgent.gql",
+    response_derives = "Debug"
+)]
+pub struct GetAgent;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",

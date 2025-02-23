@@ -52,13 +52,24 @@ use crate::to_console_debug;
 // ===================== HELPERS ========================
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-use crate::get_agents::agent_fields_summary as GA_AgentFieldsSummary;
+use crate::get_agents::agent_fields_summary as GAs_AgentFieldsSummary;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+Agent_importers_summary!(GAs_AgentFieldsSummary);
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::get_agents::agent_fields_full as GAs_AgentFieldsFull;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+Agent_importers_full!(GAs_AgentFieldsFull);
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::get_agent::agent_fields_summary as GA_AgentFieldsSummary;
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 Agent_importers_summary!(GA_AgentFieldsSummary);
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-use crate::get_agents::agent_fields_full as GA_AgentFieldsFull;
+use crate::get_agent::agent_fields_full as GA_AgentFieldsFull;
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 Agent_importers_full!(GA_AgentFieldsFull);
+
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -127,13 +138,13 @@ pub async fn post_list_agents(
 
 
 
-
 #[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
 pub fn listAgents(
   nvacl: &NavAbilityClient,
 ) -> Result<Vec<String>, Box<dyn Error>> {
   return crate::execute(post_list_agents(nvacl));
 }
+
 
 #[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
 pub fn q_listAgents(
@@ -166,31 +177,23 @@ pub fn q_listAgents(
 
 
 
-
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_agents(
   nvacl: &NavAbilityClient,
-  agent_label: Option<&str>
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
-  
-  let mut agent_id = None;
-  if let Some(agl) = agent_label {
-    agent_id = Some(nvacl.getId(agl).to_string());
-  }
 
   // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
   let variables = crate::get_agents::Variables {
     org_id: nvacl.user_label.to_string(),
-    agent_id,
     full: Some(true)
   };
   
   let request_body = GetAgents::build_query(variables);
   
   return post_to_nvaapi::<
-  crate::get_agents::Variables,
-  crate::get_agents::ResponseData,
-  Vec<Agent>
+    crate::get_agents::Variables,
+    crate::get_agents::ResponseData,
+    Vec<Agent>
   >(
     nvacl,
     request_body, 
@@ -218,7 +221,7 @@ pub fn getAgents(
   .enable_all()
   .build()
   .unwrap()
-  .block_on(post_get_agents(nvacl, agent_label));
+  .block_on(post_get_agents(nvacl));
 }
 
 
@@ -230,9 +233,51 @@ pub async fn getAgents_send(
 ) -> Result<(),Box<dyn Error>> {
   return send_api_result(
     send_into, 
-    post_get_agents(nvacl, agent_label).await,
+    post_get_agents(nvacl).await,
   );
 }
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_get_agent(
+  nvacl: &NavAbilityClient,
+  agent_label: Option<&str>
+) -> Result<Vec<Agent>, Box<dyn Error>> {
+  
+  let mut agent_id = None;
+  if let Some(agl) = agent_label {
+    agent_id = Some(nvacl.getId(agl).to_string());
+  }
+
+  // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
+  let variables = crate::get_agent::Variables {
+    org_id: nvacl.user_label.to_string(),
+    agent_id,
+    full: Some(true)
+  };
+  
+  let request_body = crate::GetAgent::build_query(variables);
+  
+  return post_to_nvaapi::<
+    crate::get_agent::Variables,
+    crate::get_agent::ResponseData,
+    Vec<Agent>
+  >(
+    nvacl,
+    request_body, 
+    |s| {
+      let mut ags = Vec::new();
+      for a in s.agents {
+        let mut agent = Agent::from_gql_summary(&a.agent_fields_summary);
+        Agent::from_gql_full(&a.agent_fields_full, &mut agent);
+        ags.push(agent);
+      };
+      return ags;
+    },
+    Some(3)
+  ).await;
+}
+
 
 
 
