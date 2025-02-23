@@ -4,19 +4,54 @@
 /// This module provides various utility functions and common tools used throughout the NavAbility SDK,
 /// including functions for type introspection, string parsing, console logging, and handling GraphQL query responses.
 
+
+use std::{
+    fmt,
+    any::type_name,
+    convert::TryInto,
+    future::Future
+};
+
+use serde::{Serialize,Deserialize};
+
 // use graphql_client::GraphQLQuery;
 use crate::{
     Error, 
     Sender, 
     Response
 };
-use std::{
-    fmt,
-    any::type_name,
-    convert::TryInto,
-};
 
-use serde::{Serialize,Deserialize};
+#[cfg(feature = "wasm")]
+use wasm_bindgen_futures;
+#[cfg(feature = "tokio")]
+use tokio;
+
+
+#[cfg(feature = "wasm")]
+pub fn execute<F: Future<Output = ()> + 'static>(f: F) {
+  wasm_bindgen_futures::spawn_local(f);
+}
+
+#[cfg(feature = "thread")]
+pub fn execute<F: Future<Output = ()>>(  //  + Send + 'static
+    f: F
+) {
+  // use any executor of your choice instead
+  std::thread::spawn(move || futures::executor::block_on(f));
+}
+
+#[cfg(feature = "tokio")]
+pub fn execute<R,F: Future<Output = ()>>(  // Result<R,Box<dyn Error>> // < + Send + 'static>
+    f: F
+) {
+    // TODO, use any executor of your choice instead
+    return tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(f);
+    // std::thread::spawn(move || futures::executor::block_on(f));
+}
 
 
 
@@ -315,24 +350,7 @@ pub async fn post_to_nvaapi<
 // ====================== FUTURE IDEAS ======================
 
 
-// // TODO complete common executor
-// #[cfg(feature = "wasm")]
-// use std::future::Future;
-// #[cfg(feature = "tokio")]
-// fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
-//     // TODO, use any executor of your choice instead
-//     return tokio::runtime::Builder::new_current_thread()
-//         .enable_all()
-//         .build()
-//         .unwrap()
-//         .block_on(f);
-//     // std::thread::spawn(move || futures::executor::block_on(f));
-// }
 
-// #[cfg(feature = "wasm")]
-// fn execute<F: Future<Output = ()> + 'static>(f: F) {
-//     wasm_bindgen_futures::spawn_local(f);
-// }
 
 
 // missing traits for generic serde on query types
