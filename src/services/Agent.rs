@@ -126,30 +126,45 @@ pub async fn post_list_agents(
 }
 
 
-#[cfg(feature = "tokio")]
+
+
+#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
 pub fn listAgents(
   nvacl: &NavAbilityClient,
 ) -> Result<Vec<String>, Box<dyn Error>> {
-  return tokio::runtime::Builder::new_current_thread()
-  .enable_all()
-  .build()
-  .unwrap()
-  .block_on(post_list_agents(nvacl));
+  return crate::execute(post_list_agents(nvacl));
 }
 
-// FIXME update to newer pattern without requiring separate wasm config
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-#[allow(non_snake_case)]
-pub async fn listAgents_send(
+#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
+pub fn q_listAgents(
   send_into: Sender<Vec<String>>, 
-  nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> {
-  // use common send_query_result
-  return send_api_result(
-    send_into, 
-    post_list_agents(&nvacl).await,
-  );
+  nvacl: &NavAbilityClient,
+) -> Result<(), Box<dyn Error>> {
+  crate::execute(async {
+    return send_api_result(
+      send_into, 
+      post_list_agents(&nvacl).await,
+    );
+  })
 }
+
+#[cfg(feature = "wasm")]
+pub fn q_listAgents(
+  send_into: Sender<Vec<String>>, 
+  nvacl: &NavAbilityClient,
+) {
+  // wasmbindgen limitation?  overcome +'static requirement
+  let nvacl_ = nvacl.clone();
+  let send_into_ = send_into.clone();
+  crate::execute(async move {
+    let _ = send_api_result(
+      send_into_, 
+      post_list_agents(&nvacl_).await,
+    );
+  });
+}
+
+
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -198,6 +213,7 @@ pub fn getAgents(
   nvacl: &NavAbilityClient,
   agent_label: Option<&str>,
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
+  // return crate::execute(post_get_agents(nvacl, agent_label));
   return tokio::runtime::Builder::new_current_thread()
   .enable_all()
   .build()
