@@ -180,13 +180,13 @@ pub fn q_listAgents(
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_agents(
   nvacl: &NavAbilityClient,
-  label_contains: Option<String>
+  label_contains: String
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
 
   // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
   let variables = crate::get_agents::Variables {
     org_id: nvacl.user_label.to_string(),
-    label_contains: label_contains.unwrap_or("".into()), // "" returns all, None/null returns empty list -- go figure.
+    label_contains, // "" returns all, None/null returns empty list -- go figure.
     full: Some(true)
   };
   
@@ -216,7 +216,7 @@ pub async fn post_get_agents(
 #[cfg(feature = "tokio")]
 pub fn getAgents(
   nvacl: &NavAbilityClient,
-  label_contains: Option<String>,
+  label_contains: String,
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
   return crate::execute(post_get_agents(nvacl, label_contains));
 }
@@ -227,7 +227,7 @@ pub fn getAgents(
 pub fn q_getAgents(
   send_into: Sender<Vec<Agent>>, 
   nvacl: &NavAbilityClient,
-  label_contains: Option<String>,
+  label_contains: String,
 ) -> Result<(), Box<dyn Error>> {
   crate::execute(async {
     return send_api_result(
@@ -241,7 +241,7 @@ pub fn q_getAgents(
 pub fn q_getAgents(
   send_into: Sender<Vec<Agent>>, 
   nvacl: &NavAbilityClient,
-  label_contains: Option<String>,
+  label_contains: String,
 ) {
   // wasmbindgen limitation?  overcome +'static requirement
   let nvacl_ = nvacl.clone();
