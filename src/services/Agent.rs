@@ -180,17 +180,13 @@ pub fn q_listAgents(
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_agents(
   nvacl: &NavAbilityClient,
-  agent_lbl_contains: Option<String>
+  label_contains: Option<String>
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
-  let mut label_contains = None; 
-  if let Some(lbl) = agent_lbl_contains {
-    label_contains = Some(lbl.to_string());
-  }
 
   // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
   let variables = crate::get_agents::Variables {
     org_id: nvacl.user_label.to_string(),
-    label_contains,
+    label_contains: label_contains.unwrap_or("".into()), // "" returns all, None/null returns empty list -- go figure.
     full: Some(true)
   };
   
@@ -220,9 +216,9 @@ pub async fn post_get_agents(
 #[cfg(feature = "tokio")]
 pub fn getAgents(
   nvacl: &NavAbilityClient,
-  agent_label: Option<String>,
+  label_contains: Option<String>,
 ) -> Result<Vec<Agent>, Box<dyn Error>> {
-  return crate::execute(post_get_agents(nvacl, agent_label));
+  return crate::execute(post_get_agents(nvacl, label_contains));
 }
 
 
@@ -231,12 +227,12 @@ pub fn getAgents(
 pub fn q_getAgents(
   send_into: Sender<Vec<Agent>>, 
   nvacl: &NavAbilityClient,
-  agent_label: Option<String>,
+  label_contains: Option<String>,
 ) -> Result<(), Box<dyn Error>> {
   crate::execute(async {
     return send_api_result(
       send_into, 
-      post_get_agents(&nvacl, agent_label).await,
+      post_get_agents(&nvacl, label_contains).await,
     );
   })
 }
@@ -245,16 +241,16 @@ pub fn q_getAgents(
 pub fn q_getAgents(
   send_into: Sender<Vec<Agent>>, 
   nvacl: &NavAbilityClient,
-  agent_label: Option<String>,
+  label_contains: Option<String>,
 ) {
   // wasmbindgen limitation?  overcome +'static requirement
   let nvacl_ = nvacl.clone();
   let send_into_ = send_into.clone();
-  let agent_label_ = agent_label.clone();
+  let label_contains_ = label_contains.clone();
   crate::execute(async move {
     let _ = send_api_result(
       send_into_, 
-      post_get_agents(&nvacl_, agent_label_).await,
+      post_get_agents(&nvacl_, label_contains_).await,
     );
   });
 }
