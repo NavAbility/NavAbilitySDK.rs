@@ -224,7 +224,8 @@ impl FactorDFG {
       nullhypo,
       inflation,
     );
-    f.data = Some(fdata.to_string_b64());
+    // FIXME, should not be json'd so early: JuliaRobotics/DistributedFactorGraphs.jl#1118
+    f.data = Some(fdata.to_json());
     
     return f;
   }
