@@ -1,4 +1,51 @@
 
+use std::ptr::null;
+
+use uuid::Uuid;
+use chrono::{
+    DateTime,
+    Utc
+};
+
+
+use serde::{Deserialize, Serialize};
+
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct FunctionData {
+  pub eliminated:  Option<bool>,
+  pub potialused: Option<bool>,
+  pub edgeIDs: Option<Vec<i64>>,
+  pub fnc: String,
+  pub multihypo: Vec<f64>,
+  pub certainhypo: Option<Vec<i64>>,
+  pub nullhypo: f64,
+  pub solveInProgress: Option<i64>,
+  pub inflation: f64
+}
+
+
+#[derive(Debug, Clone, Default)]
+#[allow(non_snake_case)]
+pub struct FactorDFG {
+  pub id: Option<Uuid>,
+  pub label: String,
+  pub tags: Vec<String>,
+  pub variableOrderSymbols_: Vec<String>,
+  pub timestamp: Option<DateTime<Utc>>,
+  pub nstime: Option<String>,
+  pub fnctype: String,
+  pub solvable: Option<i64>,
+  pub data: Option<String>,
+  pub metadata: Option<String>,
+  pub _version: Option<String>
+}
+
+
+
+
+
 
 #[derive(Debug, Clone)]
 #[allow(non_snake_case)]
