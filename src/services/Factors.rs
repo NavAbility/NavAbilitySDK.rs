@@ -12,8 +12,16 @@ use base64::{
 };
 
 
-use crate::{entities::Distributions::Distribution, FullNormal, SDK_VERSION};
 use crate::{
+  GraphQLQuery,
+  entities::Distributions::Distribution, 
+  GetId,
+};
+
+use crate::{
+  FullNormal, 
+  SDK_VERSION,
+  common_traits::GetLabel,
   entities::Factors::{FactorDFG, FunctionData},
   // FullNormal, 
   Point2Point2, 
@@ -39,6 +47,10 @@ macro_rules! GenDistrFactor {
         Self {
           Z
         }
+      }
+
+      fn type_str(&self) -> String {
+        return format!("RoME.{}", get_fnc_name(&std::any::type_name::<Self>()));
       }
     }
   }
@@ -205,18 +217,42 @@ where
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub fn post_add_factor<F>(
+pub fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   nvafg: &NavAbilityDFG,
   factor: FactorDFG<F>,
 ) {
 
-  // let request_body = GetVariable::build_query(
-  //   get_variable::Variables {
-  //       var_id: id.to_string(),
-  //       fields_summary: true, // TODO simplify, since this must always be true
-  //       fields_full,
-  //   }
-  // );
+  let label = factor.getLabel().to_string();
+  let id = nvafg.getId(&label).to_string();
+
+  let mut variable_order_symbols = Vec::new();
+  for v in factor.variableOrderSymbols_ {
+    variable_order_symbols.push(Some(v));
+  }
+
+  let newfac = crate::add_factors::FactorCreateInput {
+    id,
+    label,
+    tags: factor.tags,
+    timestamp: factor.timestamp.expect("FactorDFG missing .timestamp field").to_string(),
+    nstime: factor.nstime.expect("FactorDFG missing .nstime field"),
+    fnctype: factor.fnctype.type_str(),
+    solvable: factor.solvable.expect("FactorDFG missing .solvable field"),
+    data: factor.data.expect("FactorDFG missing .data field"),
+    metadata: factor.metadata,
+    variable_order_symbols: Some(variable_order_symbols),
+    version: SDK_VERSION.to_string(),
+    blob_entries: None,
+    fg: None,
+    variables: None,
+    // _type: "",
+  };
+
+  let request_body = crate::AddFactors::build_query(
+    crate::add_factors::Variables {
+        factors_to_create: vec![newfac],
+    }
+  );
 
   todo!()
 }

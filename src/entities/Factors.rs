@@ -47,6 +47,7 @@ pub struct FactorDFG<F> {
 #[allow(non_snake_case)]
 pub trait FactorType<'a, D: crate::Distribution<'a>> {
   fn new(Z: D) -> Self;
+  fn type_str(&self) -> String;
 }
 
 

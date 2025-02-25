@@ -272,6 +272,16 @@ pub struct AddVariable;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/schema.json",
+    query_path = "src/gql/AddFactors.gql",
+    response_derives = "Debug"
+)]
+pub struct AddFactors;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/schema.json",
     query_path = "src/gql/AddBlobEntryAgent.gql",
     response_derives = "Debug"
 )]

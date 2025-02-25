@@ -20,7 +20,7 @@ fragment factor_full_fields on Factor {
 }
 
 
-mutation addFactors($factorsToCreate: [FactorCreateInput!]!) {
+mutation AddFactors($factorsToCreate: [FactorCreateInput!]!) {
   addFactors(
     input: $factorsToCreate
   ) {
