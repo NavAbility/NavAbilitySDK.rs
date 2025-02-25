@@ -79,6 +79,7 @@ fn get_fnc_name(fnc: &str) -> String {
   return t.to_owned();
 }
 
+
 impl FunctionData {
   pub fn new(
     fnc: &str,
@@ -99,7 +100,7 @@ impl FunctionData {
   }
   
   pub fn to_string_b64(&self) -> String {
-    general_purpose::STANDARD.encode(self.to_json().to_string())
+    general_purpose::STANDARD.encode(self.to_json())
   }
 }
 
@@ -180,7 +181,7 @@ where
       fnctype,
       solvable: Some(solvable.unwrap_or(0)),
       data: None,
-      metadata: None,
+      metadata: Some("e30=".to_string()),
       _version: Some(crate::SDK_VERSION.to_string()),
     };
     
