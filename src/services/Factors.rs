@@ -1,3 +1,9 @@
+
+use std::{
+  sync::mpsc::Sender,
+  error::Error
+};
+
 use uuid::Uuid;
 
 use chrono::{
@@ -14,11 +20,14 @@ use base64::{
 
 use crate::{
   GraphQLQuery,
-  entities::Distributions::Distribution, 
   GetId,
+  AddFactors,
+  add_factors,
+  send_api_result,
 };
 
 use crate::{
+  entities::Distributions::Distribution, 
   FullNormal, 
   SDK_VERSION,
   common_traits::GetLabel,
@@ -220,7 +229,7 @@ where
 pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   nvafg: &NavAbilityDFG,
   factor: FactorDFG<F>,
-) -> Result<crate::add_factors::ResponseData, Box<dyn crate::Error>> {
+) -> Result<add_factors::ResponseData, Box<dyn crate::Error>> {
 
   let label = factor.getLabel().to_string();
   let id = nvafg.getId(&label).to_string();
@@ -230,7 +239,7 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
     variable_order_symbols.push(Some(v));
   }
 
-  let newfac = crate::add_factors::FactorCreateInput {
+  let newfac = add_factors::FactorCreateInput {
     id,
     label,
     tags: factor.tags,
@@ -248,16 +257,16 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
     // _type: "",
   };
 
-  let request_body = crate::AddFactors::build_query(
-    crate::add_factors::Variables {
+  let request_body = AddFactors::build_query(
+    add_factors::Variables {
         factors_to_create: vec![newfac],
     }
   );
   
   return crate::post_to_nvaapi::<
-    crate::add_factors::Variables,
-    crate::add_factors::ResponseData,
-    crate::add_factors::ResponseData
+    add_factors::Variables,
+    add_factors::ResponseData,
+    add_factors::ResponseData
   >(
     &nvafg.client,
     request_body, 
@@ -267,42 +276,26 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
 }
 
 
+#[cfg(any(feature = "tokio", feature = "thread"))]
+pub fn addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
+  nvafg: &NavAbilityDFG,
+  factor: FactorDFG<F>,
+) -> Result<add_factors::ResponseData, Box<dyn Error>> {
+  return crate::execute(post_add_factor(nvafg, factor));
+}
 
-// function DFG.addFactor!(
-//     fgclient::NavAbilityDFG,
-//     xisyms::Vector{Symbol},
-//     fnc::InferenceType;
-//     multihypo::Vector{Float64} = Float64[],
-//     nullhypo::Float64 = 0.0,
-//     solvable::Int = 1,
-//     tags::Vector{Symbol} = Symbol[],
-//     timestamp::ZonedDateTime = TimeZones.now(tz"UTC"),
-//     inflation::Real = 3.0,
-//     label::Symbol = assembleFactorName(xisyms),
-//     nstime::Int = 0,
-//     metadata::Dict{Symbol, DFG.SmallDataTypes} = Dict{Symbol, DFG.SmallDataTypes}(),
-// )
-//     # create factor data
-//     factordata = FactorData(; fnc, multihypo, nullhypo, inflation)
 
-//     fnctype = getFncTypeName(fnc)
+#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
+pub fn q_addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
+  send_into: Sender<add_factors::ResponseData>, 
+  nvafg: NavAbilityDFG,
+  factor: FactorDFG<F>,
+) -> Result<(), Box<dyn Error>> {
+  crate::execute(async {
+    return send_api_result(
+      send_into, 
+      post_add_factor(&nvafg, factor).await,
+    );
+  })
+}
 
-//     union!(tags, [:FACTOR])
-//     # create factor
-//     factor = FactorDFG(;
-//         label,
-//         tags,
-//         _variableOrderSymbols = xisyms,
-//         timestamp,
-//         nstime = string(nstime),
-//         fnctype,
-//         solvable,
-//         data = JSON3.write(factordata),
-//         metadata = base64encode(JSON3.write(metadata)),
-//     )
-
-//     # add factor
-//     resultId = addFactor!(fgclient, factor)
-
-//     return resultId
-// end
