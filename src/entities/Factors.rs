@@ -44,6 +44,11 @@ pub struct FactorDFG {
 
 
 
+#[allow(non_snake_case)]
+pub trait FactorType<'a, T: crate::Distribution<'a>> {
+  fn new(Z: T) -> Self;
+}
+
 
 
 

@@ -15,7 +15,7 @@ use base64::{
 use crate::entities::Distributions::Distribution;
 use crate::{
   entities::Factors::{FactorDFG, FunctionData},
-  FullNormal, 
+  // FullNormal, 
   Point2Point2, 
   Point3Point3, 
   Pose2Pose2, 
@@ -30,18 +30,11 @@ use crate::{
 use crate::entities::ClientDFG::NavAbilityDFG;
 
 
-#[allow(non_snake_case)]
-trait FactorType<'a, T: Distribution<'a>> {
-  fn new(Z: T) -> Self;
-}
-
-
-
 // helper macro to avoid repetition of "basic" impl Coordinates
 #[macro_export]
 macro_rules! GenDistrFactor { 
   ($T:ident) => {
-    impl<'a, D: Distribution<'a>> FactorType<'a, D> for $T<D> {
+    impl<'a, D: Distribution<'a>> crate::FactorType<'a, D> for $T<D> {
       fn new(Z: D) -> Self {
         Self {
           Z
@@ -60,70 +53,6 @@ GenDistrFactor!(Point2Point2);
 GenDistrFactor!(Point3Point3);
 GenDistrFactor!(Pose2Pose2);
 GenDistrFactor!(Pose3Pose3);
-
-// impl<'a, T: Distribution<'a>> FactorType<'a, T> for PriorPoint2<T> {
-//   fn new(Z: T) -> Self {
-//     Self {
-//       Z
-//     }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> PriorPoint2<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> PriorPoint3<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> PriorPose2<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> PriorPose3<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> Point2Point2<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> Point3Point3<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> Pose2Pose2<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
-
-// #[allow(non_snake_case)]
-// impl<'a> Pose3Pose3<FullNormal<'a>> {
-//   pub fn new(Z: FullNormal<'a>) -> Self {
-//     Self { Z: Z }
-//   }
-// }
 
 
 
@@ -188,10 +117,15 @@ impl FactorDFG {
   /// ```
   /// use navabilitysdk::services::Factors;
   /// use chrono::{DateTime, Utc};
-  /// let f = Factors::new(vec!["x1", "x2"], "RoME.Pose3Pose3", vec!["ODOMETRY","BODY_FRAME"], Some(Utc::now()));
+  /// let f = Factors::new(
+  ///   vec!["x1", "x2"], 
+  ///   "RoME.Pose3Pose3", 
+  ///   vec!["ODOMETRY","BODY_FRAME"], 
+  ///   Some(Utc::now())
+  /// );
   /// ```
   /// # Note
-  /// * This is a simplified version of the original function, which is more complex and has more options.
+  /// * This is a simplified version of the ::new_more function, which has more options.
   pub fn new(
     varlbls: Vec<&str>,
     fnctype: &str,
@@ -200,7 +134,15 @@ impl FactorDFG {
     nstime: Option<usize>,
   ) -> Self {
     return Self::new_more(
-      varlbls, fnctype, tags, timestamp, nstime, None, None, None, None,
+      varlbls, 
+      fnctype, 
+      tags, 
+      timestamp, 
+      nstime, 
+      None, 
+      None, 
+      None, 
+      None,
     );
   }
   
