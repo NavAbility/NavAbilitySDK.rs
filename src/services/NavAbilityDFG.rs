@@ -77,8 +77,12 @@ impl NavAbilityDFG {
             let _ = crate::services::addAgent(client, &(agentLabel.to_string()));
         }
 
-        // FIXME
-        // connect(client, agent, fg);
+        let _ = crate::services::connectAgentGraph(
+            client, 
+            agentLabel, 
+            fgLabel
+        );
+
         return Self {
             client: _client,
             fg,

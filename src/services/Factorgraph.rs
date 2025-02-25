@@ -244,6 +244,22 @@ pub async fn post_connect_graph_agent(
 
 
 
+#[cfg(any(feature = "tokio", feature = "thread"))]
+pub fn connectAgentGraph(
+  nvacl: &NavAbilityClient,
+  graph: &str,
+  agent: &str,
+) -> Result<crate::connect_graph_agent::ResponseData, Box<dyn Error>> {
+  return crate::execute(
+    post_connect_graph_agent(
+      nvacl,
+      graph,
+      agent
+    )
+  );
+}
+
+
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_find_org_model_fgs(
