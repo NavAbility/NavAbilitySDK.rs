@@ -87,7 +87,7 @@ type BigInt = String;
 type DateTime = String;
 type EmailAddress = String;
 type Metadata = String;
-type JSON = String;
+type JSON = String; // TODO, #37, maybe type JSON = serde_json::Map<String, serde_json::Value>;
 type B64JSON = String;
 type Latitude = f64;
 type Longitude = f64;
