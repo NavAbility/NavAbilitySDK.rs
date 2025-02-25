@@ -1,4 +1,5 @@
 
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
     Uuid,
@@ -24,6 +25,13 @@ impl GetId for NavAbilityClient {
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 impl NavAbilityClient {
+    pub fn getOrgId(
+        &self
+    ) -> Uuid   {
+        return Uuid::parse_str(&self.user_label)
+        .expect("Error, unable to parse OrgId Uuid from NavAbilityClient string");
+    }
+
     pub fn new(
         apiurl: &String, 
         user_label: &String, 
