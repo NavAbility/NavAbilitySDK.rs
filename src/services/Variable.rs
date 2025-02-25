@@ -491,18 +491,14 @@ pub fn addVariable(
     _nstime: Option<usize>,
     _metadata: Option<String>,
 ) -> Result<Uuid, Box<dyn Error>> {
-    return tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(post_add_variable(
-            nvafg,
-            label,
-            variableType,
-            _tags,
-            _solvable,
-            _timestamp,
-            _nstime,
-            _metadata,
-        ));
+    return crate::execute(post_add_variable(
+        nvafg,
+        label,
+        variableType,
+        _tags,
+        _solvable,
+        _timestamp,
+        _nstime,
+        _metadata,
+    ));
 }
