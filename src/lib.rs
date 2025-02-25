@@ -40,6 +40,10 @@ use gloo_console::{
 
 pub mod entities;
 pub use crate::entities::*;
+
+pub mod common_traits;
+pub use crate::common_traits::*;
+
 // type and file name are the same and requires precision import
 pub use crate::Agent::Agent;
 pub use crate::BlobEntry::BlobEntry;
@@ -415,31 +419,15 @@ impl<Q: Serialize> QueryDetails<Q> for graphql_client::QueryBody<Q> {
 
 
 
-#[allow(non_snake_case)]
-pub trait GetLabel {
-    fn getLabel(&self) -> &String;
-}
-
-// helper macro to avoid repetition of "basic" impl Coordinates
-// #[macro_export]
-macro_rules! genGetLabel { 
-    ($T:ident) => {
-        impl GetLabel for $T {
-            fn getLabel(&self) -> &String { &self.label }
-        }
-    }
-}
-
 
 // move some impl GetLabel to services
 genGetLabel!(User);
 genGetLabel!(Agent);
 genGetLabel!(BlobEntry);
+genGetLabel!(VariableDFG);
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 genGetLabel!(NavAbilityBlobStore);
-
-// TO BE DEPRECATED
-genGetLabel!(Session);
 
 // move to services
 impl<T> GetLabel for NvaNode<T> {
@@ -449,6 +437,10 @@ impl<T> GetLabel for NvaNode<T> {
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 impl GetLabel for crate::entities::ClientDFG::NavAbilityDFG {
     fn getLabel(&self) -> &String { &self.fg.getLabel() }
+}
+
+impl<F> GetLabel for FactorDFG<F> {
+    fn getLabel(&self) -> &String { &self.label }
 }
 
 // ---------------- GetId trait ----------------

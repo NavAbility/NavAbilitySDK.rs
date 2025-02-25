@@ -204,13 +204,22 @@ where
 }
 
 
-// #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-// pub fn post_add_factor(
-//   nvacl: &NavAbilityDFG,
-//   factor: FactorDFG,
-// ) {
-//   todo!()
-// }
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub fn post_add_factor<F>(
+  nvafg: &NavAbilityDFG,
+  factor: FactorDFG<F>,
+) {
+
+  // let request_body = GetVariable::build_query(
+  //   get_variable::Variables {
+  //       var_id: id.to_string(),
+  //       fields_summary: true, // TODO simplify, since this must always be true
+  //       fields_full,
+  //   }
+  // );
+
+  todo!()
+}
 
 
 
