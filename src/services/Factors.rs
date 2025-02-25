@@ -217,10 +217,10 @@ where
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
+pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   nvafg: &NavAbilityDFG,
   factor: FactorDFG<F>,
-) {
+) -> Result<crate::add_factors::ResponseData, Box<dyn crate::Error>> {
 
   let label = factor.getLabel().to_string();
   let id = nvafg.getId(&label).to_string();
@@ -253,8 +253,17 @@ pub fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
         factors_to_create: vec![newfac],
     }
   );
-
-  todo!()
+  
+  return crate::post_to_nvaapi::<
+    crate::add_factors::Variables,
+    crate::add_factors::ResponseData,
+    crate::add_factors::ResponseData
+  >(
+    &nvafg.client,
+    request_body, 
+    |s| s,
+    Some(1)
+  ).await;
 }
 
 
