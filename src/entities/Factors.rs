@@ -26,16 +26,16 @@ pub struct FunctionData {
 }
 
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 #[allow(non_snake_case)]
-pub struct FactorDFG {
+pub struct FactorDFG<F> {
   pub id: Option<Uuid>,
   pub label: String,
   pub tags: Vec<String>,
   pub variableOrderSymbols_: Vec<String>,
   pub timestamp: Option<DateTime<Utc>>,
   pub nstime: Option<String>,
-  pub fnctype: String,
+  pub fnctype: F,
   pub solvable: Option<i64>,
   pub data: Option<String>,
   pub metadata: Option<String>,
@@ -45,8 +45,8 @@ pub struct FactorDFG {
 
 
 #[allow(non_snake_case)]
-pub trait FactorType<'a, T: crate::Distribution<'a>> {
-  fn new(Z: T) -> Self;
+pub trait FactorType<'a, D: crate::Distribution<'a>> {
+  fn new(Z: D) -> Self;
 }
 
 

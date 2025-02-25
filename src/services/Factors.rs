@@ -12,7 +12,7 @@ use base64::{
 };
 
 
-use crate::entities::Distributions::Distribution;
+use crate::{entities::Distributions::Distribution, FullNormal, SDK_VERSION};
 use crate::{
   entities::Factors::{FactorDFG, FunctionData},
   // FullNormal, 
@@ -103,7 +103,12 @@ impl FunctionData {
   }
 }
 
-impl FactorDFG {
+
+// TODO support more D: Distributions<'a>
+impl<'a, F> FactorDFG<F> 
+where 
+  F: crate::FactorType<'a, FullNormal<'a>>
+{
   /// Create a new factor
   /// # Arguments
   /// * `varlbls` - variable labels is a ordered vector of variable label strings, e.g. ["x1", "x2"]
@@ -119,8 +124,8 @@ impl FactorDFG {
   /// use chrono::{DateTime, Utc};
   /// let f = Factors::new(
   ///   vec!["x1", "x2"], 
-  ///   "RoME.Pose3Pose3", 
-  ///   vec!["ODOMETRY","BODY_FRAME"], 
+  ///   Pose2Pose2::new(FullNormal::new(vec![&[1.0, 2.0, 3.0], &[0.01, 0.01, 0.01]])),
+  ///   vec!["ODOMETRY","BODY_MOTION"], 
   ///   Some(Utc::now())
   /// );
   /// ```
@@ -128,7 +133,7 @@ impl FactorDFG {
   /// * This is a simplified version of the ::new_more function, which has more options.
   pub fn new(
     varlbls: Vec<&str>,
-    fnctype: &str,
+    fnctype: F,
     tags: Vec<&str>,
     timestamp: Option<DateTime<Utc>>,
     nstime: Option<usize>,
@@ -156,7 +161,7 @@ impl FactorDFG {
   /// * `FactorDFG` - a new factor
   pub fn new_more(
     varlbls: Vec<&str>,
-    fnctype: &str,
+    fnctype: F,
     tags: Vec<&str>,
     timestamp: Option<DateTime<Utc>>,
     nstime: Option<usize>,
@@ -165,24 +170,31 @@ impl FactorDFG {
     nullhypo: Option<f64>,
     inflation: Option<f64>,
   ) -> Self {
-    let mut f = FactorDFG::default();
+    let mut f = Self {
+      id: None,
+      label: assemble_factor_name(varlbls.clone()),
+      tags: Vec::new(),
+      variableOrderSymbols_: Vec::new(),
+      timestamp: Some(timestamp.unwrap_or(Utc::now())),
+      nstime: Some(format!("{}", nstime.unwrap_or(0))),
+      fnctype,
+      solvable: Some(solvable.unwrap_or(0)),
+      data: None,
+      metadata: None,
+      _version: Some(crate::SDK_VERSION.to_string()),
+    };
     
     for vl in varlbls {
       f.variableOrderSymbols_.push(vl.to_string());
     }
-    f.fnctype = get_fnc_name(fnctype);
     f.tags.push("FACTOR".to_string());
     for t in tags {
       if !t.eq("FACTOR") {
         f.tags.push(t.to_string());
       }
     }
-    // default on create, also deser is different use-case
-    f.timestamp = Some(timestamp.unwrap_or(Utc::now()));
-    f.nstime = Some(format!("{}", nstime.unwrap_or(0)));
-    f.solvable = Some(solvable.unwrap_or(0));
-    
-    let fdata = FunctionData::new(&f.fnctype.to_string(), multihypo, nullhypo, inflation);
+    // default on create, also deser is different use-case    
+    let fdata = FunctionData::new("FIXME", multihypo, nullhypo, inflation);
     // FIXME, should not be json'd so early: JuliaRobotics/DistributedFactorGraphs.jl#1118
     f.data = Some(fdata.to_json());
     
@@ -191,13 +203,13 @@ impl FactorDFG {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub fn post_add_factor(
-  nvacl: &NavAbilityDFG,
-  factor: FactorDFG,
-) {
-  todo!()
-}
+// #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+// pub fn post_add_factor(
+//   nvacl: &NavAbilityDFG,
+//   factor: FactorDFG,
+// ) {
+//   todo!()
+// }
 
 
 
