@@ -232,6 +232,34 @@ pub async fn post_blob_singlepart(
 
 
 // TODO , feature = "blocking"
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[allow(non_snake_case)]
+pub async fn post_blob_store(
+  nvabs: &NavAbilityBlobStore,
+  blobId: Uuid,
+  filename: &str,
+  file_mime: &str,
+  file_timestamp: &chrono::DateTime<Utc>,
+  file_bytes: std::sync::Arc<[u8]>,
+) {
+  match &nvabs.label {
+    crate::NvaStoreLabel::cloud(_store) => {
+      post_blob_singlepart(
+        nvabs,
+        blobId,
+        filename,
+        file_mime,
+        file_timestamp,
+        file_bytes
+      ).await;
+    }
+    crate::NvaStoreLabel::onprem(_store) => {
+      todo!();
+    }
+  }
+}
+
+// TODO , feature = "blocking"
 #[cfg(any(feature = "tokio", feature = "thread"))]
 #[allow(non_snake_case)]
 pub fn addBlob(
@@ -254,7 +282,7 @@ pub fn addBlob(
   bytes.resize(nbytes, 0x00);
   bytes[..nbytes].clone_from_slice(&file_bytes);
 
-  crate::execute(crate::services::post_blob_singlepart(
+  crate::execute(crate::services::post_blob_store(
     &nvabs_,
     blobId_.clone(),
     &filename_,
