@@ -15,6 +15,5 @@ pub enum NvaStoreLabel {
 pub struct NavAbilityBlobStore {
     pub client: NavAbilityClient,
     pub label: NvaStoreLabel,
-
 }
 

@@ -9,6 +9,7 @@ use crate::{
   Sender,
   SDK_VERSION,
   NavAbilityClient,
+  NavAbilityBlobStore,
   CreateDownload,
   create_download,
   CreateUpload,
@@ -118,6 +119,7 @@ pub async fn create_upload_send(
 }
 
 
+// TODO update to new query/mutation pattern
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_complete_upload(
   nvacl: NavAbilityClient,
@@ -171,13 +173,14 @@ pub async fn post_complete_upload(
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 #[allow(non_snake_case)]
 pub async fn post_blob_singlepart(
-  _nvacl: &NavAbilityClient,
+  nvabs: &NavAbilityBlobStore,
   blobId: Uuid,
   filename: &str,
   file_mime: &str,
   file_timestamp: &chrono::DateTime<Utc>,
   file_bytes: std::sync::Arc<[u8]>,
 ) {
+  let _nvacl = &nvabs.client;
   let upl = post_create_upload(
     _nvacl.clone(), // change to allow borrow 
     blobId,
@@ -232,15 +235,16 @@ pub async fn post_blob_singlepart(
 #[cfg(any(feature = "tokio", feature = "thread"))]
 #[allow(non_snake_case)]
 pub fn addBlob(
-  nvacl_: NavAbilityClient,
+  nvabs: NavAbilityBlobStore,
   blobId: Uuid,
   filename: &str,
   file_mime: &str,
   file_timestamp: &chrono::DateTime<Utc>,
   file_bytes: std::sync::Arc<[u8]>,
 ) {
-
-  let nvacl = nvacl_.clone();
+  // TODO, multiple clones and likely unnecessary for non-wasm case
+  let nvabs_ = nvabs.clone();
+  // let nvacl = nvabs.nvacl.clone();
   let blobId_ = blobId.clone();
   let filename_ = filename.to_string();
   let mime_  = file_mime.to_string();
@@ -250,16 +254,14 @@ pub fn addBlob(
   bytes.resize(nbytes, 0x00);
   bytes[..nbytes].clone_from_slice(&file_bytes);
 
-  crate::execute(async move {
-    let ret = crate::services::post_blob_singlepart(
-      &nvacl,
-      blobId_.clone(),
-      &filename_,
-      &mime_,
-      &timestamp_,
-      bytes.into(),
-    ).await;
-  });
+  crate::execute(crate::services::post_blob_singlepart(
+    &nvabs_,
+    blobId_.clone(),
+    &filename_,
+    &mime_,
+    &timestamp_,
+    bytes.into(),
+  ));
 }
 
 
