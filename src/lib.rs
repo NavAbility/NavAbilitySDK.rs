@@ -436,8 +436,16 @@ genGetLabel!(Agent);
 genGetLabel!(BlobEntry);
 genGetLabel!(VariableDFG);
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-genGetLabel!(NavAbilityBlobStore);
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking", feature = "thread"))]
+impl GetLabel for NavAbilityBlobStore {
+    fn getLabel(&self) -> &String { 
+        match &self.label {
+            NvaStoreLabel::cloud(l) =>  {return l},
+            NvaStoreLabel::onprem(l) => {return l},
+        };
+    }
+}
+
 
 // move to services
 impl<T> GetLabel for NvaNode<T> {
