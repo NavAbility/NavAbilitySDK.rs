@@ -1,4 +1,9 @@
 
+use serde::Serialize;
+
+use base64::{Engine as _, engine::{self, general_purpose}, alphabet};
+
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
   Utc,
@@ -230,6 +235,59 @@ pub async fn post_blob_singlepart(
 }
 
 
+#[derive(Serialize)]
+#[allow(non_snake_case)]
+struct PostOnPrem {
+  storeLabel: String,
+  blobId: String,
+  input: String,
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[allow(non_snake_case)]
+pub async fn post_blob_onprem(
+  nvabs: &NavAbilityBlobStore,
+  blobId: Uuid,
+  filename: &str,
+  file_mime: &str,
+  file_timestamp: &chrono::DateTime<Utc>,
+  file_bytes: std::sync::Arc<[u8]>,
+) {
+
+  let input = general_purpose::STANDARD.encode(file_bytes.to_vec());
+  let request_body = crate::QueryBody::<PostOnPrem> {
+    query: "addBlobFS",
+    variables: PostOnPrem {
+      storeLabel: "".to_owned(),
+      blobId: blobId.to_string(),
+      input,
+    },
+    operation_name: "addBlobFS",
+  };
+  
+  let req_res = nvabs.client.client
+  .post(&nvabs.client.apiurl)
+  .json(&request_body)
+  .send().await;
+
+  if let Err(ref re) = req_res {
+    to_console_error(&format!("Error in upload request to NavAbilityBlobStoreOnPrem: {:?}", re));
+  }
+  // TODO extract blobId from response and better error handling
+}
+// b64blob = base64encode(blob)
+// response = NvaSDK.GQL.mutate(
+//     store.client.client,
+//     "addBlobFS",
+//     Dict("storeLabel" => string(store.label), "blobId" => string(blobId), "input" => b64blob);
+//     throw_on_execution_error = true,
+// )
+// blobId_str = response.data["addBlobFS"]
+// blobId = tryparse(UUID, blobId_str)
+// isnothing(blobId) && error(blobId_str)
+
+
 
 // TODO , feature = "blocking"
 #[cfg(any(feature = "tokio", feature = "wasm"))]
@@ -254,7 +312,14 @@ pub async fn post_blob_store(
       ).await;
     }
     crate::NvaStoreLabel::onprem(_store) => {
-      todo!();
+      post_blob_onprem(
+        nvabs,
+        blobId,
+        filename,
+        file_mime,
+        file_timestamp,
+        file_bytes
+      ).await;
     }
   }
 }
@@ -301,6 +366,7 @@ pub async fn post_delete_blob(
   label: Option<&str>,
 ) -> Result<delete_blob::ResponseData, Box<dyn Error>> {
   
+  // TODO use NvaBlobStore::cloud(lb) instead
   let mut store = "default".to_owned();
   if let Some(lb) = label {
     store = lb.to_owned();
