@@ -420,15 +420,11 @@ pub async fn post_add_variable(
     label: &String,
     variableType: &String,
     _tags: Option<Vec<String>>,
-    _solvable: Option<i64>,
     _timestamp: Option<chrono::DateTime<Utc>>,
     _nstime: Option<usize>,
+    _solvable: Option<i64>,
     _metadata: Option<String>,
 ) -> Result<Uuid,Box<dyn Error>> {
-    use uuid::timestamp;
-
-
-    let _fg_id = nvafg.getId(label);
 
     let metadata = Some(if _metadata.is_some() {
         _metadata.unwrap().clone()
@@ -455,7 +451,7 @@ pub async fn post_add_variable(
         nstime: nstime.to_string(),
         solvable,
         metadata,
-        fg_id: _fg_id.to_string(),
+        fg_id: nvafg.getId("").to_string(),
     };
 
     let request_body = AddVariable::build_query(variables);
@@ -496,9 +492,9 @@ pub async fn add_variable_send(
             label,
             variableType,
             _tags,
-            _solvable,
             _timestamp,
             _nstime,
+            _solvable,
             _metadata,
         ).await,
     );
@@ -522,9 +518,9 @@ pub fn addVariable(
         label,
         variableType,
         _tags,
-        _solvable,
         _timestamp,
         _nstime,
+        _solvable,
         _metadata,
     ));
 }
