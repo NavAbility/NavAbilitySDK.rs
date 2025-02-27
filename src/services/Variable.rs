@@ -409,6 +409,8 @@ pub async fn post_add_variable(
     _metadata: Option<String>,
 ) -> Result<Uuid,Box<dyn Error>> {
 
+    let _fg_id = nvafg.getId(label);
+
     let metadata = Some(if _metadata.is_some() {
         _metadata.unwrap().clone()
     } else {
@@ -421,9 +423,9 @@ pub async fn post_add_variable(
         v.push("VARIABLE".to_owned());
         v
     };
-    let solvable = Some(_solvable.unwrap_or(1));
-    let timestamp = Some(_timestamp.unwrap_or(Utc::now()).to_string());
-    let nstime = Some(_nstime.unwrap_or(0).to_string());
+    let solvable = _solvable.unwrap_or(1);
+    let timestamp = _timestamp.unwrap_or(Utc::now()).to_string();
+    let nstime = _nstime.unwrap_or(0).to_string();
     
     let variables = crate::add_variable::Variables {
         id: nvafg.getId(label).to_string(),
@@ -433,7 +435,8 @@ pub async fn post_add_variable(
         timestamp,
         nstime,
         solvable,
-        metadata
+        metadata,
+        fg_id: _fg_id.to_string(),
     };
 
     let request_body = AddVariable::build_query(variables);
@@ -464,6 +467,7 @@ pub async fn add_variable_send(
     _timestamp: Option<chrono::DateTime<Utc>>,
     _nstime: Option<usize>,
     _metadata: Option<String>,
+    _fg_id: Uuid
 ) -> Result<(),Box<dyn Error>> {
     
     return send_api_result(
@@ -493,6 +497,7 @@ pub fn addVariable(
     _nstime: Option<usize>,
     _metadata: Option<String>,
 ) -> Result<Uuid, Box<dyn Error>> {
+    let _fg_id = nvafg.getId(label);
     return crate::execute(post_add_variable(
         nvafg,
         label,
