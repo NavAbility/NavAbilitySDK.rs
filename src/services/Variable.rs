@@ -397,7 +397,8 @@ pub fn listVariables(
 // pub fn to_ISO8601(
 //     dt: chrono::DateTime<Utc>
 // ) -> String {
-//     return dt.to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+//     Working example: "2025-01-01 00:00:00.000"
+//     return dt.to_rfc3339_opts(chrono::SecondsFormat::Millis??, false);
 // }
 pub fn to_string_ISO8601(
     dt: chrono::DateTime<Utc>
