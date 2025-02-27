@@ -393,8 +393,24 @@ pub fn listVariables(
         ));
 }
 
-
-
+// FIXME use standardized function instead, perhaps rfc3339
+// pub fn to_ISO8601(
+//     dt: chrono::DateTime<Utc>
+// ) -> String {
+//     return dt.to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+// }
+pub fn to_string_ISO8601(
+    dt: chrono::DateTime<Utc>
+) -> String{
+    let mut timestamp = dt.to_string()
+    .replace(" UTC","")
+    .replace("UTC","")
+    .replace("Z","")
+    .replace("T"," ");
+    let parts = timestamp.split(".").collect::<Vec<&str>>();
+    timestamp = format!("{}.{:0<3}", parts[0], parts[1].get(..3).unwrap_or(parts[1]));
+    return timestamp;
+}
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -408,6 +424,8 @@ pub async fn post_add_variable(
     _nstime: Option<usize>,
     _metadata: Option<String>,
 ) -> Result<Uuid,Box<dyn Error>> {
+    use uuid::timestamp;
+
 
     let _fg_id = nvafg.getId(label);
 
@@ -424,7 +442,7 @@ pub async fn post_add_variable(
         v
     };
     let solvable = _solvable.unwrap_or(1);
-    let timestamp = _timestamp.unwrap_or(Utc::now()).to_string();
+    let timestamp = to_string_ISO8601(_timestamp.unwrap_or(Utc::now()));
     let nstime = _nstime.unwrap_or(0).to_string();
     
     let variables = crate::add_variable::Variables {
@@ -433,7 +451,7 @@ pub async fn post_add_variable(
         variable_type: variableType.to_string(),
         tags,
         timestamp,
-        nstime,
+        nstime: nstime.to_string(),
         solvable,
         metadata,
         fg_id: _fg_id.to_string(),
