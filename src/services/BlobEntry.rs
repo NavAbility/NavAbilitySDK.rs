@@ -432,16 +432,35 @@ pub async fn post_add_variable_blobentry(
 
 
 
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn q_addVariableBlobEntry(
+  send_into: std::sync::mpsc::Sender<Uuid>,
+  nvafg: &NavAbilityDFG,
+  variable_label: &String,
+  bentry: &BlobEntry,
+) -> Result<(),Box<dyn Error>> {
+  
+  return send_api_result(
+    send_into, 
+    post_add_variable_blobentry(
+      nvafg, 
+      variable_label,
+      bentry,
+    ).await,
+  );
+}
+
+
 #[cfg(any(feature = "tokio", feature = "thread"))]
 pub fn addVariableBlobEntry(
   nvafg: &NavAbilityDFG,
   variable_label: &String,
-  entry: &BlobEntry,
+  bentry: &BlobEntry,
 ) -> Result<Uuid, Box<dyn Error>> {
   return crate::execute(post_add_variable_blobentry(
     nvafg,
     variable_label,
-    entry,
+    bentry,
   ));
 }
 
