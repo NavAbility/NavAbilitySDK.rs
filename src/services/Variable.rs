@@ -14,13 +14,13 @@ use crate::{
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
-    GQLResponseEmptyError,
+    // GQLResponseEmptyError,
     Error,     
     Sender, 
-    Response, 
+    // Response, 
     NavAbilityDFG,
-    check_deser,
-    send_query_result,
+    // check_deser,
+    // send_query_result,
     send_api_result,
     post_to_nvaapi,
     // send_api_response,
@@ -29,14 +29,14 @@ use crate::{
     ListVariables,
     AddVariable,
     GetId,
-    check_query_response_data,
+    // check_query_response_data,
     get_variable::{
         self, 
         ppe_fields
     }, 
     list_variables, 
     // to_console_debug, 
-    to_console_error, 
+    // to_console_error, 
 };
 
 
@@ -392,6 +392,10 @@ pub fn listVariables(
             nvafg,
         ));
 }
+
+
+
+
 
 // FIXME use standardized function instead, perhaps rfc3339
 // pub fn to_ISO8601(
