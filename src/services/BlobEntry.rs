@@ -28,7 +28,7 @@ use crate::{
   NavAbilityClient,
   NavAbilityDFG,
   GetId,
-  AddBlobEntryAgent,
+  AddAgentBlobEntry,
   AddVariableBlobEntry,
 };
 
@@ -298,7 +298,7 @@ pub async fn post_add_agent_entry(
     metadata = "e30=".to_string();
   }
   
-  let variables = crate::add_blob_entry_agent::Variables {
+  let variables = crate::add_agent_blob_entry::Variables {
     agent_label: agent_label.to_string(),
     entry_id: entry_id.to_string(),
     entry_label: entry.label.to_string(),
@@ -313,11 +313,11 @@ pub async fn post_add_agent_entry(
     timestamp: Some(entry.timestamp.to_string()),
   };
   
-  let request_body = AddBlobEntryAgent::build_query(variables);
+  let request_body = AddAgentBlobEntry::build_query(variables);
   
   return post_to_nvaapi::<
-    crate::add_blob_entry_agent::Variables,
-    crate::add_blob_entry_agent::ResponseData,
+    crate::add_agent_blob_entry::Variables,
+    crate::add_agent_blob_entry::ResponseData,
     String
   >(
     nvacl,

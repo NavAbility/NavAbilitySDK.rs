@@ -20,15 +20,8 @@ use crate::{
   to_console_error,
   parse_str_utc,
   NavAbilityClient,
-  // NvaNode,
-  // Factorgraph,
-  // Model,
-  // check_deser,
   post_to_nvaapi,
-  // send_query_result,
   send_api_result,
-  // send_api_response,
-  // check_query_response_data,
   AddAgent,
   add_agent,
   GetAgents, // query vs fn, unique crate::get_agents,
@@ -40,9 +33,6 @@ use crate::{
   get_agent_entries_metadata,
   GetAgentEntriesMetadata,
   UpdateAgentMetadata,
-  // AddBlobEntryAgent,
-  // add_blob_entry_agent,
-  // GQLRequestError,
 };
 
 #[cfg(feature = "wasm")]
