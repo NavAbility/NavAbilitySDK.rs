@@ -312,20 +312,10 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   let jcon: serde_json::Value = serde_json::from_str(&serde_json::to_string(&connect).unwrap()).expect("problem with connect");
   jval["variables"]["variables_connect"] = jcon;
 
-  // println!("request_body {:?}",
-  //   serde_json::to_string_pretty(&jval).unwrap()
-  // );
-  // let jvec = serde_json::to_vec(&jval).unwrap();
-  // serde_json::to_vec_pretty(&request_body).unwrap());
-
   let nvacl = nvafg.client.clone();
   let post_req = nvacl.client
     .post(&nvacl.apiurl)
     .json(&jval);
-    //.json(&request_body);
-
-  // let post2 = post_req.try_clone().expect("tryclone of post_req failed");
-  // println!("post_add_factor: post_req: {:?}", &post2.build().unwrap());
 
   return crate::post_to_nvaapi_cb::<
     add_factors::ResponseData,
@@ -341,23 +331,6 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
     Some(1),
     post_req
   ).await;
-
-  // return crate::post_to_nvaapi::<
-  //   add_factors::Variables,
-  //   add_factors::ResponseData,
-  //   Uuid
-  // >(
-  //   &nvafg.client,
-  //   request_body, 
-  //   |s| {
-  //     if &s.add_factors.factors.len() != &1 {
-  //       to_console_error(&format!("post_add_factor: expected 1 factor in response, got {}", s.add_factors.factors.len()));
-  //       return Uuid::nil();
-  //     }
-  //     return Uuid::parse_str(&s.add_factors.factors[0].factor_skeleton_fields.id).expect("post_add_variable not able to parse uuid from API response");
-  //   },
-  //   Some(1)
-  // ).await;
 }
 
 
