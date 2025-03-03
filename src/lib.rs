@@ -18,8 +18,8 @@ use graphql_client::{
     Response
 };
 
-#[cfg(feature = "wasm")]
-use wasm_bindgen_futures;
+// #[cfg(feature = "wasm")]
+// use wasm_bindgen_futures;
 
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 use reqwest::Client;
@@ -450,8 +450,8 @@ genGetLabel!(VariableDFG);
 impl GetLabel for NavAbilityBlobStore {
     fn getLabel(&self) -> &String { 
         match &self.label {
-            NvaStoreLabel::cloud(l) =>  {return l},
-            NvaStoreLabel::onprem(l) => {return l},
+            NvaStoreLabel::Cloud(l) =>  {return l},
+            NvaStoreLabel::Onprem(l) => {return l},
         };
     }
 }
