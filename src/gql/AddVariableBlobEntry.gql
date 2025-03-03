@@ -1,0 +1,48 @@
+mutation AddVariableBlobEntry(
+  $variable_id: ID!,
+  $entry_id: ID!,
+  $entry_label: String!,
+  $blob_id: ID!,
+  $blobstore: String! = "default",
+  $origin: String! = "NvaSDK.rs",
+  $mime_type: String,
+  $metadata: String!,
+  $description: String,
+  $hash: String!,
+  $size: BigInt,
+  $timestamp: DateTime!,
+  $version: String! = "0.25"
+) {
+    addBlobEntries(
+    input: {
+      id: $entry_id, 
+      blobId: $blob_id,
+      originId: $blob_id,
+      label: $entry_label, 
+      blobstore: $blobstore,
+      origin: $origin,
+      mimeType: $mime_type, 
+      metadata: $metadata,
+      description: $description,
+      hash: $hash,
+      size: $size,
+      timestamp: $timestamp,
+      _version: $version, 
+      parent: {
+        Variable: {
+          connect: {
+            where: {
+              node: {
+                id: $variable_id
+              }
+            }
+          }
+        }
+      }
+    }
+  ) {
+    blobEntries {
+      id
+    }
+  }
+}
