@@ -271,6 +271,37 @@ impl PackedVariableNodeData {
 }
 
 
+#[cfg(any(feature = "tokio", feature = "blocking", feature = "wasm"))]
+pub fn getPPEMean(
+    vari: &VariableDFG,
+    solveKey: &str
+) -> Vec<f64> {
+
+    for ppe in vari.ppes.iter() {
+        if ppe.solveKey.eq(solveKey) {
+            return ppe.mean.clone();
+        }
+    }
+    return Vec::new();
+}
+
+
+#[cfg(any(feature = "tokio", feature = "blocking", feature = "wasm"))]
+pub fn getPPECov(
+    vari: &VariableDFG,
+    solveKey: &str
+) -> Vec<f64> {
+
+    todo!("getPPECov, TODO extract from solverData.val -- see JuliaRobotics/DistributedFactorGraphs.jl#535");
+    // for ppe in vari.ppes.iter() {
+    //     if ppe.solveKey.eq(solveKey) {
+    //         return ppe.cov.clone();
+    //     }
+    // }
+    return Vec::new();
+}
+
+
 // ===================== Queries =========================
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
