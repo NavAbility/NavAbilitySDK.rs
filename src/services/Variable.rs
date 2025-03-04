@@ -338,7 +338,6 @@ pub async fn post_get_variable(
     ).await;
 }
 
-
 #[cfg(feature = "tokio")]
 #[allow(non_snake_case)]
 pub fn getVariable(
@@ -346,17 +345,12 @@ pub fn getVariable(
     label: &str,
     fields_full: bool,
 ) -> Option<VariableDFG> {
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    let result = rt.block_on(async { 
-        post_get_variable(
-            nvafg,
-            label,
-            fields_full,
-        ).await
-    });
+    // TODO why not returning Result like others, did something force this to Option?
+    let result = crate::execute(post_get_variable(
+        nvafg,
+        label,
+        fields_full,
+    ));
 
     if let Ok(variable) = result {
         return variable;
