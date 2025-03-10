@@ -5,9 +5,11 @@ use serde::Serialize;
 use base64::{
   Engine as _, 
   engine::general_purpose, 
+  read
   // alphabet
 };
 
+// use std::os::linux::raw;
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
@@ -246,9 +248,9 @@ pub async fn post_blob_singlepart(
   blobId: Uuid,
   filename: &str,
   file_mime: &str,
-  file_timestamp: &chrono::DateTime<Utc>,
+  file_timestamp: Option<&chrono::DateTime<Utc>>,
   file_bytes: std::sync::Arc<[u8]>,
-) {
+) -> Result<(), Box<dyn Error>> {
   let _nvacl = &nvabs.client;
   let upl = post_create_upload(
     _nvacl.clone(), // change to allow borrow 
@@ -258,7 +260,7 @@ pub async fn post_blob_singlepart(
   
   // send the single part blob
   let upld = upl.unwrap();
-  if let Some(crup) = upld.create_upload {
+  if let Some(crup) = upld.create_upload { // FIXME, change to Result, not Option
     let uploadId = &crup.upload_id.to_string();
     if let Some(st_url) = &crup.parts[0] {
       // let file = &cache.dropped_files[0];
@@ -297,6 +299,7 @@ pub async fn post_blob_singlepart(
       ).await;
     }
   }
+  return Ok(());
 }
 
 
@@ -316,9 +319,9 @@ pub async fn post_blob_onprem(
   blobId: Uuid,
   filename: &str,
   file_mime: &str,
-  file_timestamp: &chrono::DateTime<Utc>,
+  file_timestamp: Option<&chrono::DateTime<Utc>>,
   file_bytes: std::sync::Arc<[u8]>,
-) {
+) -> Result<(), Box<dyn Error>> {
 
   let input = general_purpose::STANDARD.encode(file_bytes.to_vec());
   let request_body = crate::QueryBody::<PostOnPrem> {
@@ -340,6 +343,8 @@ pub async fn post_blob_onprem(
     to_console_error(&format!("Error in upload request to NavAbilityBlobStoreOnPrem: {:?}", re));
   }
   // TODO extract blobId from response and better error handling
+
+  return Ok(());
 }
 // b64blob = base64encode(blob)
 // response = NvaSDK.GQL.mutate(
@@ -364,25 +369,25 @@ pub async fn post_blob_store(
   file_mime: &str,
   file_timestamp: &chrono::DateTime<Utc>,
   file_bytes: std::sync::Arc<[u8]>,
-) {
+) -> Result<(), Box<dyn Error>> {
   match &nvabs.label {
     crate::NvaStoreLabel::Cloud(_store) => {
-      post_blob_singlepart(
+      return post_blob_singlepart(
         nvabs,
         blobId,
         filename,
         file_mime,
-        file_timestamp,
+        Some(file_timestamp),
         file_bytes
       ).await;
     }
     crate::NvaStoreLabel::Onprem(_store) => {
-      post_blob_onprem(
+      return post_blob_onprem(
         nvabs,
         blobId,
         filename,
         file_mime,
-        file_timestamp,
+        Some(file_timestamp),
         file_bytes
       ).await;
     }
@@ -412,7 +417,7 @@ pub fn addBlob(
   bytes.resize(nbytes, 0x00);
   bytes[..nbytes].clone_from_slice(&file_bytes);
 
-  crate::execute(crate::services::post_blob_store(
+  let _ = crate::execute(crate::services::post_blob_store(
     &nvabs_,
     blobId_.clone(),
     &filename_,
