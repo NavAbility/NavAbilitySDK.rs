@@ -275,7 +275,8 @@ pub async fn post_blob_singlepart(
       );
       let upload_result = fu.upload_file(
         bytes,
-        url
+        url,
+        file_mime.to_string(),
       ).await;
       
       let mut etags = Vec::new();
@@ -498,3 +499,35 @@ pub fn deleteBlob(
   );
 }
 
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn download_blob(
+  // nvacl: &NavAbilityClient,
+  url: String
+  // blob_id: Uuid,
+  // store: Option<String>,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+  
+  // let dwurl  =post_create_download(nvacl, blob_id, store).await;
+  let mut headers = reqwest::header::HeaderMap::new();
+  headers.insert(reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN, reqwest::header::HeaderValue::from_static("*.amazonaws.com"));
+  // headers.insert(CONTENT_TYPE, reqwest::header::HeaderValue::from_static("image/png"));
+
+  // if let Ok(dw) = dwurl {
+  //   if let Some(url) = dw.create_download {
+    let client = reqwest::Client::new();
+    let req_res = client
+    .get(url)
+    .headers(headers)
+    // .header("Access-Control-Allow-Origin", "*.amazonaws.com")
+    .send()
+    .await;
+    if let Err(ref re) = req_res {
+      to_console_error(&format!("Error in download request from NavAbilityBlobStore: {:?}", re));
+    }
+    let bytes = req_res?.bytes().await?;
+    return Ok(bytes.to_vec());
+  //   }
+  // }
+  return Err("Error in download request from NavAbilityBlobStore".into());
+}
