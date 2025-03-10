@@ -260,7 +260,7 @@ pub async fn post_blob_singlepart(
   
   // send the single part blob
   let upld = upl.unwrap();
-  if let Some(crup) = upld.create_upload { // FIXME, change to Result, not Option
+  if let Some(crup) = upld.create_upload {
     let uploadId = &crup.upload_id.to_string();
     if let Some(st_url) = &crup.parts[0] {
       // let file = &cache.dropped_files[0];
