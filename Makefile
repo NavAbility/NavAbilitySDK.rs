@@ -15,7 +15,7 @@ default: help ;
 clean:
 	cargo clean
 	rm -rf test/build
-	rm -f src/schema.json
+	rm -f src/gql/schema.json
 .PHONY: clean
 
 test-tokio:
@@ -31,7 +31,7 @@ build-wasm:
 .PHONY: build-wasm
 
 fetch-schema:
-	@graphql-client introspect-schema --authorization $(NVA_API_TOKEN) --output src/schema.json $(NVA_API_URL)
+	@graphql-client introspect-schema --authorization $(NVA_API_TOKEN) --output src/gql/schema.json $(NVA_API_URL)
 .PHONY: fetch-schema
 
 install-sys-deps:
