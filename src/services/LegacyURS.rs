@@ -99,8 +99,7 @@ pub async fn fetch_context_web(
     session_label: String,
 ) { // -> Vec<get_robots::GetRobotsUsers> {
     let result = fetch_urs_async(&client).await;
-    // FIXME use send_query_result instead, refactor .orgs part
-    // send_query_result(send_into, result);
+    // FIXME use new common query functions refactor .orgs part
     if let Ok(response_body) = result {
         let res_errs = response_body.errors;
         match res_errs {
