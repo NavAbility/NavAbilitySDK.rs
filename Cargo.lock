@@ -1017,6 +1017,7 @@ dependencies = [
  "graphql_client",
  "graphql_client_cli",
  "log",
+ "regex",
  "reqwest 0.12.12",
  "serde",
  "serde_json",

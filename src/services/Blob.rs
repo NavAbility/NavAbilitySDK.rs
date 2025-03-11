@@ -33,7 +33,6 @@ use crate::{
   check_deser,
   post_to_nvaapi,
   send_api_result,
-  send_query_result,
   // to_console_debug,
   to_console_error,
 };
@@ -198,7 +197,7 @@ pub async fn post_complete_upload(
   upload_id: String,
   etags: Vec<String>,
   // completed_upload: complete_upload::CompletedUploadInput,
-) -> Result<Response<complete_upload::ResponseData>, Box<dyn Error>> {
+) -> Result<complete_upload::ResponseData, Box<dyn Error>> {
   let mut parts: Vec<Option<complete_upload::CompletedUploadPartInput>> = vec![];
   for (i,et) in etags.iter().enumerate() {
     parts.push(
@@ -223,18 +222,16 @@ pub async fn post_complete_upload(
   
   let request_body = CompleteUpload::build_query(variables);
   
-  let req_res = nvacl.client
-  .post(&nvacl.apiurl)
-  .json(&request_body)
-  .send().await;
-  
-  if let Err(ref re) = req_res {
-    to_console_error(&format!("API request error: {:?}", re));
-  }
-  
-  return check_deser::<complete_upload::ResponseData>(
-    req_res?.json().await
-  )
+  return crate::post_to_nvaapi::<
+    complete_upload::Variables,
+    complete_upload::ResponseData,
+    complete_upload::ResponseData
+  >(
+    &nvacl,
+    request_body, 
+    |s| s,
+    Some(3)
+  ).await;
 }
 
 

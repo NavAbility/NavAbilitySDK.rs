@@ -11,6 +11,8 @@ use crate::{
     genGetLabel,
     GetLabel,
     Sender,
+    Response,
+    GraphQLQuery,
     Error,
     send_api_result,
     to_console_debug,
@@ -21,7 +23,67 @@ use crate::{
 };
 
 
-// ================== DEPRECATED ===================
+// ==== MAYBE GOOD MAYBE BAD ====
+
+// missing traits for generic serde on query types
+// async fn post_query_serde<V,R>(
+//     nvacl: NavAbilityClient,
+//     request_body: QueryBody<V>,
+// ) -> Result<R,Box<dyn Error>> {
+//     let req_res = nvacl.client
+//     .post(&nvacl.apiurl)
+//     .json(&request_body)
+//     .send().await;
+
+//     match req_res {
+//         Err(re) => {
+//             to_console_error(&format!("API request error: {:?}", re));
+//             return Err(Box::new(re));
+//         },
+//         Ok(res) => {
+//             let serde_res = res.json().await;
+//             match serde_res {
+//                 Ok(response_body) => {
+//                     return Ok(response_body)
+//                 },
+//                 Err(e) => {
+//                     to_console_error(&format!("JSON unpack of API response failed: {:?}", &e));
+//                     return Err(Box::new(e));
+//                 }
+//             }
+//         }
+//     }
+// }
+
+
+// ================== DEPRECATED BELOW ===================
+
+
+/// Sends the result of a GraphQL query to a given sender.
+///
+/// # Arguments
+///
+/// * `send_into` - A sender to which the query result will be sent.
+/// * `response_body` - A `Result` containing the response body of the GraphQL query.
+#[deprecated(since="0.1.0", note="please use send_api_result(send_into, `response_body=Ok(data)`) instead")]
+pub fn send_query_result<F,T>(
+    send_into: Sender<T>,
+    response_body: Result<Response<F>,Box<dyn Error>>,
+    fn_modifier: fn(F) -> T,
+) -> Result<(),Box<dyn Error>> {
+    match crate::check_query_response_data(response_body, fn_modifier) {
+        Ok(data) => {
+            // let _ = send_into.send(data);
+            if let Err(e) = send_into.send(data) {
+                to_console_error(&format!("Error sending data on channel: {:?}", e));
+            };
+            return Ok(())
+        },
+            Err(e) => {
+            return Err(e)
+        }
+    }
+}
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
