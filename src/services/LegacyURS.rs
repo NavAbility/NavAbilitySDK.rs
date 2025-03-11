@@ -16,10 +16,7 @@ use crate::{
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-use crate::{
-    NavAbilityClient,
-    check_deser,
-};
+use crate::NavAbilityClient;
 
 
 #[cfg(feature = "blocking")]
@@ -83,7 +80,7 @@ pub async fn fetch_urs_async(
         to_console_error(&format!("API request error: {:?}", re));
     }
 
-    return check_deser::<get_urs::ResponseData>(
+    return crate::check_deser::<get_urs::ResponseData>(
         req_res?.json().await
     )
 }

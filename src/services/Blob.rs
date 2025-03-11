@@ -30,7 +30,6 @@ use crate::{
   complete_upload,
   DeleteBlob,
   delete_blob,
-  check_deser,
   post_to_nvaapi,
   send_api_result,
   // to_console_debug,
