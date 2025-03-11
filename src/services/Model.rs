@@ -5,13 +5,9 @@ use chrono::DateTime;
 use log::Metadata;
 
 use crate::{
-    BlobEntry,
-    Utc,
-    Uuid,
-    Agent,
-    Error,
+    Agent, BlobEntry, Utc, Uuid, Error
 };
-
+use base64::{Engine as _, engine::general_purpose};
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
@@ -136,8 +132,17 @@ impl GetModelResponse {
 
 
         let mut metadata: serde_json::Map<String,serde_json::Value> = serde_json::Map::new();
-        if let Ok(jmap) = serde_json::from_str(&gmr.models[0].metadata.clone().unwrap()) {
-            metadata = jmap;
+        let jstr_b64 = &gmr.models[0].metadata.clone().unwrap();
+        match &general_purpose::STANDARD.decode(jstr_b64) {
+            Err(e) => {
+                to_console_error(&format!("Failed to decode agent metadata base64 string: {:?}", e));
+            },
+            Ok(jstr_) => {
+                let jstr = std::str::from_utf8(jstr_).expect("Invalid agent metadata json UTF8 string decoding "); // FIXME make soft error only
+                if let Ok(jmap) = serde_json::from_str(&jstr) {
+                    metadata = jmap;
+                }
+            },
         }
         return Self {
             id: Uuid::parse_str(&gmr.models[0].id).expect("failed to parse model id to uuid"),
