@@ -105,12 +105,12 @@ pub async fn fetch_context_web(
         let res_errs = response_body.errors;
         match res_errs {
             Some(ref err) => {
-                to_console_error(&format!("fetch_context_web has response errors {:?}",&res_errs));
+                to_console_error(&format!("fetch_context_web has response errors {:?}",&err));
             },
             None => {
                 let urs_data = response_body.data;
                 match urs_data {
-                    None => to_console_debug(&"NvaSDK.rs, GQL response_body.data is empty"),
+                    None => to_console_debug(&"GQL response_body.data is empty"),
                     Some(resdata) => {
                         let urs_data = resdata.orgs;
                         let res_len = urs_data.len();

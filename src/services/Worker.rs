@@ -1,4 +1,6 @@
 
+use serde_json;
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
   // Serialize,
@@ -38,8 +40,15 @@ pub async fn post_start_worker(
   >(
     nvacl,
     request_body, 
-    |s|{
-      return s.start_worker.unwrap_or("{}".to_owned());
+    |s| {
+      // let sm = serde_json::from_str(s).unwrap();
+      if let Some(sw) = &s.start_worker {
+        if let Ok(res) = serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(sw) {
+          //FIXME, make more robust -- ensure fields are present etc.
+          return res["id"].to_string();
+        }
+      }
+      return "".to_string();
     },
     Some(1)
   ).await;
