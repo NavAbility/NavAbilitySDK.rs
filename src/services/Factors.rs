@@ -278,7 +278,7 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   }
 
   // DFG.FactorDFG + BlobEntry + ... ~= GQL.FactorCreateInput
-  let mut variables = add_factors::Variables {
+  let variables = add_factors::Variables {
     id,
     label,
     tags: factor.tags,

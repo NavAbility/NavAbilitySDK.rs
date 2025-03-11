@@ -150,7 +150,7 @@ pub async fn post_get_factorgraphs(
     |s| {
       let mut fgs = Vec::new();
       for a in s.factorgraphs {
-        let mut fg = NvaNode::<Factorgraph>::from_gql_skeleton(&a);
+        let fg = NvaNode::<Factorgraph>::from_gql_skeleton(&a);
         fgs.push(fg);
       };
       return fgs;

@@ -25,6 +25,8 @@ use crate::{
     // to_console_debug,
     // to_console_error,
     post_to_nvaapi,
+    BlobEntrySummaryImporters,
+    BlobEntryFieldsImporters
 };
 
 
@@ -65,35 +67,6 @@ pub async fn post_list_models(
 }
 
 
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn post_get_model(
-    nvacl: &NavAbilityClient,
-    model_label: &str,
-) -> Result<crate::get_model::ResponseData, Box<dyn Error>> {
-
-    let request_body = GetModel::build_query(crate::get_model::Variables {
-        label: model_label.to_string(),
-    });
-
-    return post_to_nvaapi::<
-        crate::get_model::Variables,
-        crate::get_model::ResponseData,
-        crate::get_model::ResponseData
-    >(
-        nvacl,
-        request_body,
-        |s| s, 
-        // |s| {
-        //     let mut bes = Vec::new();
-        //     for be in &s.blob_entries {
-        //       bes.push(BlobEntry::from_gql(be));
-        //     }
-        //     return bes
-        // },
-        Some(3)
-    ).await;
-}
 
 
 
