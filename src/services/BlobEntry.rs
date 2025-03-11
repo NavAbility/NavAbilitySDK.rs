@@ -30,6 +30,7 @@ use crate::{
   GetId,
   AddAgentBlobEntry,
   AddVariableBlobEntry,
+  AddModelBlobEntry,
 };
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -64,6 +65,11 @@ BlobEntry_importers_summary!(GAs_BlobEntrySummary);
 use crate::get_agent::blobEntry_fields_summary as GA_BlobEntrySummary;
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 BlobEntry_importers_summary!(GA_BlobEntrySummary);
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::get_model::blobEntry_fields_summary as GM_BlobEntrySummary;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+BlobEntry_importers_summary!(GM_BlobEntrySummary);
 
 
 impl BlobEntry {
@@ -375,6 +381,56 @@ pub fn addAgentBlobEntry(
   ));
 }
 
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_add_model_blobentry(
+    nvacl: &NavAbilityClient,
+    model_label: &String,
+    entry: &BlobEntry,
+) -> Result<crate::add_model_blob_entry::ResponseData, Box<dyn Error>> {
+    
+    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
+    let name = format!("{}{}",&model_label,&entry.label).to_string();
+    let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
+
+    let mut size_s: Option<String> = None;
+    if let Some(sz) = entry.size {
+        size_s = Some(format!("{}",sz));
+    }
+    let mut metadata = entry.metadata.to_string();
+    if metadata.is_empty() {
+        metadata = "e30=".to_string();
+    }
+
+    let variables = crate::add_model_blob_entry::Variables {
+        model_label: model_label.to_string(),
+        entry_id: entry_id.to_string(),
+        entry_label: entry.label.to_string(),
+        blob_id: entry.blobId.to_string(),
+        blobstore: Some(entry.blobstore.to_string()),
+        origin: Some(entry.origin.to_string()),
+        mime_type: Some(entry.mimeType.to_string()),
+        metadata: metadata,
+        description: Some(entry.description.to_string()),
+        hash: entry.hash.to_string(),
+        size: size_s,
+        timestamp: Some(entry.timestamp.to_string()),
+    };
+
+    let request_body = AddModelBlobEntry::build_query(variables);
+
+    return post_to_nvaapi::<
+        crate::add_model_blob_entry::Variables,
+        crate::add_model_blob_entry::ResponseData,
+        crate::add_model_blob_entry::ResponseData
+    >(
+        nvacl,
+        request_body, 
+        |s| s,
+        Some(1)
+    ).await;
+}
 
 
 // FIXME return Uuid (not string)

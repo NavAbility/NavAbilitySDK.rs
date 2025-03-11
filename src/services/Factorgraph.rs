@@ -36,6 +36,11 @@ use crate::get_factorgraphs::graph_fields_skeleton as GGs_GraphFieldsSkeleton;
 Graph_importers_skeleton!(GGs_GraphFieldsSkeleton);
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+use crate::get_model::graph_fields_skeleton as GM_GraphFieldsSkeleton;
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+Graph_importers_skeleton!(GM_GraphFieldsSkeleton);
+
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 impl NvaNode<Factorgraph> {

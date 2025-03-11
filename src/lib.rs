@@ -70,9 +70,9 @@ pub use crate::services::{
     post_get_agent_entries_metadata,
     post_add_agent_entry,
     list_models_query,
-    fetch_list_models,
+    post_list_models,
     add_model_async,
-    add_entry_model_async,
+    post_add_model_blobentry,
     post_list_model_graphs,
     post_list_graphs,
 };
@@ -175,6 +175,16 @@ pub struct GetURS;
     response_derives = "Debug"
 )]
 pub struct ListModels;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
+    query_path = "src/gql/GetModel.gql",
+    response_derives = "Debug"
+)]
+pub struct GetModel;
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]

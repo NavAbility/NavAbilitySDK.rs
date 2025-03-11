@@ -13,6 +13,7 @@ use crate::{
     BlobEntry,
     ListModels,
     list_models,
+    GetModel,
     AddModel,
     add_model,
     AddModelBlobEntry,
@@ -44,7 +45,7 @@ pub fn list_models_query(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn fetch_list_models(
+pub async fn post_list_models(
     nvacl: &NavAbilityClient,
     model_label_contains: Option<&str>,
 ) -> Result<list_models::ResponseData, Box<dyn Error>> {
@@ -62,6 +63,38 @@ pub async fn fetch_list_models(
         Some(3)
     ).await;
 }
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub async fn post_get_model(
+    nvacl: &NavAbilityClient,
+    model_label: &str,
+) -> Result<crate::get_model::ResponseData, Box<dyn Error>> {
+
+    let request_body = GetModel::build_query(crate::get_model::Variables {
+        label: model_label.to_string(),
+    });
+
+    return post_to_nvaapi::<
+        crate::get_model::Variables,
+        crate::get_model::ResponseData,
+        crate::get_model::ResponseData
+    >(
+        nvacl,
+        request_body,
+        |s| s, 
+        // |s| {
+        //     let mut bes = Vec::new();
+        //     for be in &s.blob_entries {
+        //       bes.push(BlobEntry::from_gql(be));
+        //     }
+        //     return bes
+        // },
+        Some(3)
+    ).await;
+}
+
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
@@ -86,56 +119,6 @@ pub async fn add_model_async(
         add_model::Variables,
         add_model::ResponseData,
         add_model::ResponseData
-    >(
-        nvacl,
-        request_body, 
-        |s| s,
-        Some(1)
-    ).await;
-}
-
-
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub async fn add_entry_model_async(
-    nvacl: &NavAbilityClient,
-    model_label: &String,
-    entry: &BlobEntry,
-) -> Result<add_model_blob_entry::ResponseData, Box<dyn Error>> {
-    
-    let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
-    let name = format!("{}{}",&model_label,&entry.label).to_string();
-    let entry_id = Uuid::new_v5(&org_id, name.as_bytes());
-
-    let mut size_s: Option<String> = None;
-    if let Some(sz) = entry.size {
-        size_s = Some(format!("{}",sz));
-    }
-    let mut metadata = entry.metadata.to_string();
-    if metadata.is_empty() {
-        metadata = "e30=".to_string();
-    }
-
-    let variables = add_model_blob_entry::Variables {
-        model_label: model_label.to_string(),
-        entry_id: entry_id.to_string(),
-        entry_label: entry.label.to_string(),
-        blob_id: entry.blobId.to_string(),
-        blobstore: Some(entry.blobstore.to_string()),
-        origin: Some(entry.origin.to_string()),
-        mime_type: Some(entry.mimeType.to_string()),
-        metadata: metadata,
-        description: Some(entry.description.to_string()),
-        hash: entry.hash.to_string(),
-        size: size_s,
-        timestamp: Some(entry.timestamp.to_string()),
-    };
-
-    let request_body = AddModelBlobEntry::build_query(variables);
-
-    return post_to_nvaapi::<
-        add_model_blob_entry::Variables,
-        add_model_blob_entry::ResponseData,
-        add_model_blob_entry::ResponseData
     >(
         nvacl,
         request_body, 
