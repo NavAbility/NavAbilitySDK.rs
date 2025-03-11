@@ -94,13 +94,13 @@ pub struct GetFactorgraph {
 
 #[allow(non_snake_case)]
 pub struct GetModelResponse {
-    id: Uuid,
-    label: String,
-    lastUpdatedTimestamp: DateTime<Utc>,
-    metadata: serde_json::Map<String, serde_json::Value>,
-    tags: Vec<String>,
-    blobEntries: Vec<BlobEntry>,
-    fgs: Vec<GetFactorgraph>
+    pub id: Uuid,
+    pub label: String,
+    pub lastUpdatedTimestamp: DateTime<Utc>,
+    pub metadata: serde_json::Map<String, serde_json::Value>,
+    pub tags: Vec<String>,
+    pub blobEntries: Vec<BlobEntry>,
+    pub fgs: Vec<GetFactorgraph>
 }
 
 
@@ -169,13 +169,34 @@ pub async fn post_get_model(
     >(
         nvacl,
         request_body,
-        |s| {
-            return GetModelResponse::from_gql_summary(&s);
-        },
+        |s| GetModelResponse::from_gql_summary(&s),
         Some(3)
     ).await;
 }
 
+
+#[cfg(feature = "wasm")]
+pub fn q_getModel(
+    send_into: crate::Sender<GetModelResponse>,
+    nvacl: &NavAbilityClient,
+    model_label: &str,
+) {
+  // wasmbindgen limitation?  overcome +'static requirement
+
+  let nvacl_ = (*nvacl).clone();
+  // let send_into_ = send_into.clone();
+  let label_ = model_label.to_string();
+  
+  crate::execute(async move {
+    let _ = crate::send_api_result(
+      send_into, 
+      post_get_model(
+        &nvacl_, 
+        &label_
+      ).await,
+    );
+  });
+}
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
