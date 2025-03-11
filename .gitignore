@@ -1,3 +1,3 @@
 /target
 /test/build
-src/schema.json
+src/gql/schema.json
