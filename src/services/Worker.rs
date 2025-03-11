@@ -25,6 +25,8 @@ pub async fn post_start_worker(
   input: &str,
   worker_label: crate::start_worker::WorkerLabelEnum
 ) -> Result<String, Box<dyn Error>> {
+    use crate::to_console_error;
+
   
   let variables = crate::start_worker::Variables {
     input: input.to_string(),
@@ -43,9 +45,15 @@ pub async fn post_start_worker(
     |s| {
       // let sm = serde_json::from_str(s).unwrap();
       if let Some(sw) = &s.start_worker {
-        if let Ok(res) = serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(sw) {
-          //FIXME, make more robust -- ensure fields are present etc.
-          return res["id"].to_string();
+        match serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(sw) {
+          Ok(res) => {
+            //FIXME, make more robust -- ensure fields are present etc.
+            return res["id"].to_string();
+          },
+          Err(e) => {
+            to_console_error(&format!("start worker parse response error: {:?}", e));
+            return "".to_string();
+          }
         }
       }
       return "".to_string();
