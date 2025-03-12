@@ -73,7 +73,7 @@ pub async fn q_findFactorgraphBlobEntries(
   nvacl: &NavAbilityClient,
   label: &str,
   bentry_lbl_contains: &str,
-) -> Result<Vec<BlobEntry>, Box<dyn Error>> {
+) {
 
   let nvacl_ = nvacl.clone();
   let send_into_ = send_into.clone();
