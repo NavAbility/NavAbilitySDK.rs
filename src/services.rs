@@ -36,6 +36,11 @@ pub mod Model;
 pub use Model::*;
 
 #[allow(non_snake_case)]
+pub mod ConnectGraphToModel;
+#[allow(non_snake_case)]
+pub use ConnectGraphToModel::*;
+
+#[allow(non_snake_case)]
 pub mod Factorgraph;
 #[allow(non_snake_case)]
 pub use Factorgraph::*;
