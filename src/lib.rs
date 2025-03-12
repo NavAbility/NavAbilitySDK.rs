@@ -400,6 +400,16 @@ pub struct FindOrgModelGraphs;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/gql/schema.json",
+    query_path = "src/gql/FindFactorgraphBlobEntries.gql",
+    response_derives = "Debug"
+)]
+pub struct FindFactorgraphBlobEntries;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
     query_path = "src/gql/AddAgent.gql",
     response_derives = "Debug"
 )]

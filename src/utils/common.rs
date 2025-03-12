@@ -285,27 +285,6 @@ pub fn send_api_result<T>(
 
 
 
-/// Checks the deserialization result of a GraphQL query response.
-///
-/// # Arguments
-///
-/// * `serde_res` - A `Result` containing the deserialization result of the response.
-///
-/// # Returns
-///
-/// * `Result<Response<T>, Box<dyn Error>>` - A `Result` containing the deserialized response or an error.
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
-pub fn check_deser<T>(
-  serde_res: Result<Response<T>,reqwest::Error>
-) -> Result<Response<T>,Box<dyn Error>> {
-  
-  if let Err(ref e) = serde_res {
-    to_console_error(&format!("JSON unpack failure from possibly good API response: {:?}", &e));
-  }
-  
-  return Ok(serde_res?)
-}
-
 
 
 
