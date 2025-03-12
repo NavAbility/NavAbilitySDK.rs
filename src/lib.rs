@@ -342,6 +342,16 @@ pub struct ConnectGraphAgent;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/gql/schema.json",
+    query_path = "src/gql/ConnectGraphToModel.gql",
+    response_derives = "Debug"
+)]
+pub struct ConnectGraphModel;
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
     query_path = "src/gql/AddModelBlobEntry.gql",
     response_derives = "Debug"
 )]
