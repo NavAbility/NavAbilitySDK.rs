@@ -41,6 +41,11 @@ pub mod Factorgraph;
 pub use Factorgraph::*;
 
 #[allow(non_snake_case)]
+pub mod FindFactorgraphBlobEntries;
+#[allow(non_snake_case)]
+pub use FindFactorgraphBlobEntries::*;
+
+#[allow(non_snake_case)]
 pub mod Variable;
 #[allow(non_snake_case)]
 pub use Variable::*;
