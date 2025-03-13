@@ -20,6 +20,19 @@ use crate::{
 };
 
 
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub fn start_worker_query(
+  input: &str,
+  worker_label: crate::start_worker::WorkerLabelEnum
+) -> QueryBody<crate::start_worker::Variables>{
+  return StartWorker::build_query(
+    crate::start_worker::Variables {
+        input: input.to_string(),
+        worker_label
+    }
+  );
+}
+
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_start_worker(
@@ -27,15 +40,13 @@ pub async fn post_start_worker(
   input: &str,
   worker_label: crate::start_worker::WorkerLabelEnum
 ) -> Result<Uuid, Box<dyn Error>> {
-    use crate::to_console_error;
-
   
-  let variables = crate::start_worker::Variables {
-    input: input.to_string(),
-    worker_label
-  };
-  
-  let request_body = StartWorker::build_query(variables);
+  let request_body = start_worker_query(input, worker_label);
+  // let variables = crate::start_worker::Variables {
+  //   input: input.to_string(),
+  //   worker_label
+  // };
+  // let request_body = StartWorker::build_query(variables);
   
   let bad_json_on_resp = post_to_nvaapi::<
     crate::start_worker::Variables,
