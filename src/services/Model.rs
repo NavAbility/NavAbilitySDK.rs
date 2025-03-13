@@ -237,17 +237,24 @@ pub async fn add_model_async(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+pub fn list_model_graphs_query(
+    model_label: &str,
+) -> QueryBody<crate::list_models_graphs::Variables> {
+
+    let variables = crate::list_models_graphs::Variables {
+        label: model_label.to_string(), 
+    };
+    return  ListModelsGraphs::build_query(variables);
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_list_model_graphs(
     nvacl: NavAbilityClient,
-    mlabel: Option<&str>, // FIXME must exist
+    model_label: &str,
 ) -> Result<crate::list_models_graphs::ResponseData, Box<dyn Error>> {
     
-    // let label = mlabel.unwrap_or("").to_string();
-    
-    let variables = crate::list_models_graphs::Variables {
-        id: nvacl.getId(mlabel.unwrap_or("")).to_string(),
-    };
-    let request_body = ListModelsGraphs::build_query(variables);
+    let request_body = list_model_graphs_query(model_label);
 
     return post_to_nvaapi::<
         crate::list_models_graphs::Variables,
@@ -277,7 +284,7 @@ pub fn q_listModelGraphs(
       send_into, 
       post_list_model_graphs(
         nvacl_, 
-        Some(&model_)
+        &model_
       ).await,
     );
   });
