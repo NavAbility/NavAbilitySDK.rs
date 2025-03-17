@@ -36,9 +36,16 @@ pub mod Model;
 pub use Model::*;
 
 #[allow(non_snake_case)]
+pub mod FindModelBlobEntries;
+#[allow(non_snake_case)]
+pub use FindModelBlobEntries::*;
+
+
+#[allow(non_snake_case)]
 pub mod ConnectGraphToModel;
 #[allow(non_snake_case)]
 pub use ConnectGraphToModel::*;
+
 
 #[allow(non_snake_case)]
 pub mod Factorgraph;
@@ -49,6 +56,7 @@ pub use Factorgraph::*;
 pub mod FindFactorgraphBlobEntries;
 #[allow(non_snake_case)]
 pub use FindFactorgraphBlobEntries::*;
+
 
 #[allow(non_snake_case)]
 pub mod Variable;
