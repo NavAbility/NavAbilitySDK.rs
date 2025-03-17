@@ -47,7 +47,7 @@ pub async fn post_find_model_blob_entries(
   bentry_lbl_contains: &str,
 ) -> Result<Vec<BlobEntry>, Box<dyn Error>> {
 
-  let variables = find_model_blob_entries::Variables {
+  let variables = crate::find_model_blob_entries::Variables {
     model_label: Some(model_label.to_string()),
     be_label_contains: Some(bentry_lbl_contains.to_string()),
   };
@@ -55,8 +55,8 @@ pub async fn post_find_model_blob_entries(
   let request_body = crate::FindModelBlobEntries::build_query(variables);
   
   return crate::post_to_nvaapi::<
-    find_model_blob_entries::Variables,
-    find_model_blob_entries::ResponseData,
+    crate::find_model_blob_entries::Variables,
+    crate::find_model_blob_entries::ResponseData,
     Vec<BlobEntry>
   >(
     nvacl,

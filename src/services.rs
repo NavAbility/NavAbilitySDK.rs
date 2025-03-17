@@ -35,10 +35,10 @@ pub mod Model;
 #[allow(non_snake_case)]
 pub use Model::*;
 
-// #[allow(non_snake_case)]
-// pub mod FindModelBlobEntries;
-// #[allow(non_snake_case)]
-// pub use FindModelBlobEntries::*;
+#[allow(non_snake_case)]
+pub mod FindModelBlobEntries;
+#[allow(non_snake_case)]
+pub use FindModelBlobEntries::*;
 
 
 #[allow(non_snake_case)]
