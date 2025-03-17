@@ -197,6 +197,15 @@ pub struct GetModel;
 pub struct ListModelsGraphs;
 
 
+// #[derive(GraphQLQuery, Clone)]
+// #[graphql(
+//     schema_path = "src/gql/schema.json",
+//     query_path = "src/gql/FindModelBlobEntries.gql",
+//     response_derives = "Debug"
+// )]
+// pub struct FindModelBlobEntries;
+
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
