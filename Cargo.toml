@@ -1,8 +1,11 @@
 [package]
 name = "navabilitysdk"
-version = "0.1.0-b4"
+version = "0.1.0-rc4"
 authors = ["NavAbility™ by WhereWhen.ai Technologies Inc."]
 edition = "2021"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [lib]
 crate-type = ["rlib"]
