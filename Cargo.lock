@@ -1009,7 +1009,7 @@ dependencies = [
 
 [[package]]
 name = "navabilitysdk"
-version = "0.1.0-b4"
+version = "0.1.0-rc4"
 dependencies = [
  "base64 0.22.1",
  "chrono",
