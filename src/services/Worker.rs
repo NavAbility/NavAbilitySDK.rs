@@ -42,11 +42,6 @@ pub async fn post_start_worker(
 ) -> Result<Uuid, Box<dyn Error>> {
   
   let request_body = start_worker_query(input, worker_label);
-  // let variables = crate::start_worker::Variables {
-  //   input: input.to_string(),
-  //   worker_label
-  // };
-  // let request_body = StartWorker::build_query(variables);
   
   let bad_json_on_resp = post_to_nvaapi::<
     crate::start_worker::Variables,
@@ -102,5 +97,18 @@ pub async fn post_start_worker(
 
 
 
+#[cfg(any(feature = "tokio", feature = "thread"))]
+pub fn startWorker(
+  nvacl: &NavAbilityClient,
+  input: &str,
+  worker_label: crate::start_worker::WorkerLabelEnum
+) -> Result<Uuid, Box<dyn Error>> {
+  return crate::execute(post_start_worker(
+    nvacl,
+    input,
+    worker_label
+  ));
+}
+    
 
 
