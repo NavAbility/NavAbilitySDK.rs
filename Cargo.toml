@@ -35,6 +35,7 @@ tracing = "^0.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-console = { version = "^0.3", optional = true }
+windows-sys = "^0.59"
 
 [build-dependencies]
 graphql_client_cli = "^0.14"
