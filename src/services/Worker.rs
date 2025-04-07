@@ -26,8 +26,6 @@ pub fn start_worker_query(
   input: &str,
   worker_label: crate::start_worker::WorkerLabelEnum
 ) -> QueryBody<crate::start_worker::Variables>{
-    use graphql_client::QueryBody;
-
 
   let res = serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(input).unwrap();
   return StartWorker::build_query(
@@ -36,13 +34,6 @@ pub fn start_worker_query(
       worker_label
     }
   );
-
-  // return StartWorker::build_query(
-  //   crate::start_worker::Variables {
-  //       input, //: input.to_string(),
-  //       worker_label
-  //   }
-  // );
 }
 
 
