@@ -586,18 +586,14 @@ mod tests {
     #[allow(non_snake_case)]
     fn startWorker_echo(
         nvacl: &NavAbilityClient,
-    ) { //-> Result<Uuid, Box<dyn Error>> {
-        
-        let mut map = HashMap::new();
+    ) { 
+        let mut map = serde_json::Map::<String,serde_json::Value>::new();
         map.insert("lambda".to_string(), serde_json::json!("echo"));
         map.insert("payload".to_string(), serde_json::json!(30));
     
-        let input = serde_json::to_string(&map).unwrap();
-        // println!("Serialized JSON: {}", serialized);
-
         let res = crate::services::startWorker(
             nvacl,
-            &format!("{}",input),
+            map,
             crate::start_worker::WorkerLabelEnum::echo
         );
 
