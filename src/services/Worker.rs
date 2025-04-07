@@ -23,14 +23,14 @@ use crate::{
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub fn start_worker_query(
-  input: &str,
+  input: serde_json::Map<String,serde_json::Value>,
   worker_label: crate::start_worker::WorkerLabelEnum
 ) -> QueryBody<crate::start_worker::Variables>{
 
-  let res = serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(input).unwrap();
+  // let res = serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(input).unwrap();
   return StartWorker::build_query(
     crate::start_worker::Variables {
-      input: res,
+      input,
       worker_label
     }
   );
@@ -40,7 +40,7 @@ pub fn start_worker_query(
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 pub async fn post_start_worker(
   nvacl: &NavAbilityClient,
-  input: &str,
+  input: serde_json::Map<String,serde_json::Value>,
   worker_label: crate::start_worker::WorkerLabelEnum
 ) -> Result<Uuid, Box<dyn Error>> {
   
@@ -60,8 +60,7 @@ pub async fn post_start_worker(
   match bad_json_on_resp {
     Ok(res) => {
       let rstr = &res.start_worker.unwrap();
-      let idstr = rstr["id"].as_str().expect(&format!("Unable to estract 'id' from post_start_worker response {:?}",&rstr["id"]))
-        .trim(); // trim whitespace/newlines
+      let idstr = rstr["id"].as_str().expect(&format!("Unable to estract 'id' from post_start_worker response {:?}",&rstr["id"]));
       let id = Uuid::parse_str(&idstr).map_err(|e_| Box::new(e_) as Box<dyn Error>);
       return id;
     },
@@ -76,7 +75,7 @@ pub async fn post_start_worker(
 #[cfg(any(feature = "tokio", feature = "thread"))]
 pub fn startWorker(
   nvacl: &NavAbilityClient,
-  input: &str,
+  input: serde_json::Map<String,serde_json::Value>,
   worker_label: crate::start_worker::WorkerLabelEnum
 ) -> Result<Uuid, Box<dyn Error>> {
   return crate::execute(post_start_worker(
@@ -89,17 +88,17 @@ pub fn startWorker(
 #[cfg(feature = "wasm")]
 pub fn startWorker(
   nvacl_: &NavAbilityClient,
-  input_: &str,
+  input: serde_json::Map<String,serde_json::Value>,
   worker_label_: crate::start_worker::WorkerLabelEnum
 ) {
 
   let nvacl = nvacl_.clone();
-  let input = input_.to_string();
+  // let input = input_.to_string();
   let worker_label = worker_label_;
   return crate::execute(async move {
       let _ = post_start_worker(
       &nvacl,
-      &input,
+      input,
       worker_label
     ).await;
   });
