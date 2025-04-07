@@ -24,6 +24,11 @@ test-tokio: build-tokio
 	cargo test -F tokio
 .PHONY: test-tokio
 
+test-tokio-unsafe: build-tokio
+	cargo test -F tokio -- --nocapture
+.PHONY: test-tokio
+
+
 build-tokio: $(NVA_API_SCHEMA_PATH)
 	cargo build -F tokio
 .PHONY: build-tokio
