@@ -2,6 +2,7 @@
 use regex::Regex;
 
 use serde_json;
+use serde::Serialize;
 
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
@@ -110,5 +111,22 @@ pub fn startWorker(
   ));
 }
     
+#[cfg(feature = "wasm")]
+pub fn startWorker(
+  nvacl_: &NavAbilityClient,
+  input_: &str,
+  worker_label_: crate::start_worker::WorkerLabelEnum
+) {
 
+  let nvacl = nvacl_.clone();
+  let input = input_.to_string();
+  let worker_label = worker_label_;
+  return crate::execute(async move {
+      let _ = post_start_worker(
+      &nvacl,
+      &input,
+      worker_label
+    ).await;
+  });
+}
 

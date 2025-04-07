@@ -3,7 +3,7 @@
 use std::{
     error::Error, 
     sync::mpsc::Sender,
-    // collections::HashMap,
+    collections::HashMap,
 };
 use serde::Serialize;
 use uuid::Uuid;
@@ -559,8 +559,54 @@ impl<T> GetId for NvaNode<T> {
 mod tests {
     use super::*;
 
+    fn test_nvacl() -> NavAbilityClient {
+        let mut nva_apiurl = "https://api.navability.io/graphql".to_owned();
+
+        #[cfg(feature = "tokio")]
+        if let Ok(userlabel) = std::env::var("NVA_API_URL") {
+            nva_apiurl = userlabel;
+        } else {
+            to_console_debug(&format!("Warning: NVA_API_URL env var not set, using default: {}", nva_apiurl));
+        }
+
+        let mut nva_api_token: String = "".to_owned();
+        #[cfg(feature = "tokio")]
+        if let Ok(token) = std::env::var("NVA_API_TOKEN") {
+            nva_api_token = token;
+        } else {
+            to_console_debug(&format!("Warning: NVA_API_TOKEN env var not set, using default: {}", nva_apiurl));
+        }
+
+        let client = NavAbilityClient::new(&nva_apiurl.to_string(), &nva_api_token, None);
+        println!("client: {:?}", client);
+
+        return client;
+    }
+
+    #[allow(non_snake_case)]
+    fn startWorker_echo(
+        nvacl: &NavAbilityClient,
+    ) { //-> Result<Uuid, Box<dyn Error>> {
+        
+        let mut map = HashMap::new();
+        map.insert("lambda".to_string(), serde_json::json!("echo"));
+        map.insert("payload".to_string(), serde_json::json!(30));
+    
+        let input = serde_json::to_string(&map).unwrap();
+        // println!("Serialized JSON: {}", serialized);
+
+        let res = crate::services::startWorker(
+            nvacl,
+            &format!("{}",input),
+            crate::start_worker::WorkerLabelEnum::echo
+        );
+
+        println!("startWorker echo response: {:?}", &res);
+        // return convert_str(&wrk_id.to_string());
+    }
+
     #[test]
-    fn test_get_robots() {
+    fn test_utils() {
         // parse datetime example 1
         let text = "2024-09-03 02:31:39.367 UTC";
         let _res = parse_str_utc(text.to_owned());
@@ -571,17 +617,11 @@ mod tests {
         let _res = parse_str_utc(text.to_owned());
         println!("parse_str_utc {:?}",_res);
         let _ = _res.unwrap(); // make sure the conversion worked
+    }
 
-
-        let nva_userlabel: String = "test@wherewhen.ai".to_owned();
-            // std::env::var("NAVABILITY_USERLABEL").expect("Missing NAVABILITY_USERLABEL env var");
-
-        let nva_api_token: String = "".to_owned();
-            // std::env::var("NAVABILITY_API_TOKEN").expect("Missing NAVABILITY_API_TOKEN env var");
-
-        let api_url: &str = "https://api.navability.io/graphql";
-        let client = NavAbilityClient::new(&api_url.to_string(), &nva_api_token, Some(&nva_userlabel));
-        println!("client: {:?}", client);
+    #[test]
+    fn test_basic_connects() {
+        let client = test_nvacl();
 
         #[cfg(feature = "blocking")]
         let robotrs = get_robots_blocking(&client);
@@ -590,5 +630,14 @@ mod tests {
         #[cfg(feature = "blocking")]
         let robotlist = get_robots_blocking(&client);
         // println!("robot list: {:?}", robotlist);
+
+    }
+
+    #[test]
+    fn test_workers() {
+        let nvacl = test_nvacl();
+
+        // #[cfg(feature = "tokio")]
+        let _ = startWorker_echo(&nvacl);
     }
 }
