@@ -29,7 +29,8 @@ test-tokio-unsafe: build-tokio
 .PHONY: test-tokio
 
 
-build-tokio: $(NVA_API_SCHEMA_PATH)
+# $(NVA_API_SCHEMA_PATH)
+build-tokio: 
 	cargo build -F tokio
 .PHONY: build-tokio
 
