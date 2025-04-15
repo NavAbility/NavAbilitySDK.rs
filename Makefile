@@ -14,11 +14,15 @@ NVA_API_SCHEMA_PATH := src/gql/schema.json
 default: help ;
 .PHONY: default
 
-clean:
+clean: delete-schema
+	@echo "Cleaning up..."
 	cargo clean
 	rm -rf test/build
-	rm -f src/gql/schema.json
 .PHONY: clean
+
+delete-schema:
+	@echo "Deleting GraphQL schema..."
+	rm -f $(NVA_API_SCHEMA_PATH)
 
 test-tokio: build-tokio
 	cargo test -F tokio
@@ -28,13 +32,11 @@ test-tokio-unsafe: build-tokio
 	cargo test -F tokio -- --nocapture
 .PHONY: test-tokio
 
-
-# $(NVA_API_SCHEMA_PATH)
 build-tokio: 
 	cargo build -F tokio
 .PHONY: build-tokio
 
-build-wasm: $(NVA_API_SCHEMA_PATH)
+build-wasm:
 	cargo build -F wasm
 .PHONY: build-wasm
 
@@ -42,7 +44,7 @@ $(NVA_API_SCHEMA_PATH):
 	@echo "Fetching GraphQL schema from $(NVA_API_URL)..."
 	@graphql-client introspect-schema --authorization $(NVA_API_TOKEN) --output src/gql/schema.json $(NVA_API_URL)
 
-fetch-schema: $(NVA_API_SCHEMA_PATH) ;
+fetch-schema: delete-schema $(NVA_API_SCHEMA_PATH) ;
 .PHONY: fetch-schema
 
 graphql-codegen:
