@@ -405,7 +405,7 @@ pub struct JSONCRUD {}
 
 impl JSONCRUD {
   pub fn to_jsonstr(
-    jobj: Map<String,Value>,
+    jobj: &Map<String,Value>,
   ) -> String {
     serde_json::to_string(&jobj).unwrap().to_string()
   }
@@ -424,28 +424,43 @@ impl JSONCRUD {
     }
   }
   
-  pub fn to_jsonstr_b64(
-    jobj: Map<String,Value>,
+  pub fn encode_b64(
+    jstr: String
   ) -> String {
-    return general_purpose::STANDARD.encode(Self::to_jsonstr(jobj).to_string());
+    return general_purpose::STANDARD.encode(jstr);
+  }
+
+  pub fn decode_b64_utf8(
+    jstr_b64: &str
+  ) -> Option<String> {
+    match &general_purpose::STANDARD.decode(jstr_b64) {
+      Ok(jstr) => {
+        return Some(
+          std::str::from_utf8(jstr)
+          .expect("JSONCRUD, invalid json UTF8 string decoding")
+          .to_string()
+        )
+      },
+      Err(e) => {
+        to_console_error(&format!("JSONCRUD, base64 decode of b64_string failed {:?}",e));
+        return None;
+      }
+    }
+  }
+
+  pub fn to_jsonstr_b64(
+    jobj: &Map<String,Value>,
+  ) -> String {
+    return Self::encode_b64(Self::to_jsonstr(jobj).to_string());
   }
   
   pub fn from_jsonstr_b64(
     jstr_b64: &str
   ) -> Map<String,Value> {
-    match &general_purpose::STANDARD.decode(jstr_b64) {
-      Ok(jstr) => {
-        Self::from_jsonstr(
-          std::str::from_utf8(
-            jstr
-          ).expect("JSONCRUD, invalid json UTF8 string decoding")
-        )
-      },
-      Err(e) => {
-        to_console_error(&format!("JSONCRUD, base64 decode of b64_string failed {:?}",e));
-        return Map::<String,Value>::new();
-      }
+    if let Some(jstr) = Self::decode_b64_utf8(jstr_b64) {
+      return Self::from_jsonstr(&jstr);
     }
+    return Map::<String,Value>::new();
   }
 }
 
