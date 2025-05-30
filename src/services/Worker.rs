@@ -25,7 +25,7 @@ use crate::{
 pub fn start_worker_query(
   input: serde_json::Map<String,serde_json::Value>,
   worker_label: crate::start_worker::WorkerLabelEnum
-) -> QueryBody<crate::start_worker::Variables>{
+) -> QueryBody<crate::start_worker::Variables> {
 
   // let res = serde_json::from_str::<serde_json::Map<String,serde_json::Value>>(input).unwrap();
   return StartWorker::build_query(
@@ -104,3 +104,48 @@ pub fn startWorker(
   });
 }
 
+
+
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub async fn post_subscription(
+  nvacl: &NavAbilityClient,
+) -> Result<crate::default_subscription::ResponseData, Box<dyn Error>> {
+  
+  let request_body = crate::DefaultSubscription::build_query(
+    crate::default_subscription::Variables{}
+  );
+  
+  let response = post_to_nvaapi::<
+    crate::default_subscription::Variables,
+    crate::default_subscription::ResponseData,
+    crate::default_subscription::ResponseData
+  >(
+    nvacl,
+    request_body, 
+    |s| s,
+    Some(1)
+  ).await;
+
+  return response;
+}
+
+
+#[cfg(any(feature = "tokio", feature = "wasm"))]
+pub fn q_Subscription(
+    send_into: crate::Sender<crate::default_subscription::ResponseData>,
+    nvacl: &NavAbilityClient,
+) {
+  // wasmbindgen limitation?  overcome +'static requirement
+
+  let nvacl_ = (*nvacl).clone();
+  
+  crate::execute(async move {
+    let _ = crate::send_api_result(
+      send_into, 
+      post_subscription(
+        &nvacl_, 
+      ).await,
+    );
+  });
+}
