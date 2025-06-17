@@ -46,9 +46,10 @@ impl NavAbilityClient {
         nva_api_token: &String,
         org_id: Option<&String>
     ) -> Self {
-        // FIXME good header.insert example: https://medium.com/@itsuki.enjoy/post-file-using-multipart-form-data-in-rust-5171ae57aeed
-        //   or https://users.rust-lang.org/t/how-to-upload-a-file-using-rust-or-some-library/45423/4
+
+        // use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
         let mut headers = reqwest::header::HeaderMap::new();
+        // use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
         headers.insert(
             reqwest::header::AUTHORIZATION,
             reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
@@ -71,8 +72,6 @@ impl NavAbilityClient {
         //         .unwrap(),
         // );
         
-        //         // TODO use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
-        //         // TODO use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
         let client = Client::builder()
         .user_agent("graphql-rust/0.12.0")
         .default_headers(headers)
@@ -104,6 +103,8 @@ impl NavAbilityClient {
         temp.user_label = oid;
 
         return temp;
+        // HOLD good header.insert example: https://medium.com/@itsuki.enjoy/post-file-using-multipart-form-data-in-rust-5171ae57aeed
+        //   or https://users.rust-lang.org/t/how-to-upload-a-file-using-rust-or-some-library/45423/4
     }
 }
 
