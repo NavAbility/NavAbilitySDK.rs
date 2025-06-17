@@ -48,38 +48,36 @@ impl NavAbilityClient {
     ) -> Self {
         // FIXME good header.insert example: https://medium.com/@itsuki.enjoy/post-file-using-multipart-form-data-in-rust-5171ae57aeed
         //   or https://users.rust-lang.org/t/how-to-upload-a-file-using-rust-or-some-library/45423/4
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
+                .unwrap(),
+        );
+        headers.insert(
+            reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            reqwest::header::HeaderValue::from_str(&nva_api_url)
+                .unwrap(),
+        );
+        headers.insert(
+            reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            reqwest::header::HeaderValue::from_str(&nva_api_url.replace("api.","app."))
+                .unwrap(),
+        );
+        // // "accept"=>"text/event-stream"
+        // headers.insert(
+        //     reqwest::header::ACCEPT,
+        //     reqwest::header::HeaderValue::from_str("text/event-stream")
+        //         .unwrap(),
+        // );
+        
+        //         // TODO use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
+        //         // TODO use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
         let client = Client::builder()
         .user_agent("graphql-rust/0.12.0")
-        .default_headers(
-                // TODO use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
-                // TODO use bearer auth: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.bearer_auth
-                std::iter::once((
-                    reqwest::header::AUTHORIZATION,
-                    reqwest::header::HeaderValue::from_str(&format!("Bearer {}", nva_api_token))
-                        .unwrap(),
-                )).chain(
-                    std::iter::once((
-                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                        reqwest::header::HeaderValue::from_str("https://navability.io")
-                            .unwrap(),
-                    ))
-                ).chain(
-                    std::iter::once((
-                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                        reqwest::header::HeaderValue::from_str(&nva_api_url)
-                            .unwrap(),
-                    ))
-                ).chain(
-                    std::iter::once((
-                        reqwest::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                        reqwest::header::HeaderValue::from_str(&nva_api_url.replace("api.","app."))
-                            .unwrap(),
-                    ))
-                )
-                .collect(),
-            )
-            .build()
-            .expect("Failure to create client");
+        .default_headers(headers)
+        .build()
+        .expect("Failure to create client");
 
         let mut temp = NavAbilityClient {
             client,
