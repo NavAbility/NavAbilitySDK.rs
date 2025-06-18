@@ -4,18 +4,23 @@ use regex::Regex;
 use serde_json;
 use serde::Serialize;
 
+use reqwest_eventsource::{
+  EventSource,
+  Event,
+};
+use url::form_urlencoded;
+
+use futures::stream::StreamExt;
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
   Uuid,
-  // Serialize,
   GraphQLQuery,
   QueryBody,
   Error,
-  // GQLRequestError,
-  // GQLResponseEmptyError,
   NavAbilityClient,
   post_to_nvaapi,
-  StartWorker, // start_worker
+  StartWorker,
   to_console_debug, 
   to_console_error,
 };
@@ -106,46 +111,62 @@ pub fn startWorker(
 
 
 
-
 #[cfg(any(feature = "tokio", feature = "wasm"))]
-pub async fn post_subscription(
-  nvacl: &NavAbilityClient,
-) -> Result<crate::default_subscription::ResponseData, Box<dyn Error>> {
-  
-  let request_body = crate::DefaultSubscription::build_query(
-    crate::default_subscription::Variables{}
-  );
-  
-  let response = post_to_nvaapi::<
-    crate::default_subscription::Variables,
-    crate::default_subscription::ResponseData,
-    crate::default_subscription::ResponseData
-  >(
-    nvacl,
-    request_body, 
-    |s| s,
-    Some(1)
-  ).await;
-
-  return response;
-}
-
-
-#[cfg(any(feature = "tokio", feature = "wasm"))]
-pub fn q_Subscription(
+pub fn subscription_listener(
     send_into: crate::Sender<crate::default_subscription::ResponseData>,
     nvacl: &NavAbilityClient,
 ) {
-  // wasmbindgen limitation?  overcome +'static requirement
+  // FIXME upgrade to eventsource_reqwest for sse
+  let nvacl_e = NavAbilityClient::similar(
+    nvacl,
+    true
+  );
+  let query = crate::DefaultSubscription::build_query(
+    crate::default_subscription::Variables {}
+  );
+  // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
+  let query_string = form_urlencoded::byte_serialize(query.query.as_bytes())
+    .collect::<String>();
+  // let query_string = "subscription%7BworkerEvent%7Bpayload+id+status%7D%7D";
+  let uri = format!("{}?query={}", nvacl.apiurl, query_string);
 
-  let nvacl_ = (*nvacl).clone();
-  
+  let mut nvaes = EventSource::new(
+    nvacl_e.client.get(&uri)
+  ).expect("Failed to create EventSource");
+
+  // wasmbindgen limitation?  overcome +'static requirement
   crate::execute(async move {
-    let _ = crate::send_api_result(
-      send_into, 
-      post_subscription(
-        &nvacl_, 
-      ).await,
-    );
+    while let Some(event) = nvaes.next().await {
+        match event {
+            Ok(Event::Open) => to_console_debug("SSE connection Open!"),
+            Ok(Event::Message(message)) => {
+              let msg_: Result<
+                serde_json::Map<String, serde_json::Value>,
+                serde_json::Error
+              > = serde_json::from_str(&message.data);
+              if let Err(e) = msg_ {
+                to_console_error(&format!("Failed to parse message data: {}", e));
+                continue;
+              }
+              let msg = msg_.unwrap();
+              if let Some(jobj) = msg.get("data") { //msg.contains_key("data") {
+                // to_console_debug(&format!("{:?}",&msg));
+                let jstr = jobj.to_string();
+                let jobj_: Result<crate::default_subscription::ResponseData, serde_json::Error> = serde_json::from_str(&jstr);
+                if let Ok(subwe) = jobj_ {
+                  send_into.send(
+                    subwe
+                  ).expect("Failed to send Event");
+                } else {
+                  to_console_error("Failed to parse 'data' from message data");
+                }
+              }
+            },
+            Err(err) => {
+                to_console_error(&format!("Error: {}", err));
+                nvaes.close();
+            }
+        }
+    }
   });
 }
