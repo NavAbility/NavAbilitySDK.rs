@@ -44,7 +44,33 @@ impl NavAbilityClient {
     pub fn new(
         nva_api_url: &String, 
         nva_api_token: &String,
-        org_id: Option<&String>
+        org_id: Option<&String>,
+    ) -> Self {
+        return Self::new_fromargs(
+            nva_api_url,
+            nva_api_token,
+            org_id,
+            false
+        );
+    }
+
+    pub fn similar(
+        nvacl: &NavAbilityClient,
+        do_events: bool,
+    ) -> Self {
+        Self::new_fromargs(
+            &nvacl.apiurl,
+            &nvacl.nva_api_token,
+            Some(&nvacl.user_label),
+            do_events
+        )
+    }
+
+    pub fn new_fromargs(
+        nva_api_url: &String, 
+        nva_api_token: &String,
+        org_id: Option<&String>,
+        do_events: bool,
     ) -> Self {
 
         // use HeaderMap: https://docs.rs/reqwest/latest/reqwest/struct.RequestBuilder.html#method.headers
@@ -65,12 +91,14 @@ impl NavAbilityClient {
             reqwest::header::HeaderValue::from_str(&nva_api_url.replace("api.","app."))
                 .unwrap(),
         );
-        // // "accept"=>"text/event-stream"
-        // headers.insert(
-        //     reqwest::header::ACCEPT,
-        //     reqwest::header::HeaderValue::from_str("text/event-stream")
-        //         .unwrap(),
-        // );
+        if do_events {
+            // "accept"=>"text/event-stream"
+            headers.insert(
+                reqwest::header::ACCEPT,
+                reqwest::header::HeaderValue::from_str("text/event-stream")
+                    .unwrap(),
+            );
+        }
         
         let client = Client::builder()
         .user_agent("graphql-rust/0.12.0")

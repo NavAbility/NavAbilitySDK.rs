@@ -4,6 +4,11 @@ use regex::Regex;
 use serde_json;
 use serde::Serialize;
 
+use reqwest_eventsource::{
+  EventSource,
+  Event,
+};
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
   Uuid,
@@ -15,6 +20,7 @@ use crate::{
   // GQLResponseEmptyError,
   NavAbilityClient,
   post_to_nvaapi,
+  get_to_nvaapi,
   StartWorker, // start_worker
   to_console_debug, 
   to_console_error,
@@ -106,9 +112,9 @@ pub fn startWorker(
 
 
 
-
+// FIXME -- use GET not POST
 #[cfg(any(feature = "tokio", feature = "wasm"))]
-pub async fn post_subscription(
+pub async fn get_subscription(
   nvacl: &NavAbilityClient,
 ) -> Result<crate::default_subscription::ResponseData, Box<dyn Error>> {
   
@@ -116,7 +122,7 @@ pub async fn post_subscription(
     crate::default_subscription::Variables{}
   );
   
-  let response = post_to_nvaapi::<
+  let response = get_to_nvaapi::<
     crate::default_subscription::Variables,
     crate::default_subscription::ResponseData,
     crate::default_subscription::ResponseData
@@ -131,21 +137,51 @@ pub async fn post_subscription(
 }
 
 
+use futures::stream::StreamExt;
+
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 pub fn q_Subscription(
-    send_into: crate::Sender<crate::default_subscription::ResponseData>,
+    send_into: crate::Sender<String>,
     nvacl: &NavAbilityClient,
 ) {
-  // wasmbindgen limitation?  overcome +'static requirement
+  // FIXME upgrade to eventsource_reqwest for sse
+  let nvacl_e = NavAbilityClient::similar(
+    nvacl,
+    true
+  );
+    // // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
+  // let query_string = form_urlencoded::byte_serialize(request_body.query.as_bytes())
+  //   .collect::<String>();
+  let query_string = "subscription%7BworkerEvent%7Bpayload+id+status%7D%7D";
+  let uri = format!("{}?query={}", nvacl.apiurl, query_string);
 
-  let nvacl_ = (*nvacl).clone();
-  
+  let mut nvaes = EventSource::new(
+    nvacl_e.client.get(&uri)
+  ).expect("Failed to create EventSource");
+
+  // wasmbindgen limitation?  overcome +'static requirement
   crate::execute(async move {
-    let _ = crate::send_api_result(
-      send_into, 
-      post_subscription(
-        &nvacl_, 
-      ).await,
-    );
+    while let Some(event) = nvaes.next().await {
+        use crate::to_console_debug;
+
+        match event {
+            Ok(Event::Open) => to_console_debug("Connection Open!"),
+            Ok(Event::Message(message)) => {
+              let msg = format!("{:#?}", &message);
+              to_console_debug(&msg);
+              send_into.send(msg).expect("Failed to send WorkerEvent");
+            },
+            Err(err) => {
+                to_console_error(&format!("Error: {}", err));
+                nvaes.close();
+            }
+        }
+    }
+    // let _ = crate::send_api_result(
+    //   send_into, 
+    //   get_subscription(
+    //     &nvacl_events, 
+    //   ).await,
+    // );
   });
 }
