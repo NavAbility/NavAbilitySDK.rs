@@ -9,19 +9,17 @@ use reqwest_eventsource::{
   Event,
 };
 
+use futures::stream::StreamExt;
+
 #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 use crate::{
   Uuid,
-  // Serialize,
   GraphQLQuery,
   QueryBody,
   Error,
-  // GQLRequestError,
-  // GQLResponseEmptyError,
   NavAbilityClient,
   post_to_nvaapi,
-  get_to_nvaapi,
-  StartWorker, // start_worker
+  StartWorker,
   to_console_debug, 
   to_console_error,
 };
@@ -112,33 +110,6 @@ pub fn startWorker(
 
 
 
-// FIXME -- use GET not POST
-#[cfg(any(feature = "tokio", feature = "wasm"))]
-pub async fn get_subscription(
-  nvacl: &NavAbilityClient,
-) -> Result<crate::default_subscription::ResponseData, Box<dyn Error>> {
-  
-  let request_body = crate::DefaultSubscription::build_query(
-    crate::default_subscription::Variables{}
-  );
-  
-  let response = get_to_nvaapi::<
-    crate::default_subscription::Variables,
-    crate::default_subscription::ResponseData,
-    crate::default_subscription::ResponseData
-  >(
-    nvacl,
-    request_body, 
-    |s| s,
-    Some(1)
-  ).await;
-
-  return response;
-}
-
-
-use futures::stream::StreamExt;
-
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 pub fn q_Subscription(
     send_into: crate::Sender<String>,
@@ -162,8 +133,6 @@ pub fn q_Subscription(
   // wasmbindgen limitation?  overcome +'static requirement
   crate::execute(async move {
     while let Some(event) = nvaes.next().await {
-        use crate::to_console_debug;
-
         match event {
             Ok(Event::Open) => to_console_debug("Connection Open!"),
             Ok(Event::Message(message)) => {
@@ -177,11 +146,5 @@ pub fn q_Subscription(
             }
         }
     }
-    // let _ = crate::send_api_result(
-    //   send_into, 
-    //   get_subscription(
-    //     &nvacl_events, 
-    //   ).await,
-    // );
   });
 }
