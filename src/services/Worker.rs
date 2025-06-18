@@ -8,6 +8,7 @@ use reqwest_eventsource::{
   EventSource,
   Event,
 };
+use url::form_urlencoded;
 
 use futures::stream::StreamExt;
 
@@ -111,8 +112,8 @@ pub fn startWorker(
 
 
 #[cfg(any(feature = "tokio", feature = "wasm"))]
-pub fn q_Subscription(
-    send_into: crate::Sender<String>,
+pub fn subscription_listener(
+    send_into: crate::Sender<crate::default_subscription::ResponseData>,
     nvacl: &NavAbilityClient,
 ) {
   // FIXME upgrade to eventsource_reqwest for sse
@@ -120,10 +121,13 @@ pub fn q_Subscription(
     nvacl,
     true
   );
-    // // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
-  // let query_string = form_urlencoded::byte_serialize(request_body.query.as_bytes())
-  //   .collect::<String>();
-  let query_string = "subscription%7BworkerEvent%7Bpayload+id+status%7D%7D";
+  let query = crate::DefaultSubscription::build_query(
+    crate::default_subscription::Variables {}
+  );
+  // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
+  let query_string = form_urlencoded::byte_serialize(query.query.as_bytes())
+    .collect::<String>();
+  // let query_string = "subscription%7BworkerEvent%7Bpayload+id+status%7D%7D";
   let uri = format!("{}?query={}", nvacl.apiurl, query_string);
 
   let mut nvaes = EventSource::new(
@@ -134,11 +138,29 @@ pub fn q_Subscription(
   crate::execute(async move {
     while let Some(event) = nvaes.next().await {
         match event {
-            Ok(Event::Open) => to_console_debug("Connection Open!"),
+            Ok(Event::Open) => to_console_debug("SSE connection Open!"),
             Ok(Event::Message(message)) => {
-              let msg = format!("{:#?}", &message);
-              to_console_debug(&msg);
-              send_into.send(msg).expect("Failed to send WorkerEvent");
+              let msg_: Result<
+                serde_json::Map<String, serde_json::Value>,
+                serde_json::Error
+              > = serde_json::from_str(&message.data);
+              if let Err(e) = msg_ {
+                to_console_error(&format!("Failed to parse message data: {}", e));
+                continue;
+              }
+              let msg = msg_.unwrap();
+              if let Some(jobj) = msg.get("data") { //msg.contains_key("data") {
+                // to_console_debug(&format!("{:?}",&msg));
+                let jstr = jobj.to_string();
+                let jobj_: Result<crate::default_subscription::ResponseData, serde_json::Error> = serde_json::from_str(&jstr);
+                if let Ok(subwe) = jobj_ {
+                  send_into.send(
+                    subwe
+                  ).expect("Failed to send Event");
+                } else {
+                  to_console_error("Failed to parse 'data' from message data");
+                }
+              }
             },
             Err(err) => {
                 to_console_error(&format!("Error: {}", err));
