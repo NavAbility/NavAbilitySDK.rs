@@ -9,8 +9,15 @@ use url::form_urlencoded;
 use futures::stream::StreamExt;
 
 use std::{
-  sync::mpsc::{Sender, Receiver, channel},
-  collections::BTreeMap,
+  sync::mpsc::{
+    Sender, 
+    Receiver, 
+    channel
+  },
+  collections::{
+    BTreeSet,
+    BTreeMap,
+  },
 };
 
 
@@ -25,6 +32,7 @@ use crate::{
 };
 
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WorkerStatusEnum {
   Pending,
   Ready(String),
@@ -37,13 +45,13 @@ pub enum WorkerStatusEnum {
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 pub struct SubscriptionManager {
   /// Keep track of work requests / events by their UUID
-  pub events: BTreeMap<Uuid, Option<crate::default_subscription::ResponseData>>,
+  events: BTreeMap<Uuid, Option<crate::default_subscription::ResponseData>>,
   /// Keep history of last `size` for n-many received events (SSEs)
-  pub sse_history: Vec<Uuid>,
+  sse_history: Vec<Uuid>,
   /// Maximum size of sse_history
-  pub size: usize,
+  size: usize,
   /// Receive channel for subscription events
-  pub subs_recv: Receiver<crate::default_subscription::ResponseData>, 
+  subs_recv: Receiver<crate::default_subscription::ResponseData>, 
 }
 
 
@@ -65,6 +73,26 @@ impl SubscriptionManager {
       size,
       subs_recv: recv_from,
     };
+  }
+
+
+  /// List all tracked UUIDs, returning a tuple of:
+  /// (set of pending UUIDs, map of ready UUIDs to their status, map of unknown UUIDs to their status)
+  pub fn list(
+    &mut self
+  ) -> (BTreeSet<Uuid>, BTreeMap<Uuid, WorkerStatusEnum>, BTreeMap<Uuid, WorkerStatusEnum>) {
+    self.try_recv();
+    let mut pending_set: BTreeSet<Uuid> = BTreeSet::new();
+    let mut ready_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
+    let mut unknown_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
+    for (id, _) in &self.events {
+      match self.get_status(id) {
+        WorkerStatusEnum::Pending => { pending_set.insert(*id); },
+        WorkerStatusEnum::Ready(s) => { ready_map.insert(*id, WorkerStatusEnum::Ready(s)); },
+        WorkerStatusEnum::Unknown(s) => { unknown_map.insert(*id, WorkerStatusEnum::Unknown(s)); },
+      }
+    }
+    return (pending_set, ready_map, unknown_map);
   }
 
   /// Check if a given UUID is being tracked
@@ -113,16 +141,19 @@ impl SubscriptionManager {
   /// Try to receive any pending subscription events, store in events map and sse_history
   pub fn try_recv(&mut self) {
     while let Ok(subscr) = self.subs_recv.try_recv() {
-      to_console_debug(&format!("Got subscription response {:?}",&subscr));
+      // to_console_debug(&format!("Got subscription response {:?}",&subscr));
       if let Some(subs) = &subscr.worker_event {
-        to_console_debug(&format!("Got subscription for sync_subscription {:?}",&subs));
+        // to_console_debug(&format!("Got subscription for sync_subscription {:?}",&subs));
         let idstr = &subs.id;
-        let id = Uuid::parse_str(idstr).expect("Error, unable to parse Uuid from subscription event");
-        self.events.insert(id, Some(subscr));
-        self.sse_history.push(id);
-        if self.sse_history.len() > self.size {
-          let old_id = self.sse_history.remove(0);
-          self.events.remove(&old_id);
+        if let Ok(id) = Uuid::parse_str(idstr) {
+          self.events.insert(id, Some(subscr));
+          self.sse_history.push(id);
+          if self.sse_history.len() > self.size {
+            let old_id = self.sse_history.remove(0);
+            self.events.remove(&old_id);
+          }
+        } else {
+          to_console_error(&format!("Failed to parse UUID from subscription event id string '{}'",idstr));
         }
       }
     }
