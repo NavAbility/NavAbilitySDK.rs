@@ -35,7 +35,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WorkerStatusEnum {
   Pending,
-  Ready(String),
+  Status(String),
   Unknown(String),
 }
 
@@ -77,22 +77,22 @@ impl SubscriptionManager {
 
 
   /// List all tracked UUIDs, returning a tuple of:
-  /// (set of pending UUIDs, map of ready UUIDs to their status, map of unknown UUIDs to their status)
+  /// (set of pending UUIDs, map of Status UUIDs to their status, map of unknown UUIDs to their status)
   pub fn list(
     &mut self
   ) -> (BTreeSet<Uuid>, BTreeMap<Uuid, WorkerStatusEnum>, BTreeMap<Uuid, WorkerStatusEnum>) {
     self.try_recv();
     let mut pending_set: BTreeSet<Uuid> = BTreeSet::new();
-    let mut ready_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
+    let mut status_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
     let mut unknown_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
     for (id, _) in &self.events {
       match self.get_status(id) {
         WorkerStatusEnum::Pending => { pending_set.insert(*id); },
-        WorkerStatusEnum::Ready(s) => { ready_map.insert(*id, WorkerStatusEnum::Ready(s)); },
+        WorkerStatusEnum::Status(s) => { status_map.insert(*id, WorkerStatusEnum::Status(s)); },
         WorkerStatusEnum::Unknown(s) => { unknown_map.insert(*id, WorkerStatusEnum::Unknown(s)); },
       }
     }
-    return (pending_set, ready_map, unknown_map);
+    return (pending_set, status_map, unknown_map);
   }
 
   /// Check if a given UUID is being tracked
@@ -103,9 +103,18 @@ impl SubscriptionManager {
     return self.events.contains_key(id);
   }
 
+
+  /// Add a given UUID to be tracked, initial status is None/Pending
+  pub fn add_tracking(
+    &mut self, 
+    id: Uuid
+  ) {
+    self.events.insert(id, None);
+  }
+
   /// Check if a given event UUID is trackable then return Some(true/false),
   /// ELSE return None if not trackable/something else is wrong
-  pub fn is_ready(
+  pub fn has_status(
     &self, 
     id: &Uuid
   ) -> Option<bool> {
@@ -116,20 +125,40 @@ impl SubscriptionManager {
     }
   }
 
+
+  /// Check if a given event UUID is done (status "DONE/done" or "SUCCESS/success"), return Some(true/false),
+  /// ELSE return None if not trackable/something else is wrong
+  pub fn is_status_success(
+    &self,
+    id: &Uuid
+  ) -> Option<bool> {
+    return match self.get_status(id) {
+      WorkerStatusEnum::Pending => Some(false),
+      WorkerStatusEnum::Status(s) => {
+        if s == "DONE" || s == "done" || s == "SUCCESS" || s == "success" {
+          Some(true)
+        } else {
+          Some(false)
+        }
+      },
+      WorkerStatusEnum::Unknown(_) => None,
+    }
+  }
+
   /// Get the status of a given UUID as WorkerStatusEnum
   pub fn get_status(
     &self, 
     id: &Uuid
   ) -> WorkerStatusEnum {
     // if Some(true/false)=>trackable ELSE None=>something else is wrong
-    if let Some(ready) = self.is_ready(id) {
-      if !ready {
+    if let Some(Status) = self.has_status(id) {
+      if !Status {
         return WorkerStatusEnum::Pending;
       }
       if let Some(req_data_) = self.events.get(id).as_ref() {
         if let Some(req_data) = req_data_ {
           if let Some(we) = &req_data.worker_event {
-            return WorkerStatusEnum::Ready(we.status.to_string());
+            return WorkerStatusEnum::Status(we.status.to_string());
           }
         }
         return WorkerStatusEnum::Unknown(format!("{:?}",req_data_));
