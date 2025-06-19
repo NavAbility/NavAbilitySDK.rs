@@ -79,7 +79,7 @@ impl SubscriptionManager {
   /// List all tracked UUIDs, returning a tuple of:
   /// (set of pending UUIDs, map of Status UUIDs to their status, map of unknown UUIDs to their status)
   /// NOTE, user is responsible for calling try_recv() to update the internal state before calling this (requires mutable self)
-  pub fn list(
+  pub fn build_summary(
     &self
   ) -> (BTreeSet<Uuid>, BTreeMap<Uuid, WorkerStatusEnum>, BTreeMap<Uuid, WorkerStatusEnum>) {
     // self.try_recv();
@@ -94,6 +94,14 @@ impl SubscriptionManager {
       }
     }
     return (pending_set, status_map, unknown_map);
+  }
+
+
+  /// Get the maximum history size
+  pub fn max_history(
+    &self
+  ) -> usize {
+    return self.size;
   }
 
   /// Check if a given UUID is being tracked
@@ -169,7 +177,7 @@ impl SubscriptionManager {
   }
 
   /// Try to receive any pending subscription events, store in events map and sse_history
-  pub fn try_recv(&mut self) {
+  pub fn poll(&mut self) {
     while let Ok(subscr) = self.subs_recv.try_recv() {
       // to_console_debug(&format!("Got subscription response {:?}",&subscr));
       if let Some(subs) = &subscr.worker_event {
