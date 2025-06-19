@@ -78,10 +78,11 @@ impl SubscriptionManager {
 
   /// List all tracked UUIDs, returning a tuple of:
   /// (set of pending UUIDs, map of Status UUIDs to their status, map of unknown UUIDs to their status)
+  /// NOTE, user is responsible for calling try_recv() to update the internal state before calling this (requires mutable self)
   pub fn list(
-    &mut self
+    &self
   ) -> (BTreeSet<Uuid>, BTreeMap<Uuid, WorkerStatusEnum>, BTreeMap<Uuid, WorkerStatusEnum>) {
-    self.try_recv();
+    // self.try_recv();
     let mut pending_set: BTreeSet<Uuid> = BTreeSet::new();
     let mut status_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
     let mut unknown_map: BTreeMap<Uuid, WorkerStatusEnum> = BTreeMap::new();
