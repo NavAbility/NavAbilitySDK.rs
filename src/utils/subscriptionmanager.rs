@@ -263,7 +263,7 @@ impl SubscriptionManager {
   pub fn subscription_listener(
       nonblocking_into: Sender<crate::default_subscription::ResponseData>,
       nvacl: &NavAbilityClient,
-      direct_notifications: Receiver<(Uuid,Sender<crate::default_subscription::ResponseData>)>,
+      blocking_recv: Receiver<(Uuid,Sender<crate::default_subscription::ResponseData>)>,
   ) {
     // NOTE couldn't use eventsource_reqwest for sse get requests -- missing header support
     let nvacl_e = NavAbilityClient::similar(
@@ -292,7 +292,7 @@ impl SubscriptionManager {
       let mut please_notify: BTreeMap<Uuid, Sender<crate::default_subscription::ResponseData>> = BTreeMap::new();
       while let Some(event) = nvaes.next().await {
         // pull any direct user request uuids
-        match direct_notifications.try_recv() {
+        match blocking_recv.try_recv() {
           Ok((uuid, sender)) => {
             please_notify.insert(uuid, sender);
           },
