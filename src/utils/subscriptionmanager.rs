@@ -41,7 +41,7 @@ pub enum WorkerStatusEnum {
 
 
 /// Manages subscription events from NavAbilityClient subscriptions
-/// SPECIAL NOTE1, can use standaline Self::subscription_listener(_)
+/// SPECIAL NOTE1, can use standalone Self::subscription_listener(_)
 /// SPECIAL_NOTE2, both non-blocking and blocking interfaces are provided (for wasm or tokio)
 #[cfg(any(feature = "tokio", feature = "wasm"))]
 pub struct SubscriptionManager {
