@@ -57,16 +57,23 @@ pub fn execute<F>(
 }
 
 #[cfg(feature = "thread")]
-pub fn execute<R: std::marker::Send, F: Future<Output = R>>(
-f: F
-) -> R {
+pub fn execute<R, F>(
+  f: F
+) where 
+  R: 'static + std::marker::Send + 'static, // R: Send + 'static,
+  // https://docs.rs/futures/latest/futures/trait.Future.html
+  // https://docs.rs/futures/latest/futures/trait.Future.html#associatedtype.Output
+  // https://doc.rust-lang.org/std/thread/fn.spawn.html
+  // F: Future<Output = R> + 'static + std::marker::Send
+  F: Future<Output = R> + std::marker::Send + 'static
+{ // -> std::thread::JoinHandle<R> {
   // use any executor of your choice instead
   std::thread::spawn(move || futures::executor::block_on(f));
 }
 
 #[cfg(feature = "tokio")]
 pub fn execute<R,F: Future<Output = R>>(
-f: F
+  f: F
 ) -> R {
   // use any executor of your choice instead
   return tokio::runtime::Builder::new_current_thread()

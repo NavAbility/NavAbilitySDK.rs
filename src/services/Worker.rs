@@ -70,7 +70,7 @@ pub async fn post_start_worker(
 
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn startWorker(
   nvacl: &NavAbilityClient,
   input: serde_json::Map<String,serde_json::Value>,

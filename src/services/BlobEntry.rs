@@ -247,7 +247,7 @@ pub async fn delete_blobentry_send(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 #[allow(non_snake_case)]
 pub fn deleteBlobEntry(
   nvacl: &NavAbilityClient,
@@ -351,7 +351,7 @@ pub async fn post_add_agent_entry(
 // };
 
 
-#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "wasm"))] // , feature = "thread"
 pub async fn q_addAgentBlobEntry(
   send_into: std::sync::mpsc::Sender<String>,
   nvacl: &NavAbilityClient,
@@ -371,7 +371,7 @@ pub async fn q_addAgentBlobEntry(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn addAgentBlobEntry(
   nvacl: &NavAbilityClient,
   agent_label: &String,
@@ -492,7 +492,7 @@ pub async fn post_add_variable_blobentry(
 
 
 
-#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "wasm"))] // , feature = "thread"
 pub async fn q_addVariableBlobEntry(
   send_into: std::sync::mpsc::Sender<Uuid>,
   nvafg: &NavAbilityDFG,
@@ -511,7 +511,7 @@ pub async fn q_addVariableBlobEntry(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn addVariableBlobEntry(
   nvafg: &NavAbilityDFG,
   variable_label: &String,

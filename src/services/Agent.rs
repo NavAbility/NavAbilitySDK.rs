@@ -131,7 +131,7 @@ pub async fn post_list_agents(
 
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn listAgents(
   nvacl: &NavAbilityClient,
 ) -> Result<Vec<String>, Box<dyn Error>> {
@@ -139,7 +139,7 @@ pub fn listAgents(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn q_listAgents(
   send_into: Sender<Vec<String>>, 
   nvacl: &NavAbilityClient,
@@ -206,7 +206,7 @@ pub async fn post_get_agents(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))] 
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn q_getAgents(
   send_into: Sender<Vec<Agent>>, 
   nvacl: &NavAbilityClient,
@@ -239,7 +239,7 @@ pub fn q_getAgents(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn getAgents(
   nvacl: &NavAbilityClient,
   label_contains: String,
@@ -324,7 +324,7 @@ pub async fn post_add_agent(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
+#[cfg(any(feature = "tokio"))] // feature = "thread", 
 pub fn q_addAgent(
   send_into: Sender<add_agent::ResponseData>, 
   nvacl: &NavAbilityClient,
@@ -357,7 +357,7 @@ pub fn q_addAgent(
   });
 }
 
-#[cfg(feature = "tokio")]
+#[cfg(feature = "tokio")] // , feature = "thread"
 #[allow(non_snake_case)]
 pub fn addAgent(
   nvacl: &NavAbilityClient,  
