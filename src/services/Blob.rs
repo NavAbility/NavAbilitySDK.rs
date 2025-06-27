@@ -66,7 +66,7 @@ pub async fn post_create_download(
 
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn q_createDownload(
   send_into: Sender<create_download::ResponseData>, 
   nvacl: &NavAbilityClient,
@@ -139,7 +139,7 @@ pub async fn post_create_upload(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn q_createUpload(
   send_into: Sender<create_upload::ResponseData>, 
   nvacl: &NavAbilityClient,
@@ -391,7 +391,7 @@ pub async fn post_blob_store(
 }
 
 // TODO , feature = "blocking"
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 #[allow(non_snake_case)]
 pub fn addBlob(
   nvabs: NavAbilityBlobStore,

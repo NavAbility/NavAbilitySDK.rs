@@ -85,7 +85,7 @@ pub async fn post_list_graphs(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
+#[cfg(any(feature = "tokio"))] // feature = "thread", 
 pub fn q_listGraphs(
   send_into: Sender<Vec<String>>, 
   nvacl: &NavAbilityClient,
@@ -114,7 +114,7 @@ pub fn q_listGraphs(
   });
 }
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn listGraphs(
   nvacl: &NavAbilityClient,
 ) -> Result<Vec<String>, Box<dyn Error>> {
@@ -156,7 +156,7 @@ pub async fn post_get_factorgraphs(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))] 
+#[cfg(any(feature = "tokio"))] // , feature = "thread" 
 pub fn q_getFactorgraphs(
   send_into: Sender<Vec<NvaNode<Factorgraph>>>, 
   nvacl: &NavAbilityClient,
@@ -190,7 +190,7 @@ pub fn q_getFactorgraphs(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn getFactorgraphs(
   nvacl: &NavAbilityClient,
   label_contains: String,
@@ -351,7 +351,7 @@ pub async fn post_connect_graph_agent(
 
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio"))] // , feature = "thread"
 pub fn connectAgentGraph(
   nvacl: &NavAbilityClient,
   graph: &str,

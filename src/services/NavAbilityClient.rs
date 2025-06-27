@@ -114,12 +114,13 @@ impl NavAbilityClient {
         };
 
         // also cover wasm case
-        #[cfg(any(feature = "tokio", feature = "blocking", feature = "thread"))]
+        // #[cfg(not(feature = "wasm"))] // FIXME
+        #[cfg(any(feature = "tokio", feature = "blocking"))]
         let mut oid = org_id.unwrap_or(&"".to_string()).to_string();
-        #[cfg(feature = "wasm")]
+        #[cfg(any(feature = "wasm", feature = "thread"))]
         let oid = org_id.unwrap_or(&"".to_string()).to_string();
 
-        #[cfg(any(feature = "tokio", feature = "blocking", feature = "thread"))]
+        #[cfg(any(feature = "tokio", feature = "blocking"))] // , feature = "thread"
         if org_id.is_none() {
             oid = crate::execute(crate::services::post_org_id(
                 &temp

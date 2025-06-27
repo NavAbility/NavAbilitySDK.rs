@@ -356,16 +356,16 @@ pub fn addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
     Uuid, Box<dyn Error>> {
   return crate::execute(post_add_factor(nvafg, factor));
 }
-#[cfg(feature = "thread")]
-pub fn addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
-  nvafg: &NavAbilityDFG,
-  factor: FactorDFG<F>,
-) -> Result<
-    Uuid, Box<dyn Error + Send + Sync>> {
-  return crate::execute(post_add_factor(nvafg, factor));
-}
+// #[cfg(feature = "thread")]
+// pub fn addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
+//   nvafg: &NavAbilityDFG,
+//   factor: FactorDFG<F>,
+// ) -> Result<
+//     Uuid, Box<dyn Error + Send + Sync>> {
+//   return crate::execute(post_add_factor(nvafg, factor));
+// }
 
-#[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
+#[cfg(any(feature = "tokio"))] // feature = "thread", 
 pub fn q_addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   send_into: crate::Sender<Uuid>, 
   nvafg: NavAbilityDFG,
