@@ -36,6 +36,10 @@ build-tokio:
 	cargo build -F tokio
 .PHONY: build-tokio
 
+build-thread: 
+	cargo build -F thread
+.PHONY: build-thread
+
 build-wasm:
 	cargo build -F wasm
 .PHONY: build-wasm

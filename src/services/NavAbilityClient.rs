@@ -1,6 +1,6 @@
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
     Uuid,
     Client,
@@ -9,7 +9,7 @@ use crate::{
 };
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 impl GetId for NavAbilityClient {
     fn getId(
         &self, 
@@ -23,7 +23,7 @@ impl GetId for NavAbilityClient {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 impl NavAbilityClient {
     #[cfg(any(feature = "tokio", feature = "blocking"))]
     pub fn getOrgId(
