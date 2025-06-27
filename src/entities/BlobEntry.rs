@@ -1,10 +1,5 @@
 
-
-use crate::{
-    get_blob_entry, 
-    Uuid, 
-    parse_str_utc,
-};
+use crate::Uuid;
 
 
 
@@ -87,7 +82,7 @@ macro_rules! BlobEntry_importers_summary {
             fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<Utc>> {
                 let timestamp = &self.last_updated_timestamp;
                 // 2024-09-16T16:51:20.555Z
-                if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                if let Ok(tms) = crate::parse_str_utc(timestamp.clone()) {
                     return Some(tms);
                 } else {
                     let errm = format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp);
@@ -178,13 +173,13 @@ macro_rules! BlobEntry_importers {
             }
 
             fn timestamp(&self) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
-                return parse_str_utc(self.timestamp.clone().unwrap_or("".to_owned()));
+                return crate::parse_str_utc(self.timestamp.clone().unwrap_or("".to_owned()));
             }
 
             fn createdTimestamp(&self) -> Option<chrono::DateTime<chrono::Utc>> {
                 let timestamp = &self.created_timestamp;
                 // 2024-09-16T16:51:20.555Z
-                if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                if let Ok(tms) = crate::parse_str_utc(timestamp.clone()) {
                     return Some(tms);
                 } else {
                     let errm = format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp);
@@ -196,7 +191,7 @@ macro_rules! BlobEntry_importers {
             fn lastUpdatedTimestamp(&self) -> Option<chrono::DateTime<chrono::Utc>> {
                 let timestamp = &self.last_updated_timestamp;
                 // 2024-09-16T16:51:20.555Z
-                if let Ok(tms) = parse_str_utc(timestamp.clone()) {
+                if let Ok(tms) = crate::parse_str_utc(timestamp.clone()) {
                     return Some(tms);
                 } else {
                     let errm = format!("BlobEntry, failed chrono parse_from_str timestamp {:?}",timestamp);

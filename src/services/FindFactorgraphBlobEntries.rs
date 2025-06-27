@@ -1,20 +1,9 @@
 
 
-use std::{
-  error::Error,
-  sync::mpsc::Sender,
-};
-
-
-// use chrono::{
-//   Utc,
-//   ParseError
-// };
-// use uuid::Uuid;
-
 // #[macro_use]
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
+  Error,
   BlobEntryFieldsImporters,
   BlobEntry_importers,
   FindFactorgraphBlobEntries,
@@ -22,7 +11,7 @@ use crate::{
   Uuid,
   NavAbilityClient,
   BlobEntry,
-  parse_str_utc,
+  // parse_str_utc,
   to_console_error,
 };
 
@@ -69,7 +58,7 @@ pub async fn post_find_factorgraph_blob_entries(
 
 #[cfg(target_arch = "wasm32")]
 pub async fn q_findFactorgraphBlobEntries(
-  send_into: Sender<Vec<BlobEntry>>, 
+  send_into: crate::Sender<Vec<BlobEntry>>, 
   nvacl: &NavAbilityClient,
   label: &str,
   bentry_lbl_contains: &str,

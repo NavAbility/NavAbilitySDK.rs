@@ -7,11 +7,7 @@
 use std::fmt;
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-use std::{
-  any::type_name,
-  convert::TryInto,
-  future::Future
-};
+use std::future::Future;
 
 use serde::{Serialize,Deserialize};
 

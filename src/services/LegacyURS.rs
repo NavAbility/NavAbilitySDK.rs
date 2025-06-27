@@ -3,17 +3,18 @@
 use crate::{
     // Utc,
     // Uuid,
-    Sender,
+    // Sender,
     GraphQLQuery,
     Response,
     Error,
     // SDK_VERSION,
     GetURS,
     get_urs,
-    to_console_debug,
     to_console_error,
 };
 
+#[cfg(feature = "wasm")]
+use crate::to_console_debug;
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::NavAbilityClient;
@@ -42,7 +43,7 @@ pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseDat
 
 #[cfg(feature = "blocking")]
 pub fn fetch_ur_list_blocking(
-    send_into: &mut Sender<Vec<get_robots::GetRobotsUsers>>, 
+    send_into: &mut crate::Sender<Vec<get_robots::GetRobotsUsers>>, 
     nvacl: &NavAbilityClient
 ) -> Result<(),Box<dyn Error>> {
 
@@ -90,7 +91,7 @@ pub async fn fetch_urs_async(
 
 #[cfg(feature = "wasm")]
 pub async fn fetch_context_web(
-    send_into: Sender<Vec<get_urs::GetUrsOrgs>>, 
+    send_into: crate::Sender<Vec<get_urs::GetUrsOrgs>>, 
     client: &NavAbilityClient,
     _robot_label: String,
     _session_label: String,

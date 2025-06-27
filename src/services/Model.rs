@@ -1,12 +1,19 @@
 
-use std::collections::HashMap;
+// use std::collections::HashMap;
 
 use chrono::DateTime;
-use log::Metadata;
+// use log::Metadata;
 
 use crate::{
-    Agent, BlobEntry, Utc, Uuid, Error
+    Agent, 
+    BlobEntry, 
+    Utc, 
+    Uuid,
 };
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+use crate::Error;
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use base64::{Engine as _, engine::general_purpose};
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
@@ -14,15 +21,15 @@ use crate::{
     GraphQLQuery,
     QueryBody,
     NavAbilityClient,
-    NvaNode,
-    Factorgraph,
+    // NvaNode,
+    // Factorgraph,
     ListModels,
     GetModel,
     AddModel,
     ListModelsGraphs,
-    GetId,
+    // GetId,
     parse_str_utc,
-    to_console_debug,
+    // to_console_debug,
     to_console_error,
     post_to_nvaapi,
 };

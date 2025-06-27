@@ -5,8 +5,8 @@ use serde::Serialize;
 use base64::{
   Engine as _, 
   engine::general_purpose, 
-  read
-  // alphabet
+  // read,
+  // alphabet,
 };
 
 // use std::os::linux::raw;
@@ -16,7 +16,7 @@ use crate::{
   Utc,
   Uuid,
   GraphQLQuery,
-  Response,
+  // Response,
   Error,
   Sender,
   // SDK_VERSION,
@@ -524,11 +524,12 @@ pub async fn download_blob(
     .send()
     .await;
     if let Err(ref re) = req_res {
-      to_console_error(&format!("Error in download request from NavAbilityBlobStore: {:?}", re));
+      let msg = format!("Error in download request from NavAbilityBlobStore: {:?}", re);
+      to_console_error(&msg);
+      return Err(msg.into());
     }
     let bytes = req_res?.bytes().await?;
     return Ok(bytes.to_vec());
   //   }
   // }
-  return Err("Error in download request from NavAbilityBlobStore".into());
 }

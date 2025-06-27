@@ -1,22 +1,24 @@
 
-#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "blocking"))]
 use std::collections::HashMap;
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
     Uuid,
     GetId,
-    NvaNode,
+};
+
+#[cfg(any(feature = "tokio", feature = "blocking"))]
+use crate::{
+    NavAbilityClient,
     Agent,
+    NvaNode,
     Factorgraph,
+    NavAbilityBlobStore,
 };
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-use crate::{
-    NavAbilityClient,
-    NavAbilityDFG,
-    NavAbilityBlobStore,
-};
+use crate::NavAbilityDFG;
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]

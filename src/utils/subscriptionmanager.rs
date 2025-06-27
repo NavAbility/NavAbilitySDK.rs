@@ -1,13 +1,17 @@
 
-
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 use reqwest_eventsource::{
   EventSource,
   Event,
 };
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 use url::form_urlencoded;
 
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 use futures::stream::StreamExt;
 
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 use std::{
   sync::mpsc::{
     Sender, 
@@ -25,7 +29,6 @@ use std::{
 use crate::{
   Uuid,
   GraphQLQuery,
-  QueryBody,
   NavAbilityClient,
   to_console_debug, 
   to_console_error,

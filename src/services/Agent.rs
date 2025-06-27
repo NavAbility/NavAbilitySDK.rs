@@ -33,8 +33,8 @@ use crate::{
   UpdateAgentMetadata,
 };
 
-#[cfg(feature = "wasm")]
-use crate::to_console_debug;
+// #[cfg(feature = "wasm")]
+// use crate::to_console_debug;
 
 
 // ===================== HELPERS ========================
