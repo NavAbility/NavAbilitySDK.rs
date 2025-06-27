@@ -92,8 +92,8 @@ pub async fn fetch_urs_async(
 pub async fn fetch_context_web(
     send_into: Sender<Vec<get_urs::GetUrsOrgs>>, 
     client: &NavAbilityClient,
-    robot_label: String,
-    session_label: String,
+    _robot_label: String,
+    _session_label: String,
 ) { // -> Vec<get_robots::GetRobotsUsers> {
     let result = fetch_urs_async(&client).await;
     // FIXME use new common query functions refactor .orgs part

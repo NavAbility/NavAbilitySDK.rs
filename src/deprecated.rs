@@ -5,17 +5,16 @@ use crate::{
     BlobEntry,
 };
 
+// #[macro_use]
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-#[macro_use]
 use crate::{
     genGetLabel,
     GetLabel,
     Sender,
     Response,
-    GraphQLQuery,
     Error,
     send_api_result,
-    to_console_debug,
+    // to_console_debug,
     to_console_error,
     parse_str_utc,
     get_blob_entry,

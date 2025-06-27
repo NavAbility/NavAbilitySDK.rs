@@ -66,7 +66,8 @@ pub async fn post_list_models(
 
 
 
-#[macro_use]
+// #[macro_use]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
     Graph_importers_skeleton,
     GraphFieldImportersSkeleton

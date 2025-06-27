@@ -3,8 +3,8 @@
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use std::collections::HashMap;
 
+// #[macro_use]
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-#[macro_use]
 use crate::{
   Uuid,
   Utc,

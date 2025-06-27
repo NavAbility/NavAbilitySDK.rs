@@ -1,6 +1,9 @@
 
-use crate::Uuid;
-use crate::to_console_error;
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+use crate::{
+    Uuid,
+    to_console_error,
+};
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::NavAbilityClient;
@@ -11,6 +14,7 @@ use crate::Client;
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 #[derive(Debug,Clone)]
 #[allow(non_snake_case)]
+#[allow(dead_code)]
 pub struct FileUploader<T> {
     nvacl: NavAbilityClient,
     pub file: T, // assume read and seek are available
@@ -26,7 +30,7 @@ impl<T> FileUploader<T> {
     pub fn new(
         nvacl: NavAbilityClient,
         file: T,
-        label: String,
+        _label: String,
         blobId: Uuid,
         chunk_size: Option<u64>,
     ) -> Self {

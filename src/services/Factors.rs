@@ -268,6 +268,7 @@ struct ManualFacVarFieldInput {
 }
 
 impl ManualFacVarFieldInput {
+  #[allow(dead_code)]
   pub fn to_json(&self) -> String {
     serde_json::to_string(&self).unwrap().to_string()
   }

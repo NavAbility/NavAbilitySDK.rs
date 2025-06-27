@@ -328,8 +328,8 @@ pub fn getPPEMean(
 
 #[cfg(any(feature = "tokio", feature = "blocking", feature = "wasm"))]
 pub fn getPPECov(
-    vari: &VariableDFG,
-    solveKey: &str
+    _vari: &VariableDFG,
+    _solveKey: &str
 ) -> Vec<f64> {
 
     todo!("getPPECov, TODO extract from solverData.val -- see JuliaRobotics/DistributedFactorGraphs.jl#535");
@@ -338,7 +338,7 @@ pub fn getPPECov(
     //         return ppe.cov.clone();
     //     }
     // }
-    return Vec::new();
+    // return Vec::new();
 }
 
 
@@ -472,7 +472,7 @@ pub fn listVariables(
 pub fn to_string_ISO8601(
     dt: chrono::DateTime<Utc>
 ) -> String{
-    let mut timestamp = dt.to_string()
+    let timestamp = dt.to_string()
     .replace(" UTC","")
     .replace("UTC","")
     .replace("Z","")

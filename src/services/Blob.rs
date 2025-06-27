@@ -143,8 +143,8 @@ pub async fn post_create_upload(
 pub fn q_createUpload(
   send_into: Sender<create_upload::ResponseData>, 
   nvacl: &NavAbilityClient,
-  filename: &String,
-  blob_size: i64,
+  _filename: &String,
+  _blob_size: i64,
   nparts: Option<i64>,
   blob_id: Option<Uuid>, // doenst work yet, leave None
 ) -> Result<(), Box<dyn Error>> {
@@ -163,8 +163,8 @@ pub fn q_createUpload(
 pub fn q_createUpload(
   send_into: Sender<create_upload::ResponseData>, 
   nvacl: &NavAbilityClient,
-  filename: &String,
-  blob_size: i64,
+  _filename: &String,
+  _blob_size: i64,
   nparts: Option<i64>,
   blob_id: Option<Uuid>, // doenst work yet, leave None
 ) {
@@ -244,7 +244,7 @@ pub async fn post_blob_singlepart(
   blobId: Uuid,
   filename: &str,
   file_mime: &str,
-  file_timestamp: Option<&chrono::DateTime<Utc>>,
+  _file_timestamp: Option<&chrono::DateTime<Utc>>,
   file_bytes: std::sync::Arc<[u8]>,
 ) -> Result<(), Box<dyn Error>> {
   let _nvacl = &nvabs.client;
@@ -313,9 +313,9 @@ struct PostOnPrem {
 pub async fn post_blob_onprem(
   nvabs: &NavAbilityBlobStore,
   blobId: Uuid,
-  filename: &str,
-  file_mime: &str,
-  file_timestamp: Option<&chrono::DateTime<Utc>>,
+  _filename: &str,
+  _file_mime: &str,
+  _file_timestamp: Option<&chrono::DateTime<Utc>>,
   file_bytes: std::sync::Arc<[u8]>,
 ) -> Result<(), Box<dyn Error>> {
 

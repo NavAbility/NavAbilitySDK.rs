@@ -33,8 +33,8 @@ use crate::{
   AddModelBlobEntry,
 };
 
+// #[macro_use]
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-#[macro_use]
 use crate::{
   BlobEntrySummaryImporters,
   BlobEntry_importers_summary,

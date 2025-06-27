@@ -26,7 +26,8 @@ use crate::{
 };
 
 
-#[macro_use]
+// #[macro_use]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
   BlobEntryFieldsImporters,
   BlobEntry_importers,
