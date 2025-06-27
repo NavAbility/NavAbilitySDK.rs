@@ -9,7 +9,7 @@ use crate::{
 };
 use base64::{Engine as _, engine::general_purpose};
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
     GraphQLQuery,
     QueryBody,
@@ -28,7 +28,7 @@ use crate::{
 };
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub fn list_models_query(
     model_label_contains: Option<&str>,
 ) -> QueryBody<crate::list_models::Variables> {
@@ -44,7 +44,7 @@ pub fn list_models_query(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_list_models(
     nvacl: &NavAbilityClient,
     model_label_contains: Option<&str>,
@@ -72,9 +72,9 @@ use crate::{
     GraphFieldImportersSkeleton
 };
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::get_model::graph_fields_skeleton as GM_GraphFieldsSkeleton;
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 Graph_importers_skeleton!(GM_GraphFieldsSkeleton);
 
 
@@ -100,7 +100,7 @@ pub struct GetModelResponse {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 impl GetModelResponse {
     pub fn from_gql_summary(
         gmr: &crate::get_model::ResponseData
@@ -157,7 +157,7 @@ impl GetModelResponse {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_model(
     nvacl: &NavAbilityClient,
     model_label: &str,
@@ -204,7 +204,7 @@ pub fn q_getModel(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn add_model_async(
     nvacl: &NavAbilityClient,
     model_label: &String,
@@ -236,7 +236,7 @@ pub async fn add_model_async(
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub fn list_model_graphs_query(
     model_label: &str,
 ) -> QueryBody<crate::list_models_graphs::Variables> {
@@ -248,7 +248,7 @@ pub fn list_model_graphs_query(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_list_model_graphs(
     nvacl: NavAbilityClient,
     model_label: &str,

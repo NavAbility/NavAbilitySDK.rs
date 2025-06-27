@@ -2,19 +2,13 @@
 use crate::Uuid;
 use crate::to_console_error;
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::NavAbilityClient;
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::Client;
-// #[cfg(any(feature = "tokio", feature = "wasm"))]
-// use reqwest::Client;
-// #[cfg(feature="blocking")]
-// use ::reqwest::blocking::Client;
-// #[cfg(feature="blocking")]
-// use graphql_client::reqwest::post_graphql_blocking;
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 #[derive(Debug,Clone)]
 #[allow(non_snake_case)]
 pub struct FileUploader<T> {
@@ -26,7 +20,7 @@ pub struct FileUploader<T> {
 }
 
 // TODO , feature = "blocking"
-#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 #[allow(non_snake_case)]
 impl<T> FileUploader<T> {
     pub fn new(

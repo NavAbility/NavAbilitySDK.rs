@@ -1,6 +1,6 @@
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
     // Uuid,
     Sender,
@@ -16,7 +16,7 @@ use crate::{
 };
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_org_id(
     nvacl: &NavAbilityClient,
 ) -> Result<crate::get_org::ResponseData, Box<dyn Error>> {

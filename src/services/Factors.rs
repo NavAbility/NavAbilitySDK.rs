@@ -1,5 +1,5 @@
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use std::{
   sync::mpsc::Sender,
   error::Error,
@@ -21,7 +21,7 @@ use base64::{
 };
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
   to_console_error,
   // type_of,
@@ -49,7 +49,7 @@ use crate::{
 };
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::entities::ClientDFG::NavAbilityDFG;
 
 
@@ -274,7 +274,7 @@ impl ManualFacVarFieldInput {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   nvafg: &NavAbilityDFG,
   factor: FactorDFG<F>,
@@ -352,14 +352,22 @@ pub async fn post_add_factor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(feature = "tokio")]
 pub fn addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
   nvafg: &NavAbilityDFG,
   factor: FactorDFG<F>,
-) -> Result<Uuid, Box<dyn Error>> {
+) -> Result<
+    Uuid, Box<dyn Error>> {
   return crate::execute(post_add_factor(nvafg, factor));
 }
-
+#[cfg(feature = "thread")]
+pub fn addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(
+  nvafg: &NavAbilityDFG,
+  factor: FactorDFG<F>,
+) -> Result<
+    Uuid, Box<dyn Error + Send + Sync>> {
+  return crate::execute(post_add_factor(nvafg, factor));
+}
 
 #[cfg(any(feature = "tokio", feature = "thread"))] // feature = "thread", 
 pub fn q_addFactor<'a, F: crate::FactorType<'a, FullNormal<'a>>>(

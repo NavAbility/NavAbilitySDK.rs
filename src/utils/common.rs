@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use std::{
   any::type_name,
   convert::TryInto,
@@ -20,7 +20,10 @@ use serde_json::{
   Value
 };
 
-use base64::{Engine as _, engine::{self, general_purpose}, alphabet};
+use base64::{
+  Engine as _, 
+  engine::general_purpose,
+};
 
 // use graphql_client::GraphQLQuery;
 use crate::{
@@ -58,7 +61,7 @@ pub fn execute<F>(
 }
 
 #[cfg(feature = "thread")]
-pub fn execute<R, F: Future<Output = R>>(  //  + Send + 'static
+pub fn execute<R: std::marker::Send, F: Future<Output = R>>(
 f: F
 ) -> R {
   // use any executor of your choice instead
@@ -66,16 +69,15 @@ f: F
 }
 
 #[cfg(feature = "tokio")]
-pub fn execute<R,F: Future<Output = R>>(  // Result<R,Box<dyn Error>> // < + Send + 'static>
+pub fn execute<R,F: Future<Output = R>>(
 f: F
 ) -> R {
-  // TODO, use any executor of your choice instead
+  // use any executor of your choice instead
   return tokio::runtime::Builder::new_current_thread()
   .enable_all()
   .build()
   .unwrap()
   .block_on(f);
-  // std::thread::spawn(move || futures::executor::block_on(f));
 }
 
 
@@ -317,7 +319,7 @@ pub fn send_api_result<T>(
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_to_nvaapi_cb<
   R: for<'de> Deserialize<'de>,
   T
@@ -372,7 +374,7 @@ pub async fn post_to_nvaapi_cb<
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_to_nvaapi<
   V: Serialize,
   R: for<'de> Deserialize<'de>,

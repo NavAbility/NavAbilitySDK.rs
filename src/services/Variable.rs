@@ -3,7 +3,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-#[cfg(any(feature = "tokio", feature="wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature="wasm", feature = "blocking"))]
 use crate::{
     parse_str_utc, 
     Uuid,
@@ -23,7 +23,7 @@ use crate::{
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
     Error,     
     Sender, 
@@ -103,7 +103,7 @@ impl MeanMaxPPE {
         }
     }
 
-    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+    #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
         ppe: &ppe_fields // FIXME refac to trait similar to BlobEntry_fields
     ) -> Self {
@@ -181,7 +181,7 @@ impl VariableDFG {
         }
     }
 
-    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+    #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
         vgql: &get_variable::GetVariableVariables
     ) -> Self {
@@ -280,7 +280,7 @@ impl PackedVariableNodeData {
         }
     }
 
-    #[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+    #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
     pub fn from_gql(
         vndgql: &get_variable::solverdata_fields
     ) -> Self {
@@ -344,7 +344,7 @@ pub fn getPPECov(
 
 // ===================== Queries =========================
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_variable(
     nvafg: &NavAbilityDFG,
     label: &str,
@@ -402,7 +402,7 @@ pub fn getVariable(
 
 // TODO get better function signature
 // #[allow(non_snake_case)]
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_list_variables(
     nvafg: &NavAbilityDFG,
 ) -> Result<Vec<String>, Box<dyn Error>> {
@@ -434,7 +434,7 @@ pub async fn post_list_variables(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn send_list_variables(
     send_into: Sender<Vec<String>>,
     nvafg: &NavAbilityDFG,
@@ -487,7 +487,7 @@ pub fn to_string_ISO8601(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_add_variable(
     nvafg: &NavAbilityDFG,
     label: &String,
@@ -544,7 +544,7 @@ pub async fn post_add_variable(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub async fn add_variable_send(
     send_into: std::sync::mpsc::Sender<Uuid>,
     nvafg: &NavAbilityDFG,

@@ -1,7 +1,7 @@
 
 use serde::Serialize;
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use base64::{
   Engine as _, 
   engine::general_purpose, 
@@ -11,7 +11,7 @@ use base64::{
 
 // use std::os::linux::raw;
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
   Utc,
   Uuid,
@@ -38,7 +38,7 @@ use crate::{
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_create_download(
   nvacl: &NavAbilityClient,
   blob_id: Uuid,
@@ -109,7 +109,7 @@ pub fn q_createDownload(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_create_upload(
   nvacl: NavAbilityClient,
   // filename: String,
@@ -189,7 +189,7 @@ pub fn q_createUpload(
 
 
 // TODO update to new query/mutation pattern
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_complete_upload(
   nvacl: NavAbilityClient,
   blob_id: Uuid,
@@ -237,7 +237,7 @@ pub async fn post_complete_upload(
 
 
 // TODO , feature = "blocking"
-#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 #[allow(non_snake_case)]
 pub async fn post_blob_singlepart(
   nvabs: &NavAbilityBlobStore,
@@ -308,7 +308,7 @@ struct PostOnPrem {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 #[allow(non_snake_case)]
 pub async fn post_blob_onprem(
   nvabs: &NavAbilityBlobStore,
@@ -356,7 +356,7 @@ pub async fn post_blob_onprem(
 
 
 // TODO , feature = "blocking"
-#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 #[allow(non_snake_case)]
 pub async fn post_blob_store(
   nvabs: &NavAbilityBlobStore,
@@ -425,7 +425,7 @@ pub fn addBlob(
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_delete_blob(
   nvacl: &NavAbilityClient,
   blob_id: Uuid,
@@ -458,7 +458,7 @@ pub async fn post_delete_blob(
 
 
 
-#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn delete_blob_send(
   send_into: std::sync::mpsc::Sender<delete_blob::ResponseData>,
   nvacl: &NavAbilityClient,
@@ -501,7 +501,7 @@ pub fn deleteBlob(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub async fn download_blob(
   // nvacl: &NavAbilityClient,
   url: String
