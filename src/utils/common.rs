@@ -76,11 +76,14 @@ pub fn execute<R,F: Future<Output = R>>(
   f: F
 ) -> R {
   // use any executor of your choice instead
-  return tokio::runtime::Builder::new_current_thread()
+  // return tokio::runtime::Builder::new_current_thread()
+  return tokio::runtime::Builder::new_multi_thread()
+  .worker_threads(2)
   .enable_all()
   .build()
   .unwrap()
   .block_on(f);
+  // .spawn(f);
 }
 
 
