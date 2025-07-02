@@ -64,27 +64,58 @@ pub struct SubscriptionManager {
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 impl SubscriptionManager {
   /// Create a new SubscriptionManager, starts a subscription listener that sends events into an internal channel
-  pub fn new(
+  pub fn from_parts(
     nvacl: &NavAbilityClient,
     size: usize,
+    nonblocking_recv: Receiver<crate::default_subscription::ResponseData>,
+    blocking_into: Sender<(Uuid, Sender<crate::default_subscription::ResponseData>)>,
   ) -> Self {
-    // common channel for received subscription events (fullied by polling)
-    let (nonblocking_into, nonblocking_recv) = channel();
-    // specific user request channel for setting up direct (blocking) notifications per user Uuid
-    let (blocking_into, blocking_recv) = channel();
 
-    Self::subscription_listener(
-      nonblocking_into,
-      nvacl,
-      blocking_recv,
-    );
-    return Self {
+    let nvasm = Self {
       events: BTreeMap::new(),
       sse_history: Vec::new(),
       size,
       nonblocking_recv,
       blocking_into,
     };
+
+    return nvasm;
+  }
+
+  pub fn new_channels(
+  ) -> (
+    (
+      Sender<crate::default_subscription::ResponseData>,
+      Receiver<(Uuid, Sender<crate::default_subscription::ResponseData>)>,
+    ),(
+      Receiver<crate::default_subscription::ResponseData>,
+      Sender<(Uuid, Sender<crate::default_subscription::ResponseData>)>,
+    )
+  ) {
+    // common channel for received subscription events (fullied by polling)
+    let (nonblocking_into, nonblocking_recv) = channel();
+    // specific user request channel for setting up direct (blocking) notifications per user Uuid
+    let (blocking_into, blocking_recv) = channel();
+
+    ((nonblocking_into, blocking_recv), (nonblocking_recv, blocking_into))
+  }
+
+  pub fn new(
+    nvacl: &NavAbilityClient,
+    size: usize,
+  ) -> Self {
+    // create the channels for non-blocking and blocking interfaces
+    let ((nonblocking_into, blocking_recv), (nonblocking_recv, blocking_into)) = Self::new_channels();
+
+    let nvasm = Self::from_parts(nvacl, size, nonblocking_recv, blocking_into);
+
+    Self::subscription_listener(
+      nonblocking_into,
+      nvacl,
+      blocking_recv,
+    );
+
+    return nvasm;
   }
 
 
