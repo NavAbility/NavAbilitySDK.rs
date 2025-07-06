@@ -44,8 +44,10 @@ pub enum WorkerStatusEnum {
 
 
 /// Manages subscription events from NavAbilityClient subscriptions
-/// SPECIAL NOTE1, can use standalone Self::subscription_listener(_)
-/// SPECIAL_NOTE2, both non-blocking and blocking interfaces are provided (for wasm or tokio)
+/// SPECIAL NOTE1, can use standalone Self::subscription_listener(_) or as managed object.
+/// SPECIAL_NOTE2, both polling/non-blocking and blocking interfaces are provided.
+/// SPECIAL_NOTE3, supports both native and wasm32 targets.
+/// SPECIAL_NOTE4, also supports FFI bindings for C/C++, see NavAbilitySDK.c/src/capi/SubscriptionManager.rs
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub struct SubscriptionManager {
   /// Keep track of work requests / events by their UUID
@@ -335,7 +337,7 @@ impl SubscriptionManager {
 
         // process the event
         match event {
-          Ok(Event::Open) => to_console_debug("SSE connection Open!"),
+          Ok(Event::Open) => to_console_debug("SSE connection open..."),
           Ok(Event::Message(message)) => {
             let msg_: Result<
               serde_json::Map<String, serde_json::Value>,
