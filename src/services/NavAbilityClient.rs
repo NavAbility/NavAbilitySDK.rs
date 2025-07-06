@@ -23,7 +23,7 @@ impl GetId for NavAbilityClient {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "wasm", feature = "blocking"))]
 impl NavAbilityClient {
     #[cfg(any(feature = "tokio", feature = "blocking"))]
     pub fn getOrgId(
@@ -118,7 +118,10 @@ impl NavAbilityClient {
         let oid = if let Ok(uid) = uuid::Uuid::parse_str(&oglb) {
             uid.to_string()
         } else {
+            #[cfg(feature = "wasm")]
+            todo!("WASM case not yet implemented for NavAbilityClient::new_fromargs");
             // crate::to_console_debug(&format!("NavAbilityClient constructor trying orlb={:?}",&oglb));
+            #[cfg(any(feature = "tokio", feature="thread", feature = "blocking"))]
             crate::execute(crate::services::post_org_id(
                 &temp,
                 Some(&oglb),

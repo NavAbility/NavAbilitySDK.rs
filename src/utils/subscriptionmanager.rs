@@ -63,7 +63,7 @@ pub struct SubscriptionManager {
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
+#[cfg(any(feature = "tokio", feature = "wasm"))]
 impl SubscriptionManager {
   /// Create a new SubscriptionManager, starts a subscription listener that sends events into an internal channel
   pub fn from_parts(
@@ -295,7 +295,6 @@ impl SubscriptionManager {
 
   /// Start a subscription listener that sends received events into the provided channel
   /// DOES NOT REQUIRE a SubscriptionManager instance, can be used as standalone function
-  #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
   pub fn subscription_listener(
       nonblocking_into: Sender<crate::default_subscription::ResponseData>,
       nvacl: &NavAbilityClient,
