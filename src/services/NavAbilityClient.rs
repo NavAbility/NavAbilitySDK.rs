@@ -113,21 +113,27 @@ impl NavAbilityClient {
             nva_api_token: nva_api_token.to_string(),
         };
 
-        // There was some history on the wasm case here, just keeping the note 25Q3.
         let mut oglb = org_lbl.unwrap_or(&"".to_string()).to_string();
         let oid = if let Ok(uid) = uuid::Uuid::parse_str(&oglb) {
             uid.to_string()
         } else {
-            #[cfg(feature = "wasm")]
-            todo!("WASM case not yet implemented for NavAbilityClient::new_fromargs");
+            let mut ret = "".to_owned();
             // crate::to_console_debug(&format!("NavAbilityClient constructor trying orlb={:?}",&oglb));
+            // TBD There is some history on the wasm case here, just keeping the note 25Q3.
+            #[cfg(feature = "wasm")]
+            crate::to_console_error("WASM case not yet implemented for NavAbilityClient::new_fromargs");
+
             #[cfg(any(feature = "tokio", feature="thread", feature = "blocking"))]
-            crate::execute(crate::services::post_org_id(
-                &temp,
-                Some(&oglb),
-            )).expect("Error, unable to get OrgId from NavAbilityClient")
-            .orgs[0].id
-            .to_string()
+            {
+                ret = crate::execute(crate::services::post_org_id(
+                    &temp,
+                    Some(&oglb),
+                )).expect("Error, unable to get OrgId from NavAbilityClient")
+                .orgs[0].id
+                .to_string();
+            }
+
+            ret
         };
     
         temp.user_label = oid;
