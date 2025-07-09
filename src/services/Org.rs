@@ -19,12 +19,12 @@ use crate::{
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_org_id(
     nvacl: &NavAbilityClient,
-    label: Option<&String>, // label_CONTAINS filter
+    label: &str, // label_CONTAINS filter
 ) -> Result<crate::get_org::ResponseData, Box<dyn Error>> {
     
     let request_body = GetOrg::build_query(
       crate::get_org::Variables {
-        label: label.cloned(),
+        label: label.to_string(),
       }
     );
 
@@ -51,7 +51,7 @@ pub async fn post_org_id(
 pub fn q_getOrgId(
   send_into: Sender<crate::get_org::ResponseData>, 
   nvacl: &NavAbilityClient,
-  label: Option<&String>, // label_CONTAINS filter
+  label: &str, // label_CONTAINS filter
 ) {
   // wasmbindgen limitation?  overcome +'static requirement
   crate::execute(async move {
@@ -67,27 +67,17 @@ pub fn q_getOrgId(
 pub fn q_getOrgId(
   send_into: Sender<crate::get_org::ResponseData>, 
   nvacl: &NavAbilityClient,
-  label: Option<&String>, // label_CONTAINS filter
+  label: &str, // label_CONTAINS filter
 ) {
   // wasmbindgen limitation?  overcome +'static requirement
   let nvacl_ = nvacl.clone();
   let send_into_ = send_into.clone();
-  let label_: String = if label.is_none() {
-    "".to_owned()
-  } else {
-    label.unwrap().to_string()
-  };
+  let label_ = label.to_string();
   crate::execute(async move {
-    // annoying workaround for wasm-bindgen requiring move of &String
-    let lb2 = label_.to_string();
-    let _lb = if label_.is_empty() {
-      None
-    } else {
-      Some(&lb2)
-    };
+    let lb_ = label_.to_owned();
     let _ = send_api_result(
       send_into_, 
-      post_org_id(&nvacl_, _lb).await,
+      post_org_id(&nvacl_, &lb_).await,
     );
   });
 }
