@@ -261,6 +261,24 @@ pub fn listAgentBlobentries(
   ))
 }
 
+#[cfg(any(feature = "tokio", feature = "thread"))]
+#[allow(non_snake_case)]
+pub fn deleteAgentBlobentry(
+  nvacl: &NavAbilityClient,
+  agent_label: &str,
+  entry_label: &str
+) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
+  
+  let id = nvacl.getId(&format!("{}{}",agent_label,entry_label));
+  
+  return crate::execute(post_delete_blobentry(
+    nvacl,
+    id,
+  ));
+}
+
+
+
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub async fn get_blob_entry_send(
   send_into: std::sync::mpsc::Sender<Vec<BlobEntry>>, //get_blob_entry::ResponseData>,
