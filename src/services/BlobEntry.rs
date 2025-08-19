@@ -199,7 +199,7 @@ pub async fn post_get_blob_entry(
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub async fn post_list_agent_blobentries(
   nvacl: &NavAbilityClient,
-  agent_label: &String
+  agent_label: &str
 ) -> Result<Vec<String>, Box<dyn Error>> {
   
   let variables = list_agent_blobentries::Variables {
@@ -232,7 +232,7 @@ pub async fn post_list_agent_blobentries(
 pub async fn q_listAgentBlobentries(
   send_into: std::sync::mpsc::Sender<Vec<String>>,
   nvacl: &NavAbilityClient,
-  agent_label: &String
+  agent_label: &str
 ) -> Result<(), Box<dyn Error>> {
   return send_api_result(
     send_into, 
@@ -248,7 +248,7 @@ pub async fn q_listAgentBlobentries(
 #[allow(non_snake_case)]
 pub fn listAgentBlobentries(
   nvacl: &NavAbilityClient,
-  agent_label: &String
+  agent_label: &str
 ) -> Result<Vec<String>, Box<dyn Error>> {
   crate::execute(post_list_agent_blobentries(
     nvacl,
