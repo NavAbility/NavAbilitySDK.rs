@@ -208,6 +208,7 @@ pub async fn post_list_agent_blobentries(
   
   let request_body = crate::ListAgentBlobentries::build_query(variables);
   
+  // let agLb = agent_label.to_string();
   return post_to_nvaapi::<
     list_agent_blobentries::Variables,
     list_agent_blobentries::ResponseData,
@@ -217,8 +218,12 @@ pub async fn post_list_agent_blobentries(
     request_body, 
     |s| {
       let mut bes = Vec::new();
-      for be in &s.agents[0].blob_entries {
-        bes.push(be.label.to_string());
+      if s.agents.is_empty() {
+        to_console_error(&format!("Didn't find that agentLabel"));
+      } else {
+        for be in &s.agents[0].blob_entries {
+          bes.push(be.label.to_string());
+        }
       }
       return bes
     },
@@ -255,6 +260,24 @@ pub fn listAgentBlobentries(
     agent_label,
   ))
 }
+
+#[cfg(any(feature = "tokio", feature = "thread"))]
+#[allow(non_snake_case)]
+pub fn deleteAgentBlobentry(
+  nvacl: &NavAbilityClient,
+  agent_label: &str,
+  entry_label: &str
+) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
+  
+  let id = nvacl.getId(&format!("{}{}",agent_label,entry_label));
+  
+  return crate::execute(post_delete_blobentry(
+    nvacl,
+    id,
+  ));
+}
+
+
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub async fn get_blob_entry_send(
