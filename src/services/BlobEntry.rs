@@ -246,7 +246,7 @@ pub async fn q_listAgentBlobentries(
 
 #[cfg(any(feature = "tokio", feature = "thread"))]
 #[allow(non_snake_case)]
-pub async fn listAgentBlobentries(
+pub fn listAgentBlobentries(
   send_into: std::sync::mpsc::Sender<Vec<String>>,
   nvacl: &NavAbilityClient,
   agent_label: &String
