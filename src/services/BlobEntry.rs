@@ -208,6 +208,7 @@ pub async fn post_list_agent_blobentries(
   
   let request_body = crate::ListAgentBlobentries::build_query(variables);
   
+  // let agLb = agent_label.to_string();
   return post_to_nvaapi::<
     list_agent_blobentries::Variables,
     list_agent_blobentries::ResponseData,
@@ -217,8 +218,12 @@ pub async fn post_list_agent_blobentries(
     request_body, 
     |s| {
       let mut bes = Vec::new();
-      for be in &s.agents[0].blob_entries {
-        bes.push(be.label.to_string());
+      if s.agents.is_empty() {
+        to_console_error(&format!("Didn't find that agentLabel"));
+      } else {
+        for be in &s.agents[0].blob_entries {
+          bes.push(be.label.to_string());
+        }
       }
       return bes
     },
