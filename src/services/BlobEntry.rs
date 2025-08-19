@@ -33,6 +33,8 @@ use crate::{
   AddAgentBlobEntry,
   AddVariableBlobEntry,
   AddModelBlobEntry,
+  list_agent_blobentries,
+  // ListAgentBlobentries,
 };
 
 // #[macro_use]
@@ -152,7 +154,7 @@ impl BlobEntry {
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_get_blob_entry(
   nvacl: &NavAbilityClient,
-  id: Uuid
+  id: Uuid // FIXME should be label String, not id Uuid
 ) -> Result<Vec<BlobEntry>, Box<dyn Error>> {
   
   let variables = get_blob_entry::Variables {
@@ -194,12 +196,72 @@ pub async fn post_get_blob_entry(
 // # }
 
 
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
+pub async fn post_list_agent_blobentries(
+  nvacl: &NavAbilityClient,
+  agent_label: &String
+) -> Result<Vec<String>, Box<dyn Error>> {
+  
+  let variables = list_agent_blobentries::Variables {
+    agent_label: agent_label.to_string(),
+  };
+  
+  let request_body = crate::ListAgentBlobentries::build_query(variables);
+  
+  return post_to_nvaapi::<
+    list_agent_blobentries::Variables,
+    list_agent_blobentries::ResponseData,
+    Vec<String>
+  >(
+    nvacl,
+    request_body, 
+    |s| {
+      let mut bes = Vec::new();
+      for be in &s.agents[0].blob_entries {
+        bes.push(be.label.to_string());
+      }
+      return bes
+    },
+    Some(3)
+  ).await;
+}
+
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
+#[allow(non_snake_case)]
+pub async fn q_listAgentBlobentries(
+  send_into: std::sync::mpsc::Sender<Vec<String>>,
+  nvacl: &NavAbilityClient,
+  agent_label: &String
+) -> Result<(), Box<dyn Error>> {
+  return send_api_result(
+    send_into, 
+    post_list_agent_blobentries(
+      nvacl, 
+      agent_label,
+    ).await,
+  );
+}
+
+
+#[cfg(any(feature = "tokio", feature = "thread"))]
+#[allow(non_snake_case)]
+pub async fn listAgentBlobentries(
+  send_into: std::sync::mpsc::Sender<Vec<String>>,
+  nvacl: &NavAbilityClient,
+  agent_label: &String
+) -> Result<Vec<String>, Box<dyn Error>> {
+  crate::execute(post_list_agent_blobentries(
+    nvacl,
+    agent_label,
+  ))
+}
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 pub async fn get_blob_entry_send(
   send_into: std::sync::mpsc::Sender<Vec<BlobEntry>>, //get_blob_entry::ResponseData>,
   nvacl: &NavAbilityClient,
-  id: Uuid
+  id: Uuid // FIXME should be label String, not id Uuid
 ) -> Result<(),Box<dyn Error>> {
   
   return send_api_result(
@@ -213,7 +275,7 @@ pub async fn get_blob_entry_send(
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_delete_blobentry(
   nvacl: &NavAbilityClient,
-  id: Uuid,
+  id: Uuid, // FIXME should be label String, not id Uuid
 ) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
   
   let variables = delete_blob_entry::Variables {
@@ -238,7 +300,7 @@ pub async fn post_delete_blobentry(
 pub async fn delete_blobentry_send(
   send_into: std::sync::mpsc::Sender<delete_blob_entry::ResponseData>, //get_blob_entry::ResponseData>,
   nvacl: &NavAbilityClient,
-  id: Uuid,
+  id: Uuid, // FIXME should be label String, not id Uuid
 ) -> Result<(), Box<dyn Error>> {
   return send_api_result(
     send_into, 
@@ -251,7 +313,7 @@ pub async fn delete_blobentry_send(
 #[allow(non_snake_case)]
 pub fn deleteBlobEntry(
   nvacl: &NavAbilityClient,
-  id: Uuid,
+  id: Uuid, // FIXME should be label String, not id Uuid
 ) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
   crate::execute(post_delete_blobentry(
     nvacl,
@@ -263,7 +325,7 @@ pub fn deleteBlobEntry(
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_update_blobentry_metadata(
   nvacl: &NavAbilityClient,
-  id: &Uuid,
+  id: &Uuid, // FIXME should be label String, not id Uuid
   metadata_b64: &str
 ) -> Result<update_blobentry_metadata::ResponseData,Box<dyn Error>> {
   

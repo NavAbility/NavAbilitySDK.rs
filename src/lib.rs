@@ -128,6 +128,16 @@ pub struct ListAgents;
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/gql/schema.json",
+    query_path = "src/gql/ListAgentBlobentries.gql",
+    response_derives = "Debug"
+)]
+pub struct ListAgentBlobentries;
+
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery, Clone)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
     query_path = "src/gql/UpdateAgent.gql",
     response_derives = "Debug"
 )]
