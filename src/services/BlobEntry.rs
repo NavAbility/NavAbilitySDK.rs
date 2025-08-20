@@ -262,7 +262,7 @@ pub fn listAgentBlobentries(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 #[allow(non_snake_case)]
 pub async fn post_get_agent_blobentry(
   nvacl: &NavAbilityClient,
@@ -281,7 +281,7 @@ pub async fn post_get_agent_blobentry(
 }
 
 
-#[cfg(any(feature = "tokio", feature = "thread"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 #[allow(non_snake_case)]
 pub async fn post_delete_agent_blobentry(
   nvacl: &NavAbilityClient,
