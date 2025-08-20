@@ -261,9 +261,29 @@ pub fn listAgentBlobentries(
   ))
 }
 
+
 #[cfg(any(feature = "tokio", feature = "thread"))]
 #[allow(non_snake_case)]
-pub fn deleteAgentBlobentry(
+pub async fn post_get_agent_blobentry(
+  nvacl: &NavAbilityClient,
+  agent_label: &str,
+  entry_label: &str
+) -> Result<
+  Vec<BlobEntry>, 
+  Box<dyn Error>
+> {
+  let id = nvacl.getId(&format!("{}{}",agent_label,entry_label));
+
+  return post_get_blob_entry(
+    nvacl,
+    id,
+  ).await;
+}
+
+
+#[cfg(any(feature = "tokio", feature = "thread"))]
+#[allow(non_snake_case)]
+pub async fn post_delete_agent_blobentry(
   nvacl: &NavAbilityClient,
   agent_label: &str,
   entry_label: &str
@@ -271,9 +291,25 @@ pub fn deleteAgentBlobentry(
   
   let id = nvacl.getId(&format!("{}{}",agent_label,entry_label));
   
-  return crate::execute(post_delete_blobentry(
+  return post_delete_blobentry(
     nvacl,
     id,
+  ).await;
+}
+
+
+#[cfg(any(feature = "tokio", feature = "thread"))]
+#[allow(non_snake_case)]
+pub fn deleteAgentBlobentry(
+  nvacl: &NavAbilityClient,
+  agent_label: &str,
+  entry_label: &str
+) -> Result<delete_blob_entry::ResponseData, Box<dyn Error>> {
+
+  return crate::execute(post_delete_agent_blobentry(
+    nvacl,
+    agent_label,
+    entry_label
   ));
 }
 
