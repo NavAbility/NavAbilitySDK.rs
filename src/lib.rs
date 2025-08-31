@@ -505,6 +505,7 @@ pub trait QueryDetails<Q: Serialize> {
     fn operation_name(&self) -> &str;
     fn query(&self) -> String;
     fn variables_jstr(&self) -> Result<String,serde_json::Error>;
+    fn to_jobj(&self) -> serde_json::Value;
     fn to_jstr(&self) -> String;
 }
 
@@ -521,14 +522,17 @@ impl<Q: Serialize> QueryDetails<Q> for QueryBody<Q> {
         serde_json::to_string(&self.variables)
     }
 
+    fn to_jobj(&self) -> serde_json::Value {
+        serde_json::json!({
+            "extensions": {},
+            "operationName": self.operation_name(),
+            "query": self.query(),
+            "variables": self.variables
+        })
+    }
+
     fn to_jstr(&self) -> String {
-        format!(
-            r#"{{"extensions": {}, "operationName": "{}", "query": "{}", "variables": {}}}"#, 
-            "{}",
-            self.operation_name(),
-            self.query(),
-            self.variables_jstr().unwrap_or("".to_owned()),
-        )
+        self.to_jobj().to_string()
     }
 }
 
