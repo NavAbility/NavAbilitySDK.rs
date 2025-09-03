@@ -5,6 +5,7 @@ use reqwest_eventsource::{
   Event,
 };
 
+use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm"))]
 use url::form_urlencoded;
 
@@ -35,7 +36,7 @@ use crate::{
 };
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WorkerStatusEnum {
   Pending,
   Status(String),
@@ -257,7 +258,7 @@ impl SubscriptionManager {
   pub fn block_on(
     &mut self,
     wid: &Uuid,
-    tout_millis: std::time::Duration,
+    tout_millis: std::time::Duration, // FIXME, time.rs not available in wasm
   ) -> Option<bool> {
     // if using both polling and blocking, add the id to the polling track map
     self.add_tracking(wid);
@@ -274,7 +275,7 @@ impl SubscriptionManager {
   pub fn block_on_standalone(
     blocking_into: Sender<(Uuid,Sender<crate::default_subscription::ResponseData>)>,
     wid: &Uuid,
-    tout_millis: std::time::Duration,
+    tout_millis: std::time::Duration, // FIXME, time.rs not available in wasm
   ) -> Option<bool> {
 
     let (etx, erx) = channel();
