@@ -400,17 +400,19 @@ impl SubscriptionManager {
             > = serde_json::from_str(&jstr);
             if let Ok(subwe) = jobj_ {
               use uuid::Uuid;
-  
-              nonblocking_into.send(
+
+              if let Err(e) = nonblocking_into.send(
                 subwe.clone()
-              ).expect("Failed to send Event");
+              ) {
+                to_console_error(&format!("SubscriptionManager failed to send Event: {}", e));
+              }
               // notify any direct uuids requested by the user
               let ewid = Uuid::parse_str(&subwe.worker_event.as_ref().unwrap().id).expect("Failed to parse UUID from worker event id");
               if let Some(sender) = please_notify.remove(&ewid) {
                 sender.send(subwe).expect(&format!("Failed to send direct notification for UUID {}", &ewid));
               }
             } else {
-              to_console_error("Failed to parse 'data' from message data");
+              to_console_error("Failed to parse 'data' from message");
             }
           }
         },
