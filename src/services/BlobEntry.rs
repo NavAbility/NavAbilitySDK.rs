@@ -565,19 +565,23 @@ pub async fn post_add_variable_blobentry(
   entry: &BlobEntry,
 ) -> Result<Uuid,Box<dyn Error>> {
   
-  let entry_id = nvafg.getId(&format!("{}{}",&variable_lbl,&entry.label));
-  
   let mut size_s: Option<String> = None;
   if let Some(sz) = entry.size {
     size_s = Some(format!("{}",sz));
   }
-  let mut metadata = entry.metadata.to_string();
-  if metadata.is_empty() {
-    metadata = "e30=".to_string();
-  }
+  let metadata = if entry.metadata.is_empty() {
+    "e30=".to_string()
+  } else {
+    entry.metadata.to_string()
+  };
   
+  let variable_id = nvafg.getId(&format!("{}", variable_lbl));
+  crate::to_console_debug(&format!("This variable is getting a BlobEntry: {} {}", variable_lbl, &variable_id));
+  let entry_id = nvafg.getId(&format!("{}{}", &variable_lbl, &entry.label));
+  crate::to_console_debug(&format!("Adding BlobEntry: {} {}", &entry.label, &entry_id));
+
   let variables = crate::add_variable_blob_entry::Variables {
-    variable_id: nvafg.getId(&format!("{}{}",variable_lbl,entry.label)).to_string(),
+    variable_id: variable_id.to_string(),
     entry_id: entry_id.to_string(),
     entry_label: entry.label.to_string(),
     blob_id: entry.blobId.to_string(),
