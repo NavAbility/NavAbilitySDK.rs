@@ -1,7 +1,7 @@
 mutation CreateUpload(
   $blobId: ID!, 
   $parts: Int!,
-  $store_label: String!,
+  $store_label: String! = "default",
   $store_type: BlobStoreType!
 ) {
   createUpload(
