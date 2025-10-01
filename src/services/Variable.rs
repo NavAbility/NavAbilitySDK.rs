@@ -474,18 +474,18 @@ pub async fn post_get_variable_state(
 // }
 
 
-#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[cfg(any(feature = "tokio", feature = "thread", feature = "blocking"))]
 pub fn getVariableState(
     nvafg: &NavAbilityDFG,
     variableLabel: &str,
     stateLabel: &str
 ) -> Result<PackedVariableNodeData, Box<dyn Error>> {
-    #[cfg(feature = "wasm")]
-    let nvafg = &nvafg.clone();
-    #[cfg(feature = "wasm")]
-    let variableLabel = variableLabel.to_string();
-    #[cfg(feature = "wasm")]
-    let stateLabel = stateLabel.to_string();
+    // #[cfg(feature = "wasm")]
+    // let nvafg = &nvafg.clone();
+    // #[cfg(feature = "wasm")]
+    // let variableLabel = variableLabel.to_string();
+    // #[cfg(feature = "wasm")]
+    // let stateLabel = stateLabel.to_string();
     return crate::execute(post_get_variable_state(
         nvafg,
         &variableLabel,
