@@ -214,6 +214,7 @@ pub struct GetModel;
 pub struct ListModelsGraphs;
 
 
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/gql/schema.json",
@@ -283,6 +284,18 @@ pub struct CompleteUpload;
 pub struct StartWorker;
 
 
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
+    query_path = "src/gql/ListVariables.gql",
+    response_derives = "Debug"
+)]
+pub struct ListVariables;
+// Implicit ListWhere due to graphql-client limitation: https://github.com/graphql-rust/graphql-client/issues/508
+
+
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -297,11 +310,10 @@ pub struct GetVariable;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/gql/schema.json",
-    query_path = "src/gql/ListVariables.gql",
+    query_path = "src/gql/GetVariableState.gql",
     response_derives = "Debug"
 )]
-pub struct ListVariables;
-// Implicit ListWhere due to graphql-client limitation: https://github.com/graphql-rust/graphql-client/issues/508
+pub struct GetVariableState;
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
