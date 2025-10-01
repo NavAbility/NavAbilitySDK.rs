@@ -1,6 +1,6 @@
 [package]
 name = "navabilitysdk"
-version = "0.1.0-rc6"
+version = "0.1.0-rc7"
 authors = ["NavAbility™ by WhereWhen.ai Technologies Inc."]
 edition = "2021"
 
@@ -46,6 +46,7 @@ graphql_client_cli = "^0.14"
 wasm = ["dep:reqwest", "dep:wasm-bindgen-futures"]
 wasm-dev = ["dep:gloo-console"]
 tokio = ["dep:tokio", "dep:reqwest"]
+own_runtime = []
 thread = ["dep:reqwest"]
 blocking = ["graphql_client/reqwest","graphql_client/reqwest-blocking"]
 

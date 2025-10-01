@@ -33,7 +33,7 @@ test-tokio-unsafe: build-tokio
 .PHONY: test-tokio
 
 build-tokio: 
-	cargo build -F tokio
+	cargo build -F tokio -F own_runtime
 .PHONY: build-tokio
 
 build-thread: 
