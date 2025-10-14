@@ -395,7 +395,15 @@ pub async fn post_get_agent_metadata(
     |s| {
       if !s.agents.is_empty() {
         if let Some(metadata) = Some(s.agents[0].metadata.clone()) {
-          return metadata.unwrap_or("".into());
+          if let Some(meta) = metadata {
+            if let Ok(decoded) = base64::decode(meta) {
+              if let Ok(decoded_str) = String::from_utf8(decoded) {
+                return decoded_str;
+              }
+            }
+            return "failed to decode base64 metadata".into();
+          }
+          return "".into();
         }
       }
       return "".into();
