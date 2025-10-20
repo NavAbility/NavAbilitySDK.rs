@@ -1,15 +1,9 @@
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 use crate::{
-    // Utc,
-    // Uuid,
-    // Sender,
     GraphQLQuery,
     Response,
     Error,
-    // SDK_VERSION,
-    GetURS,
-    get_urs,
     to_console_error,
 };
 
