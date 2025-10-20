@@ -321,7 +321,7 @@ impl SubscriptionManager {
     // let query_string = "subscription%7BworkerEvent%7Bpayload+id+status%7D%7D";
     let uri = format!("{}?query={}", nvacl.apiurl, query_string);
 
-    let mut nvaes = EventSource::new(
+    let nvaes = EventSource::new(
       nvacl_e.client.get(&uri)
     ).expect("Failed to create EventSource");
 
