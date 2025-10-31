@@ -298,15 +298,15 @@ pub async fn post_add_agent(
   labelonly: &String,
   agent: Option<Agent>,
 ) -> Result<add_agent::ResponseData,Box<dyn Error>> {
-  let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
-  let name = format!("{}",&labelonly).to_string();
-  let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
-  
+  let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");  
   let agent_label: String = if let Some(ref agent_) = agent {
     agent_.label.to_string()
   } else { 
     labelonly.to_string()
   };
+  let name = agent_label;
+  let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
+
 
   let metadata = agent
     .as_ref()
