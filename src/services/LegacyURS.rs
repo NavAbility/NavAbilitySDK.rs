@@ -35,21 +35,4 @@ pub fn get_robots_blocking(client: &NavAbilityClient) -> get_robots::ResponseDat
 
 
 
-#[cfg(feature = "blocking")]
-pub fn fetch_ur_list_blocking(
-    send_into: &mut crate::Sender<Vec<get_robots::GetRobotsUsers>>, 
-    nvacl: &NavAbilityClient
-) -> Result<(),Box<dyn Error>> {
-
-    // THIS IS THE LEGACY VERSION IN SDK FIXME TO NEW VERSION FOR WEB/WASM
-    let ur_list = get_robots_blocking(&nvacl).users;
-    // dbg!(&ur_list);
-
-    if let Err(e) = send_into.send(ur_list) {
-        tracing::error!("Error sending user robot list data: {}", e);
-    };
-
-    Ok(())
-}
-
 

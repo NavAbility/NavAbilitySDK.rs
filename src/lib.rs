@@ -82,7 +82,7 @@ pub mod deprecated;
 pub use crate::deprecated::*;
 
 
-const SDK_VERSION: &str = "0.25";
+const SDK_VERSION: &str = "0.26";
 
 #[allow(dead_code)]
 type UUID = String;

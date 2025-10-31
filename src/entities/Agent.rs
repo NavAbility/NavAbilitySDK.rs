@@ -11,43 +11,37 @@ use crate::{
 #[derive(Debug, Clone, Default)]
 #[allow(non_snake_case)]
 pub struct Agent {
-    pub id: Option<Uuid>,
-    pub label: String,
-    pub description: String,
-    pub tags: Vec<String>,
-    pub _version: String,
-    pub createdTimestamp: chrono::DateTime::<Utc>,
-    pub lastUpdatedTimestamp: Option<chrono::DateTime::<Utc>>,
-    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
-    pub blobEntries: Option<HashMap<String, BlobEntry>>,
-    pub models: Option<Vec<(String,chrono::DateTime<Utc>)>>,
-    pub fgs: Option<Vec<(String,chrono::DateTime<Utc>)>>,
+  pub label: String,
+  pub description: String,
+  pub tags: Vec<String>,
+  pub _version: String,
+  pub createdTimestamp: chrono::DateTime::<Utc>,
+  pub lastUpdatedTimestamp: Option<chrono::DateTime::<Utc>>,
+  pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+  pub blobEntries: Option<HashMap<String, BlobEntry>>,
+  pub models: Option<Vec<(String,chrono::DateTime<Utc>)>>,
+  pub fgs: Option<Vec<(String,chrono::DateTime<Utc>)>>,
 }
 
 impl Agent {
   pub fn new(
-    org_id: &Uuid,
     label: String,
     description: String,
     tags: Vec<String>,
     createdTimestamp: chrono::DateTime<Utc>,
   ) -> Self {
     let mut ag = Self::default();
-    // mutate the non-default fields per new inputs
-    ag.id = Some(Uuid::new_v5(org_id, label.as_bytes()));
     ag.label = label;
     ag.description = description;
     ag.tags = tags;
     ag._version = SDK_VERSION.to_string();
     ag.lastUpdatedTimestamp = Some(createdTimestamp.clone());
     ag.createdTimestamp = createdTimestamp;
-
     return ag;
   }
 }
 
 pub trait AgentFieldImportersSummary {
-  fn id(&self) -> Option<Uuid>;
   fn label(&self) -> String;
   fn description(&self) -> String;
   fn tags(&self) -> Vec<String>;
@@ -60,9 +54,7 @@ pub trait AgentFieldImportersSummary {
 #[macro_export]
 macro_rules! Agent_importers_summary { 
   ($T:ident) => {
-    impl AgentFieldImportersSummary for $T {
-      fn id(&self) -> Option<Uuid> { Some(Uuid::parse_str(&self.id).expect("failed to parse blobentry id to uuid")) }
-      
+    impl AgentFieldImportersSummary for $T {      
       fn label(&self) -> String { self.label.to_string() }
 
       fn description(&self) -> String { 

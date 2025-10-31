@@ -71,7 +71,6 @@ impl Agent {
     aggql: &impl AgentFieldImportersSummary,
   ) -> Self {
     let mut ag = Agent::default();
-    ag.id = aggql.id();
     ag.label = aggql.label();
     ag.description = aggql.description();
     ag._version = aggql._version();
@@ -296,17 +295,36 @@ pub async fn post_get_agent(
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 pub async fn post_add_agent(
   nvacl: &NavAbilityClient,
-  agent_label: &String,
+  labelonly: &String,
+  agent: Option<Agent>,
 ) -> Result<add_agent::ResponseData,Box<dyn Error>> {
   let org_id = Uuid::parse_str(&nvacl.user_label).expect("Unable to parse org_id as uuid.");
-  let name = format!("{}",&agent_label).to_string();
+  let name = format!("{}",&labelonly).to_string();
   let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
   
+  let agent_label: String = if let Some(ref agent_) = agent {
+    agent_.label.to_string()
+  } else { 
+    labelonly.to_string()
+  };
+
+  let metadata = agent
+    .as_ref()
+    .and_then(|ag| ag.metadata.clone())
+    .and_then(|meta| Some(crate::JSONCRUD::to_jsonstr_b64(&meta)))
+    .unwrap_or_else(|| "e30=".to_string());
+  let tags = agent
+    .as_ref()
+    .and_then(|ag| Some(ag.tags.clone()))
+    .unwrap_or_else(|| vec![]);
+
   let variables = add_agent::Variables {
     agent_id: agent_id.to_string(),
     label: agent_label.to_string(),
-    version: SDK_VERSION.to_string(),
     org_id: org_id.to_string(),
+    version: SDK_VERSION.to_string(),
+    tags,
+    metadata: Some(metadata),
   };
   
   let request_body = AddAgent::build_query(variables);
@@ -329,11 +347,12 @@ pub fn q_addAgent(
   send_into: Sender<add_agent::ResponseData>, 
   nvacl: &NavAbilityClient,
   agent_label: &String,
+  agent: Option<Agent>,
 ) -> Result<(), Box<dyn Error>> {
   crate::execute(async {
     return crate::send_api_result(
       send_into, 
-      post_add_agent(&nvacl, agent_label).await,
+      post_add_agent(&nvacl, agent_label, agent).await,
     );
   })
 }
@@ -351,7 +370,7 @@ pub fn q_addAgent(
   crate::execute(async move {
     let _ = crate::send_api_result(
       send_into_, 
-      post_add_agent(&nvacl_, &ag_lbl_).await,
+      post_add_agent(&nvacl_, &ag_lbl_, None).await,
     );
     ()
   });
@@ -362,14 +381,34 @@ pub fn q_addAgent(
 pub fn addAgent(
   nvacl: &NavAbilityClient,  
   label: &String,
+  agent: Option<Agent>,
 ) -> Result<crate::add_agent::ResponseData, Box<dyn Error>> {
   return crate::execute(post_add_agent(
     nvacl,
     label,
+    agent,
   ));
 }
 
 
+#[cfg(feature = "wasm")]
+#[allow(non_snake_case)]
+pub fn addAgent(
+  nvacl: &NavAbilityClient,  
+  label: &String,
+  agent: Option<Agent>,
+) {
+  let nvacl = nvacl.clone();
+  let label = label.clone();
+  let agent = agent.clone();
+  crate::execute(async move {
+    let _ = post_add_agent(
+      &nvacl,
+      &label,
+      agent,
+    ).await;
+  });
+}
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
