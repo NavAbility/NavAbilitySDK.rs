@@ -304,7 +304,7 @@ pub async fn post_add_agent(
   } else { 
     labelonly.to_string()
   };
-  let name = agent_label;
+  let name = agent_label.to_string();
   let agent_id = Uuid::new_v5(&org_id, name.as_bytes());
 
 
