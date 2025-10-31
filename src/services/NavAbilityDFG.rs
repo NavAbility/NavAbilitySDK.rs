@@ -86,14 +86,13 @@ impl NavAbilityDFG {
         if addAgentIfAbsent.is_some() && addAgentIfAbsent.unwrap() {
             let agents = crate::services::listAgents(client);
             if !agents.is_ok() || !agents.unwrap().contains(&agentLabel.to_string()) {
-                let _ = crate::services::addAgent(client, &(agentLabel.to_string()));
+                let _ = crate::services::addAgent(client, &(agentLabel.to_string()), None);
             }
         }
 
-
         let agents = crate::services::listAgents(client);
         if !agents.is_ok() || !agents.unwrap().contains(&agentLabel.to_string()) {
-            let _ = crate::services::addAgent(client, &(agentLabel.to_string()));
+            let _ = crate::services::addAgent(client, &(agentLabel.to_string()), None);
         }
 
         let _ = crate::services::connectAgentGraph(

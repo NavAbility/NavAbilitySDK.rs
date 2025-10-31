@@ -1,16 +1,19 @@
 
 mutation AddAgent(
-  $agent_id: ID!
-  $label: String!
-  $version: String!
-  $org_id: ID!
+  $agent_id: ID!,
+  $label: String!,
+  $version: String!,
+  $org_id: ID!,
+  $tags: [String!]! = [],
+  $metadata: String = ""
 ) {
   addAgents(
     input: {
       id: $agent_id, 
       label: $label, 
-      tags: "", 
-      _version: $version, 
+      tags: $tags, 
+      _version: $version,
+      metadata: $metadata,
       org: {
         connect: {
           where: {
@@ -23,7 +26,7 @@ mutation AddAgent(
     }
   ) {
     agents {
-      id
+      label
       createdTimestamp
     }
   }
