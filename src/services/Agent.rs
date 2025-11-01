@@ -327,7 +327,6 @@ pub async fn post_add_agent(
     metadata: Some(metadata),
   };
 
-  crate::to_console_debug(&format!("posting add agent with metadata: {:?}", &variables.metadata));
   let request_body = AddAgent::build_query(variables);
   
   return post_to_nvaapi::<
