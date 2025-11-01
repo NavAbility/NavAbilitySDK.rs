@@ -484,6 +484,17 @@ pub struct FindFactorgraphBlobEntries;
 )]
 pub struct AddAgent;
 
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
+    query_path = "src/gql/DeleteAgent.gql",
+    response_derives = "Debug"
+)]
+pub struct DeleteAgent;
+
+
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]
 #[graphql(

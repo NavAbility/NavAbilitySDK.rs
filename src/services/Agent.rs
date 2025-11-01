@@ -342,6 +342,38 @@ pub async fn post_add_agent(
 }
 
 
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+pub async fn post_delete_agent(
+  nvacl: &NavAbilityClient,
+  agent_label: &str
+) -> Result<crate::delete_agent::ResponseData, Box<dyn Error>> {
+  
+  let id = nvacl.getId(agent_label).to_string();
+
+  // https://github.com/graphql-rust/graphql-client/blob/3090e0add5504ed31df74c32c2bda203793a890a/examples/github/examples/github.rs#L45C1-L48C7
+  let variables = crate::delete_agent::Variables {
+    id,
+  };
+  
+  let request_body = crate::DeleteAgent::build_query(variables);
+  
+  return post_to_nvaapi::<
+    crate::delete_agent::Variables,
+    crate::delete_agent::ResponseData,
+    crate::delete_agent::ResponseData
+  >(
+    nvacl,
+    request_body, 
+    |s| s,
+    Some(3)
+  ).await;
+}
+
+
+
+
+
 #[cfg(any(feature = "tokio"))] // feature = "thread", 
 pub fn q_addAgent(
   send_into: Sender<add_agent::ResponseData>, 
@@ -409,6 +441,37 @@ pub fn addAgent(
     ).await;
   });
 }
+
+
+#[cfg(feature = "tokio")] // , feature = "thread"
+#[allow(non_snake_case)]
+pub fn deleteAgent(
+  nvacl: &NavAbilityClient,  
+  label: &String,
+) -> Result<crate::delete_agent::ResponseData, Box<dyn Error>> {
+  return crate::execute(post_delete_agent(
+    nvacl,
+    label,
+  ));
+}
+
+
+#[cfg(feature = "wasm")]
+#[allow(non_snake_case)]
+pub fn deleteAgent(
+  nvacl: &NavAbilityClient,  
+  label: &String,
+) {
+  let nvacl = nvacl.clone();
+  let label = label.clone();
+  crate::execute(async move {
+    let _ = post_delete_agent(
+      &nvacl,
+      &label,
+    ).await;
+  });
+}
+
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
