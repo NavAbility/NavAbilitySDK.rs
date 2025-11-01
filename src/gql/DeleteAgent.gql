@@ -1,0 +1,13 @@
+mutation DeleteAgent($id: ID!) {
+  deleteAgents(
+    where: { id: $id }
+    delete: {
+      blobEntries: {
+        where: { node: { parentConnection: {Agent: {node: {id: $id } } } } }
+      }
+    }
+  ) {
+    nodesDeleted
+    relationshipsDeleted
+  }
+}
