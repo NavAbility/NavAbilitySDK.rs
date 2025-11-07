@@ -97,6 +97,8 @@ type Metadata = String;
 #[allow(dead_code)]
 type JSON = serde_json::Map<String, serde_json::Value>;
 #[allow(dead_code)]
+type JSONObjectStringified = String;
+#[allow(dead_code)]
 type B64JSON = String;
 #[allow(dead_code)]
 type Latitude = f64;
