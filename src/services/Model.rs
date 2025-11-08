@@ -113,44 +113,44 @@ impl GetModelResponse {
     pub fn from_gql_summary(
         gmr: &crate::get_model::ResponseData
     ) -> Self {
-        if gmr.models.is_empty() {
-            to_console_error("get_model: no models found");
-        }
         let mut fgs = Vec::new();
-        for fg in &gmr.models[0].fgs {
-            let mut agents = Vec::new();
-            for ag in &fg.agents {
-                agents.push(Agent::from_gql_summary(ag));
-            }
-            let fgsk = &fg.graph_fields_skeleton;
-            fgs.push(GetFactorgraph {
-                id: Uuid::parse_str(&fgsk.id).expect("failed to parse factorgraph id to uuid"),
-                label: fgsk.label.to_string(),
-                lastUpdatedTimestamp: parse_str_utc(fgsk.last_updated_timestamp.clone()).expect("failed to parse factorgraph last_updated_timestamp to datetime"),
-                namespace: Uuid::parse_str(&fgsk.namespace.clone().unwrap()).expect("failed to parse factorgraph namespace to uuid"),
-                numVariables: fg.num_variables.unwrap(),
-                numFactors: fg.num_factors.unwrap(),
-                agents,
-            });
-        }
-        let mut bes = Vec::new();
-        for be in &gmr.models[0].blob_entries {
-            bes.push(BlobEntry::from_gql_summary(be));
-        }
-
-
         let mut metadata: serde_json::Map<String,serde_json::Value> = serde_json::Map::new();
-        let jstr_b64 = &gmr.models[0].metadata.clone().unwrap();
-        match &general_purpose::STANDARD.decode(jstr_b64) {
-            Err(e) => {
-                to_console_error(&format!("Failed to decode agent metadata base64 string: {:?}", e));
-            },
-            Ok(jstr_) => {
-                let jstr = std::str::from_utf8(jstr_).expect("Invalid agent metadata json UTF8 string decoding "); // FIXME make soft error only
-                if let Ok(jmap) = serde_json::from_str(&jstr) {
-                    metadata = jmap;
+        let mut bes = Vec::new();
+
+        if !gmr.models.is_empty() {
+            for fg in &gmr.models[0].fgs {
+                let mut agents = Vec::new();
+                for ag in &fg.agents {
+                    agents.push(Agent::from_gql_summary(ag));
                 }
-            },
+                let fgsk = &fg.graph_fields_skeleton;
+                fgs.push(GetFactorgraph {
+                    id: Uuid::parse_str(&fgsk.id).expect("failed to parse factorgraph id to uuid"),
+                    label: fgsk.label.to_string(),
+                    lastUpdatedTimestamp: parse_str_utc(fgsk.last_updated_timestamp.clone()).expect("failed to parse factorgraph last_updated_timestamp to datetime"),
+                    namespace: Uuid::parse_str(&fgsk.namespace.clone().unwrap()).expect("failed to parse factorgraph namespace to uuid"),
+                    numVariables: fg.num_variables.unwrap(),
+                    numFactors: fg.num_factors.unwrap(),
+                    agents,
+                });
+            }
+            for be in &gmr.models[0].blob_entries {
+                bes.push(BlobEntry::from_gql_summary(be));
+            }
+
+
+            let jstr_b64 = &gmr.models[0].metadata.clone().unwrap();
+            match &general_purpose::STANDARD.decode(jstr_b64) {
+                Err(e) => {
+                    to_console_error(&format!("Failed to decode agent metadata base64 string: {:?}", e));
+                },
+                Ok(jstr_) => {
+                    let jstr = std::str::from_utf8(jstr_).expect("Invalid agent metadata json UTF8 string decoding "); // FIXME make soft error only
+                    if let Ok(jmap) = serde_json::from_str(&jstr) {
+                        metadata = jmap;
+                    }
+                },
+            }
         }
         return Self {
             id: Uuid::parse_str(&gmr.models[0].id).expect("failed to parse model id to uuid"),
