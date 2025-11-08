@@ -113,9 +113,13 @@ impl GetModelResponse {
     pub fn from_gql_summary(
         gmr: &crate::get_model::ResponseData
     ) -> Self {
-        let mut fgs = Vec::new();
+        let mut id = Uuid::nil();
+        let mut label = "".to_owned();
+        let mut lastUpdatedTimestamp = chrono::MIN_DATETIME;
         let mut metadata: serde_json::Map<String,serde_json::Value> = serde_json::Map::new();
-        let mut bes = Vec::new();
+        let mut tags = Vec::new();
+        let mut blobEntries = Vec::new();
+        let mut fgs = Vec::new();
 
         if !gmr.models.is_empty() {
             for fg in &gmr.models[0].fgs {
@@ -135,7 +139,7 @@ impl GetModelResponse {
                 });
             }
             for be in &gmr.models[0].blob_entries {
-                bes.push(BlobEntry::from_gql_summary(be));
+                blobEntries.push(BlobEntry::from_gql_summary(be));
             }
 
 
@@ -151,14 +155,18 @@ impl GetModelResponse {
                     }
                 },
             }
+            id = Uuid::parse_str(&gmr.models[0].id).expect("failed to parse model id to uuid");
+            label = gmr.models[0].label.to_string();
+            lastUpdatedTimestamp = parse_str_utc(gmr.models[0].last_updated_timestamp.clone()).expect("failed to parse model last_updated_timestamp to datetime");
+            tags = gmr.models[0].tags.clone();
         }
         return Self {
-            id: Uuid::parse_str(&gmr.models[0].id).expect("failed to parse model id to uuid"),
-            label: gmr.models[0].label.to_string(),
-            lastUpdatedTimestamp: parse_str_utc(gmr.models[0].last_updated_timestamp.clone()).expect("failed to parse model last_updated_timestamp to datetime"),
+            id,
+            label,
+            lastUpdatedTimestamp,
             metadata,
-            tags: gmr.models[0].tags.clone(),
-            blobEntries: bes,
+            tags,
+            blobEntries,
             fgs,
         };
     }
