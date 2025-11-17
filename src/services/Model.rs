@@ -72,6 +72,32 @@ pub async fn post_list_models(
 }
 
 
+#[cfg(feature = "wasm")]
+#[cfg(allow_non_snake_case)]
+pub fn q_listModels(
+    send_into: crate::Sender<crate::list_models::ResponseData>,
+    nvacl: &NavAbilityClient,
+    model_label_contains: Option<&str>,
+) {
+  // wasmbindgen limitation?  overcome +'static requirement
+
+  let nvacl_ = (*nvacl).clone();
+  // let send_into_ = send_into.clone();
+  let label_contains_ = model_label_contains.map(|s| s.to_string());
+  
+  crate::execute(async move {
+    let _ = crate::send_api_result(
+      send_into, 
+      post_list_models(
+        &nvacl_, 
+        label_contains_.as_deref()
+      ).await,
+    );
+  });
+}
+
+
+
 
 // #[macro_use]
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
