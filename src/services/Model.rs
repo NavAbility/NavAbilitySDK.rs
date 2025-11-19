@@ -263,7 +263,7 @@ pub fn q_getModel(
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-pub async fn add_model_async(
+pub async fn post_add_model(
     nvacl: &NavAbilityClient,
     model_label: &String,
 ) -> Result<crate::add_model::ResponseData,Box<dyn Error>> {
@@ -292,6 +292,29 @@ pub async fn add_model_async(
     ).await;
 }
 
+
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+pub async fn post_delete_model(
+    nvacl: &NavAbilityClient,
+    model_label: &str,
+) -> Result<crate::delete_model::ResponseData, Box<dyn Error>> {
+
+    let request_body = crate::DeleteModel::build_query(crate::delete_model::Variables {
+        label: model_label.to_string(),
+    });
+
+    return post_to_nvaapi::<
+        crate::delete_model::Variables,
+        crate::delete_model::ResponseData,
+        crate::delete_model::ResponseData,
+    >(
+        nvacl,
+        request_body,
+        |s| s,
+        Some(3)
+    ).await;
+}
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
