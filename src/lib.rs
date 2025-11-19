@@ -70,7 +70,7 @@ pub use crate::services::{
     post_add_agent_entry,
     list_models_query,
     post_list_models,
-    add_model_async,
+    post_add_model,
     post_add_model_blobentry,
     post_list_model_graphs,
     post_list_graphs,
@@ -505,6 +505,17 @@ pub struct DeleteAgent;
     response_derives = "Debug"
 )]
 pub struct AddModel;
+
+
+#[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/gql/schema.json",
+    query_path = "src/gql/DeleteModel.gql",
+    response_derives = "Debug"
+)]
+pub struct DeleteModel;
+
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
 #[derive(GraphQLQuery)]

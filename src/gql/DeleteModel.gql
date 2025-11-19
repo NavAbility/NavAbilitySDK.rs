@@ -1,0 +1,10 @@
+mutation DeleteModel(
+  $label: String!
+) {
+  deleteModels(
+    where: {label: $label}
+  ) {
+    nodesDeleted
+    relationshipsDeleted
+  }
+}
