@@ -188,11 +188,11 @@ pub struct GetFactorgraphs;
 
 
 #[cfg(any(feature = "tokio", feature = "thread", feature = "wasm", feature = "blocking"))]
-#[derive(GraphQLQuery)]
+#[derive(GraphQLQuery, Clone)]
 #[graphql(
     schema_path = "src/gql/schema.json",
     query_path = "src/gql/ListModels.gql",
-    response_derives = "Debug"
+    response_derives = "Debug, Clone"
 )]
 pub struct ListModels;
 
