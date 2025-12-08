@@ -1,6 +1,6 @@
 [package]
 name = "navabilitysdk"
-version = "0.1.0-rc9"
+version = "0.1.0-rc10"
 authors = ["NavAbility™ by WhereWhen.ai Technologies Inc."]
 edition = "2021"
 
@@ -20,7 +20,7 @@ regex = "^1.8"
 uuid = { version ="^1.15", features = ["v4","v5"] }
 url = "^2"
 wasm-bindgen-futures = { version = "^0.4", optional = true }
-graphql_client = "^0.14"
+graphql_client = "^0.15"
 reqwest = {version = "^0.12", optional=true, features = [
   "json",
   # "multipart",
